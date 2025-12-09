@@ -91,7 +91,7 @@ function switchTab(name: string) {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 999;
+  z-index: 1;
   background: var(--bg-content, #fff);
   border-top: 1rpx solid var(--divider-color, #eee);
   padding-bottom: env(safe-area-inset-bottom);

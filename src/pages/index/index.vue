@@ -1,191 +1,14 @@
-<template>
-  <!--
-    WotUI 最佳实践：
-    使用 wd-config-provider 包裹页面以确保组件级暗黑模式生效
-    custom-style 用于注入我们定义的 CSS 变量
-  -->
-  <wd-config-provider :theme="isDark ? 'dark' : 'light'">
-    <view class="page-container" :class="{ dark: isDark }">
-
-      <!-- 沉浸式导航栏 -->
-      <view class="custom-navbar">
-        <view class="navbar-bg"></view> <!-- 独立背景层用于做高斯模糊 -->
-        <view class="navbar-content">
-          <view class="navbar-left" @click="openDrawer">
-            <app-avatar
-                :src="user?.avatar"
-                :name="user?.name"
-                :size="72"
-                round
-                custom-style="border: 2rpx solid var(--border-subtle);"
-            />
-          </view>
-          <view class="navbar-title">
-            <text class="title-text">{{ user?.name || '消息' }}</text>
-            <view class="online-status" v-if="!loading"></view>
-          </view>
-          <view class="navbar-right">
-            <view class="icon-btn" @click="showPlusMenu = true">
-              <wd-icon name="add" size="44rpx" />
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 搜索区域 (模拟 iOS 风格) -->
-      <view class="search-wrapper">
-        <view class="search-inner" @click="goSearch">
-          <wd-icon name="search" size="32rpx" color="var(--text-tertiary)" />
-          <text class="search-placeholder">搜索</text>
-        </view>
-      </view>
-
-      <!-- 会话列表 -->
-      <scroll-view
-          class="conversation-list"
-          scroll-y
-          :refresher-enabled="true"
-          :refresher-triggered="refreshing"
-          @refresherrefresh="onRefresh"
-      >
-        <!-- 骨架屏/加载态 (优化体验) -->
-        <view v-if="loading && conversations.length === 0" class="loading-state">
-          <wd-loading size="60rpx" color="var(--color-primary)" />
-          <text>同步消息中...</text>
-        </view>
-
-        <wd-status-tip
-            v-else-if="conversations.length === 0"
-            image="message"
-            tip="暂无消息，开始聊天吧"
-        />
-
-        <template v-else>
-          <!-- 列表渲染 -->
-          <wd-swipe-action
-              v-for="item in conversations"
-              :key="item.id"
-              :disabled="false"
-          >
-            <view
-                class="conversation-item"
-                :class="{ 'is-top': item.is_top }"
-                @click="goChat(item)"
-                @longpress="handleLongPress(item)"
-            >
-              <!-- 头像区域 -->
-              <view class="avatar-wrap">
-                <app-avatar
-                    :src="item.avatar"
-                    :name="item.name"
-                    :size="104"
-                    radius="16rpx"
-                    :badge="item.is_muted ? 0 : item.unread_count"
-                    :dot="item.is_muted && item.unread_count > 0"
-                />
-                <!-- 特别关心采用更现代的角标 -->
-                <view v-if="item.is_special_care" class="special-badge-wrap">
-                  <wd-icon name="heart-fill" size="20rpx" color="#fff" />
-                </view>
-              </view>
-
-              <!-- 内容区域 -->
-              <view class="content-wrap">
-                <view class="row-top">
-                  <view class="title-box">
-                    <wd-icon v-if="item.is_top" name="pin" size="24rpx" class="pin-icon" />
-                    <text class="name text-ellipsis" :class="{ 'special-text': item.is_special_care }">
-                      {{ item.name || '未知' }}
-                    </text>
-                  </view>
-                  <text class="time">{{ formatMessageTime(item.last_time) }}</text>
-                </view>
-
-                <view class="row-bottom">
-                  <text class="msg-preview text-ellipsis">{{ item.last_message || '暂无消息' }}</text>
-                  <wd-icon v-if="item.is_muted" name="volume-mute" size="28rpx" class="mute-icon" />
-                </view>
-              </view>
-            </view>
-
-            <!-- 右滑菜单 -->
-            <template #right>
-              <view class="swipe-actions">
-                <view class="action-btn top" @click.stop="toggleTop(item)">
-                  <wd-icon name="pin" size="36rpx" />
-                </view>
-                <view class="action-btn delete" @click.stop="deleteConversation(item)">
-                  <wd-icon name="delete" size="36rpx" />
-                </view>
-              </view>
-            </template>
-          </wd-swipe-action>
-        </template>
-
-        <!-- 底部垫片 -->
-        <view class="safe-area-spacer"></view>
-      </scroll-view>
-
-      <!-- 弹窗组件保持原有逻辑 -->
-      <wd-action-sheet
-          v-model="showPlusMenu"
-          :actions="plusMenuActions"
-          @select="onPlusMenuSelect"
-      />
-
-      <wd-action-sheet
-          v-model="showConvActions"
-          :actions="convActionItems"
-          @select="onConvActionSelect"
-          cancel-text="取消"
-      />
-
-      <!-- 侧边抽屉 -->
-      <wd-popup
-          v-model="showDrawer"
-          position="left"
-          custom-style="width: 75%; height: 100%; background: var(--bg-surface);"
-      >
-        <view class="drawer-container">
-          <view class="drawer-header-bg"></view>
-          <view class="drawer-info">
-            <app-avatar :src="user?.avatar" :name="user?.name" :size="140" round custom-style="border: 4rpx solid var(--bg-surface);" />
-            <text class="drawer-username">{{ user?.name || '请登录' }}</text>
-            <text class="drawer-bio">{{ user?.desc || '编辑个签，展示你的独特个性' }}</text>
-          </view>
-
-          <view class="drawer-menu-list">
-            <wd-cell-group border>
-              <wd-cell title="个人资料" icon="user" is-link size="large" @click="goProfile" />
-              <wd-cell title="设置" icon="setting" is-link size="large" @click="goSettings" />
-              <wd-cell title="深色模式" icon="picture" :value="themeText" is-link size="large" @click="goTheme" />
-            </wd-cell-group>
-          </view>
-
-          <view class="drawer-footer-btn">
-            <wd-button type="info" plain block @click="logout">退出登录</wd-button>
-          </view>
-        </view>
-      </wd-popup>
-
-      <wd-toast />
-      <wd-message-box />
-      <app-tab-bar current="messages" />
-    </view>
-  </wd-config-provider>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import type { Conversation } from '@/types/conversation'
 import { onShow } from '@dcloudio/uni-app'
-import { useAuthStore, useConversationStore } from '@/stores'
-import { useTheme } from '@/composables/useTheme'
-import { formatMessageTime } from '@/utils/format'
-import { useToast, useMessage } from 'wot-design-uni'
+import { computed, onMounted, ref } from 'vue'
+import { useMessage, useToast } from 'wot-design-uni'
 import * as conversationApi from '@/api/modules/conversation'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import AppTabBar from '@/components/common/AppTabBar.vue'
-import type { Conversation } from '@/types/conversation'
+import { useTheme } from '@/composables/useTheme'
+import { useAuthStore, useConversationStore } from '@/stores'
+import { formatMessageTime } from '@/utils/format'
 
 const authStore = useAuthStore()
 const conversationStore = useConversationStore()
@@ -214,19 +37,22 @@ const themeText = computed(() => {
 const plusMenuActions = [
   { name: '创建群聊', value: 'createGroup' },
   { name: '添加好友', value: 'addFriend' },
-  { name: '扫一扫', value: 'scan' }
+  { name: '扫一扫', value: 'scan' },
 ]
 
 const convActionItems = computed(() => {
-  if (!selectedConv.value) return []
+  if (!selectedConv.value)
+    return []
   const conv = selectedConv.value
   const isGroup = conv.is_group || conv.type === 2
   const items: any[] = [
     { name: conv.is_top ? '取消置顶' : '置顶会话', value: 'toggleTop' },
-    { name: conv.is_muted ? '开启提醒' : '消息免打扰', value: 'toggleMute' }
+    { name: conv.is_muted ? '开启提醒' : '消息免打扰', value: 'toggleMute' },
   ]
-  if (!isGroup) items.push({ name: conv.is_special_care ? '取消特别关心' : '特别关心', value: 'toggleSpecial' })
-  if (conv.unread_count && conv.unread_count > 0) items.push({ name: '标记已读', value: 'markRead' })
+  if (!isGroup)
+    items.push({ name: conv.is_special_care ? '取消特别关心' : '特别关心', value: 'toggleSpecial' })
+  if (conv.unread_count && conv.unread_count > 0)
+    items.push({ name: '标记已读', value: 'markRead' })
   items.push({ name: '删除会话', value: 'delete', color: '#fa5151' })
   return items
 })
@@ -255,7 +81,8 @@ function goChat(item: Conversation) {
 }
 function handleLongPress(item: Conversation) { selectedConv.value = item; showConvActions.value = true }
 async function onConvActionSelect(action: { value: string }) {
-  if (!selectedConv.value) return
+  if (!selectedConv.value)
+    return
   const conv = selectedConv.value
   showConvActions.value = false
   try {
@@ -263,18 +90,23 @@ async function onConvActionSelect(action: { value: string }) {
       await conversationApi.updateConversation({ target_id: conv.target_id, is_top: !conv.is_top })
       conv.is_top = !conv.is_top
       conversationStore.sortConversations()
-    } else if (action.value === 'toggleMute') {
+    }
+    else if (action.value === 'toggleMute') {
       await conversationApi.updateConversation({ target_id: conv.target_id, is_muted: !conv.is_muted })
       conv.is_muted = !conv.is_muted
-    } else if (action.value === 'toggleSpecial') {
+    }
+    else if (action.value === 'toggleSpecial') {
       await conversationApi.updateConversation({ target_id: conv.target_id, is_special_care: !conv.is_special_care })
       conv.is_special_care = !conv.is_special_care
-    } else if (action.value === 'markRead') {
+    }
+    else if (action.value === 'markRead') {
       await conversationStore.clearUnread(conv.target_id)
-    } else if (action.value === 'delete') {
+    }
+    else if (action.value === 'delete') {
       await deleteConversation(conv)
     }
-  } catch(e) { toast.error('操作失败') }
+  }
+  catch (e) { toast.error('操作失败') }
 }
 
 // 提取删除逻辑
@@ -283,26 +115,225 @@ async function deleteConversation(item: Conversation) {
     await messageBox.confirm({ title: '提示', msg: '确定删除该会话吗？' })
     await conversationApi.deleteConversation(item.target_id)
     const index = conversationStore.conversations.findIndex(c => c.id === item.id)
-    if (index > -1) conversationStore.conversations.splice(index, 1)
+    if (index > -1)
+      conversationStore.conversations.splice(index, 1)
     toast.success('已删除')
-  } catch (e: any) { if(e !== 'cancel') toast.error('删除失败') }
+  }
+  catch (e: any) {
+    if (e !== 'cancel')
+      toast.error('删除失败')
+  }
 }
 
 function onPlusMenuSelect(item: { value: string }) {
   showPlusMenu.value = false
-  if(item.value === 'createGroup') uni.navigateTo({ url: '/pages/group/create' })
-  else if(item.value === 'addFriend') uni.navigateTo({ url: '/pages/contact/add' })
-  else if(item.value === 'scan') uni.scanCode({ success: () => toast.show('扫码成功'), fail: () => toast.error('扫码失败') })
+  if (item.value === 'createGroup')
+    uni.navigateTo({ url: '/pages/group/create' })
+  else if (item.value === 'addFriend')
+    uni.navigateTo({ url: '/pages/contact/add' })
+  else if (item.value === 'scan')
+    uni.scanCode({ success: () => toast.show('扫码成功'), fail: () => toast.error('扫码失败') })
 }
 function openDrawer() { showDrawer.value = true }
 function goProfile() { showDrawer.value = false; uni.navigateTo({ url: '/pages/profile/index' }) }
 function goSettings() { showDrawer.value = false; uni.navigateTo({ url: '/pages/settings/index' }) }
 function goTheme() { showDrawer.value = false; uni.navigateTo({ url: '/pages/settings/theme' }) }
 async function logout() {
-  try { await messageBox.confirm({ title: '提示', msg: '确定退出?' }); showDrawer.value = false; authStore.logout() } catch {}
+  try { await messageBox.confirm({ title: '提示', msg: '确定退出?' }); showDrawer.value = false; authStore.logout() }
+  catch {}
 }
 // --- 保持逻辑代码结束 ---
 </script>
+
+<template>
+  <!--
+    WotUI 最佳实践：
+    使用 wd-config-provider 包裹页面以确保组件级暗黑模式生效
+    custom-style 用于注入我们定义的 CSS 变量
+  -->
+  <wd-config-provider :theme="isDark ? 'dark' : 'light'">
+    <view class="page-container" :class="{ dark: isDark }">
+      <!-- 沉浸式导航栏 -->
+      <view class="custom-navbar">
+        <view class="navbar-bg" /> <!-- 独立背景层用于做高斯模糊 -->
+        <view class="navbar-content">
+          <view class="navbar-left" @click="openDrawer">
+            <app-avatar
+              :src="user?.avatar"
+              :name="user?.name"
+              :size="72"
+              round
+              custom-style="border: 2rpx solid var(--border-subtle);"
+            />
+          </view>
+          <view class="navbar-title">
+            <text class="title-text">
+              {{ user?.name || '消息' }}
+            </text>
+            <view v-if="!loading" class="online-status" />
+          </view>
+          <view class="navbar-right">
+            <view class="icon-btn" @click="showPlusMenu = true">
+              <wd-icon name="add" size="44rpx" />
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 搜索区域 (模拟 iOS 风格) -->
+      <view class="search-wrapper">
+        <view class="search-inner" @click="goSearch">
+          <wd-icon name="search" size="32rpx" color="var(--text-tertiary)" />
+          <text class="search-placeholder">
+            搜索
+          </text>
+        </view>
+      </view>
+
+      <!-- 会话列表 -->
+      <scroll-view
+        class="conversation-list"
+        scroll-y
+        :refresher-enabled="true"
+        :refresher-triggered="refreshing"
+        @refresherrefresh="onRefresh"
+      >
+        <!-- 骨架屏/加载态 (优化体验) -->
+        <view v-if="loading && conversations.length === 0" class="loading-state">
+          <wd-loading size="60rpx" color="var(--color-primary)" />
+          <text>同步消息中...</text>
+        </view>
+
+        <wd-status-tip
+          v-else-if="conversations.length === 0"
+          image="message"
+          tip="暂无消息，开始聊天吧"
+        />
+
+        <template v-else>
+          <!-- 列表渲染 -->
+          <wd-swipe-action
+            v-for="item in conversations"
+            :key="item.id"
+            :disabled="false"
+          >
+            <view
+              class="conversation-item"
+              :class="{ 'is-top': item.is_top }"
+              @click="goChat(item)"
+              @longpress="handleLongPress(item)"
+            >
+              <!-- 头像区域 -->
+              <view class="avatar-wrap">
+                <app-avatar
+                  :src="item.avatar"
+                  :name="item.name"
+                  :size="104"
+                  radius="16rpx"
+                  :badge="item.is_muted ? 0 : item.unread_count"
+                  :dot="item.is_muted && item.unread_count > 0"
+                />
+                <!-- 特别关心采用更现代的角标 -->
+                <view v-if="item.is_special_care" class="special-badge-wrap">
+                  <wd-icon name="heart-fill" size="20rpx" color="#fff" />
+                </view>
+              </view>
+
+              <!-- 内容区域 -->
+              <view class="content-wrap">
+                <view class="row-top">
+                  <view class="title-box">
+                    <wd-icon v-if="item.is_top" name="pin" size="24rpx" class="pin-icon" />
+                    <text class="name text-ellipsis" :class="{ 'special-text': item.is_special_care }">
+                      {{ item.name || '未知' }}
+                    </text>
+                  </view>
+                  <text class="time">
+                    {{ formatMessageTime(item.last_time) }}
+                  </text>
+                </view>
+
+                <view class="row-bottom">
+                  <text class="msg-preview text-ellipsis">
+                    {{ item.last_message || '暂无消息' }}
+                  </text>
+                  <wd-icon v-if="item.is_muted" name="volume-mute" size="28rpx" class="mute-icon" />
+                </view>
+              </view>
+            </view>
+
+            <!-- 右滑菜单 -->
+            <template #right>
+              <view class="swipe-actions">
+                <view class="action-btn top" @click.stop="toggleTop(item)">
+                  <wd-icon name="pin" size="36rpx" />
+                </view>
+                <view class="action-btn delete" @click.stop="deleteConversation(item)">
+                  <wd-icon name="delete" size="36rpx" />
+                </view>
+              </view>
+            </template>
+          </wd-swipe-action>
+        </template>
+
+        <!-- 底部垫片 -->
+        <view class="safe-area-spacer" />
+      </scroll-view>
+
+      <!-- 弹窗组件保持原有逻辑 -->
+      <wd-action-sheet
+        v-model="showPlusMenu"
+        :actions="plusMenuActions"
+        @select="onPlusMenuSelect"
+      />
+
+      <wd-action-sheet
+        v-model="showConvActions"
+        :actions="convActionItems"
+        cancel-text="取消"
+        @select="onConvActionSelect"
+      />
+
+      <!-- 侧边抽屉 -->
+      <wd-popup
+        v-model="showDrawer"
+        position="left"
+        custom-style="width: 75%; height: 100%; background: var(--bg-surface);"
+      >
+        <view class="drawer-container">
+          <view class="drawer-header-bg" />
+          <view class="drawer-info">
+            <app-avatar :src="user?.avatar" :name="user?.name" :size="140" round custom-style="border: 4rpx solid var(--bg-surface);" />
+            <text class="drawer-username">
+              {{ user?.name || '请登录' }}
+            </text>
+            <text class="drawer-bio">
+              {{ user?.desc || '编辑个签，展示你的独特个性' }}
+            </text>
+          </view>
+
+          <view class="drawer-menu-list">
+            <wd-cell-group border>
+              <wd-cell title="个人资料" icon="user" is-link size="large" @click="goProfile" />
+              <wd-cell title="设置" icon="setting" is-link size="large" @click="goSettings" />
+              <wd-cell title="深色模式" icon="picture" :value="themeText" is-link size="large" @click="goTheme" />
+            </wd-cell-group>
+          </view>
+
+          <view class="drawer-footer-btn">
+            <wd-button type="info" plain block @click="logout">
+              退出登录
+            </wd-button>
+          </view>
+        </view>
+      </wd-popup>
+
+      <wd-toast />
+      <wd-message-box />
+      <app-tab-bar current="messages" />
+    </view>
+  </wd-config-provider>
+</template>
 
 <style lang="scss" scoped>
 /* ----- 语义化 CSS 变量定义 ----- */
@@ -345,7 +376,7 @@ async function logout() {
 .custom-navbar {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 0;
   padding-top: var(--status-bar-height);
 
   .navbar-bg {
@@ -402,7 +433,7 @@ async function logout() {
   padding: 16rpx 32rpx;
   position: sticky;
   top: calc(44px + var(--status-bar-height));
-  z-index: 99;
+  z-index: 0;
 }
 
 .search-inner {
@@ -543,6 +574,7 @@ async function logout() {
   display: flex;
   flex-direction: column;
   position: relative;
+  z-index: 50000;
   overflow: hidden;
 }
 
@@ -559,7 +591,7 @@ async function logout() {
 
 .drawer-info {
   position: relative;
-  z-index: 1;
+  z-index: 1000;
   padding: 100rpx 40rpx 60rpx;
   display: flex;
   flex-direction: column;
