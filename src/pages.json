@@ -1,0 +1,169 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "消息"
+      }
+    },
+    {
+      "path": "pages/chat/index",
+      "style": {
+        "navigationBarTitleText": "聊天",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/contact/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "联系人"
+      }
+    },
+    {
+      "path": "pages/contact/detail",
+      "style": {
+        "navigationBarTitleText": "好友详情"
+      }
+    },
+    {
+      "path": "pages/contact/add",
+      "style": {
+        "navigationBarTitleText": "添加好友"
+      }
+    },
+    {
+      "path": "pages/contact/requests",
+      "style": {
+        "navigationBarTitleText": "新朋友"
+      }
+    },
+    {
+      "path": "pages/contact/groups",
+      "style": {
+        "navigationBarTitleText": "群聊"
+      }
+    },
+    {
+      "path": "pages/moment/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "朋友圈"
+      }
+    },
+    {
+      "path": "pages/moment/detail",
+      "style": {
+        "navigationBarTitleText": "动态详情"
+      }
+    },
+    {
+      "path": "pages/moment/publish",
+      "style": {
+        "navigationBarTitleText": "发布动态"
+      }
+    },
+    {
+      "path": "pages/moment/notify",
+      "style": {
+        "navigationBarTitleText": "消息通知"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "个人资料"
+      }
+    },
+    {
+      "path": "pages/profile/edit",
+      "style": {
+        "navigationBarTitleText": "编辑资料"
+      }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
+    },
+    {
+      "path": "pages/search/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "搜索"
+      }
+    },
+    {
+      "path": "pages/group/info",
+      "style": {
+        "navigationBarTitleText": "群信息"
+      }
+    },
+    {
+      "path": "pages/group/create",
+      "style": {
+        "navigationBarTitleText": "创建群聊"
+      }
+    },
+    {
+      "path": "pages/group/members",
+      "style": {
+        "navigationBarTitleText": "群成员"
+      }
+    },
+    {
+      "path": "pages/group/notify",
+      "style": {
+        "navigationBarTitleText": "群通知"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "NL-IM",
+    "navigationBarBackgroundColor": "#ededed",
+    "backgroundColor": "#ededed",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#07c160",
+    "backgroundColor": "#f7f7f7",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "消息",
+        "iconPath": "static/icons/chat.png",
+        "selectedIconPath": "static/icons/chat-active.png"
+      },
+      {
+        "pagePath": "pages/contact/index",
+        "text": "联系人",
+        "iconPath": "static/icons/contact.png",
+        "selectedIconPath": "static/icons/contact-active.png"
+      },
+      {
+        "pagePath": "pages/moment/index",
+        "text": "朋友圈",
+        "iconPath": "static/icons/moment.png",
+        "selectedIconPath": "static/icons/moment-active.png"
+      }
+    ]
+  },
+  "subPackages": []
+}

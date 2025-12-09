@@ -1,0 +1,181 @@
+/**
+ * 公共样式
+ */
+
+// 安全区域
+.safe-area-top {
+  padding-top: var(--status-bar-height, 0);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+// Flex 布局
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+// 文本
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+// 边距
+.m-0 { margin: 0; }
+.mt-10 { margin-top: 10rpx; }
+.mt-20 { margin-top: 20rpx; }
+.mt-30 { margin-top: 30rpx; }
+.mb-10 { margin-bottom: 10rpx; }
+.mb-20 { margin-bottom: 20rpx; }
+.mb-30 { margin-bottom: 30rpx; }
+
+.p-0 { padding: 0; }
+.p-20 { padding: 20rpx; }
+.p-30 { padding: 30rpx; }
+
+// 页面容器
+.page-container {
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+
+// 卡片
+.card {
+  background: var(--bg-content);
+  border-radius: 16rpx;
+  margin: 20rpx;
+  overflow: hidden;
+}
+
+// 分割线
+.divider {
+  height: 1rpx;
+  background: var(--divider-color);
+  margin: 0 30rpx;
+}
+
+// 头像占位
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--avatar-bg);
+  color: var(--avatar-text);
+  font-weight: 600;
+}
+
+// 空状态
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+  color: var(--text-tertiary);
+}
+
+// 加载状态
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx;
+  color: var(--text-tertiary);
+}
+
+// 自定义导航栏
+.custom-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--nav-bg);
+  padding-top: var(--status-bar-height, 0);
+
+  .navbar-content {
+    display: flex;
+    align-items: center;
+    height: 88rpx;
+    padding: 0 30rpx;
+  }
+
+  .navbar-title {
+    flex: 1;
+    font-size: 36rpx;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .navbar-left,
+  .navbar-right {
+    display: flex;
+    align-items: center;
+  }
+}
+
+// 底部安全区
+.bottom-safe-area {
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+}
+
+// 浮动按钮
+.fab {
+  position: fixed;
+  right: 30rpx;
+  bottom: calc(180rpx + env(safe-area-inset-bottom));
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(7, 193, 96, 0.4);
+  z-index: 99;
+}
