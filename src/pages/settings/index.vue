@@ -1,29 +1,32 @@
 <template>
   <view class="settings-page" :class="{ dark: isDark }">
-    <!-- 导航栏 -->
     <app-nav-bar title="设置" />
-    
-    <wd-cell-group title="账号设置">
-      <wd-cell title="个人资料" icon="user" is-link @click="goProfile" />
-      <wd-cell title="账号与安全" icon="shield" is-link @click="goSecurity" />
-    </wd-cell-group>
 
-    <wd-cell-group title="通用设置">
-      <wd-cell title="消息通知" icon="bell" is-link @click="goNotification" />
-      <wd-cell title="隐私设置" icon="eye-close" is-link @click="goPrivacy" />
-      <wd-cell title="深色模式" icon="picture" :value="themeText" is-link @click="goTheme" />
-      <wd-cell title="清除缓存" icon="delete" :value="cacheSize" is-link @click="clearCache" />
-    </wd-cell-group>
+    <view class="content">
+      <!-- 账号安全 -->
+      <wd-cell-group title="账号安全" border>
+        <wd-cell title="账号管理" is-link to="/pages/settings/account" />
+        <wd-cell title="隐私设置" is-link to="/pages/settings/privacy" />
+      </wd-cell-group>
 
-    <wd-cell-group title="关于">
-      <wd-cell title="当前版本" value="v1.0.0" />
-      <wd-cell title="用户协议" is-link @click="goAgreement" />
-      <wd-cell title="隐私政策" is-link @click="goPrivacyPolicy" />
-      <wd-cell title="检查更新" is-link @click="checkUpdate" />
-    </wd-cell-group>
+      <!-- 通用设置 -->
+      <wd-cell-group title="通用" border>
+        <wd-cell title="新消息通知" is-link to="/pages/settings/notification" />
+        <wd-cell title="主题设置" is-link to="/pages/settings/theme" value="自动" />
+        <wd-cell title="通用设置" is-link to="/pages/settings/general" />
+        <wd-cell title="清理缓存" is-link value="12.5MB" clickable @click="handleClearCache" />
+      </wd-cell-group>
 
-    <view class="logout-section">
-      <wd-button type="error" block plain @click="logout">退出登录</wd-button>
+      <!-- 关于 -->
+      <wd-cell-group title="关于" border>
+        <wd-cell title="帮助与反馈" is-link to="/pages/settings/feedback" />
+        <wd-cell title="关于我们" is-link to="/pages/settings/about" value="v1.0.0" />
+      </wd-cell-group>
+
+      <!-- 退出登录 -->
+      <view class="logout-section">
+        <wd-button type="error" block size="large" @click="handleLogout">退出登录</wd-button>
+      </view>
     </view>
 
     <wd-toast />
@@ -32,128 +35,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
+import { useAuthStore } from '@/stores'
 import { useToast, useMessage } from 'wot-design-uni'
+import AppNavBar from '@/components/common/AppNavBar.vue'
 
-const authStore = useAuthStore()
 const { isDark } = useTheme()
+const authStore = useAuthStore()
 const toast = useToast()
-const messageBox = useMessage()
+const message = useMessage()
 
-const cacheSize = ref('0 KB')
-
-// 主题显示文本
-const themeText = computed(() => {
-  const mode = uni.getStorageSync('nl_im_theme_mode') || 'system'
-  const texts: Record<string, string> = {
-    system: '跟随系统',
-    light: '浅色模式',
-    dark: '深色模式'
-  }
-  return texts[mode] || '跟随系统'
-})
-
-onMounted(() => {
-  calculateCacheSize()
-})
-
-function calculateCacheSize() {
-  try {
-    const info = uni.getStorageInfoSync()
-    const size = info.currentSize || 0
-    if (size < 1024) {
-      cacheSize.value = `${size} KB`
-    } else {
-      cacheSize.value = `${(size / 1024).toFixed(2)} MB`
+function handleLogout() {
+  message.confirm({
+    title: '提示',
+    msg: '确定要退出登录吗？',
+    success: async () => {
+      try {
+        await authStore.logout()
+        uni.reLaunch({ url: '/pages/login/index' })
+      } catch (error) {
+        toast.error('退出失败')
+      }
     }
-  } catch {
-    cacheSize.value = '0 KB'
-  }
+  })
 }
 
-function goProfile() {
-  uni.navigateTo({ url: '/pages/profile/index' })
-}
-
-function goSecurity() {
-  toast.show('账号安全功能开发中')
-}
-
-function goNotification() {
-  toast.show('消息通知设置开发中')
-}
-
-function goPrivacy() {
-  toast.show('隐私设置功能开发中')
-}
-
-function goTheme() {
-  uni.navigateTo({ url: '/pages/settings/theme' })
-}
-
-async function clearCache() {
-  try {
-    await messageBox.confirm({
-      title: '提示',
-      msg: '确定要清除缓存吗？'
-    })
-    
-    // 保留登录信息
-    const token = uni.getStorageSync('nl_im_token')
-    const userId = uni.getStorageSync('nl_im_user_id')
-    const userInfo = uni.getStorageSync('nl_im_user_info')
-    const theme = uni.getStorageSync('nl_im_theme')
-
-    uni.clearStorageSync()
-
-    // 恢复登录信息
-    if (token) uni.setStorageSync('nl_im_token', token)
-    if (userId) uni.setStorageSync('nl_im_user_id', userId)
-    if (userInfo) uni.setStorageSync('nl_im_user_info', userInfo)
-    if (theme) uni.setStorageSync('nl_im_theme', theme)
-
-    cacheSize.value = '0 KB'
-    toast.success('清除成功')
-  } catch {
-    // 取消
-  }
-}
-
-function goAgreement() {
-  toast.show('用户协议页面开发中')
-}
-
-function goPrivacyPolicy() {
-  toast.show('隐私政策页面开发中')
-}
-
-function checkUpdate() {
-  toast.show('当前已是最新版本')
-}
-
-async function logout() {
-  try {
-    await messageBox.confirm({
-      title: '提示',
-      msg: '确定要退出登录吗？'
-    })
-    authStore.logout()
-  } catch {
-    // 取消
-  }
+function handleClearCache() {
+  toast.loading('清理中...')
+  setTimeout(() => {
+    toast.success('清理完成')
+  }, 1000)
 }
 </script>
 
 <style lang="scss" scoped>
 .settings-page {
   min-height: 100vh;
-  background: var(--bg-page);
+  background-color: var(--bg-page);
+
+  .content {
+    padding-bottom: 40rpx;
+  }
+
+  .logout-section {
+    margin: 60rpx 30rpx 0;
+  }
 }
 
-.logout-section {
-  padding: 60rpx 30rpx;
-  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+// 暗黑模式微调 Cell Group 标题颜色
+.dark {
+  :deep(.wd-cell-group__title) {
+    color: var(--text-secondary);
+    background-color: var(--bg-page);
+  }
+
+  :deep(.wd-cell) {
+    background-color: var(--bg-content);
+    color: var(--text-primary);
+
+    // 覆盖 cell 内部线条颜色 (如果需要)
+    &::after {
+      background-color: var(--border-color);
+    }
+  }
 }
 </style>

@@ -1,0 +1,4 @@
+
+要求：
+
+本项目使用wot-ui，并且已经配置好暗色亮色模式的<wd-config-provider theme="dark">,你写的代码要适配wot-ui的暗色浅色模式

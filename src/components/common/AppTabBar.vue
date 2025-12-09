@@ -1,8 +1,8 @@
 <template>
   <view class="app-tabbar">
     <view class="tabbar-wrapper">
-      <view 
-        v-for="tab in tabs" 
+      <view
+        v-for="tab in tabs"
         :key="tab.name"
         class="tabbar-item"
         :class="{ active: current === tab.name }"
@@ -22,7 +22,7 @@
               {{ unreadCount > 99 ? '99+' : unreadCount }}
             </view>
           </template>
-          
+
           <!-- 联系人图标 -->
           <template v-else-if="tab.name === 'contacts'">
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
@@ -33,7 +33,7 @@
               <circle cx="12" cy="7" r="4"/>
             </svg>
           </template>
-          
+
           <!-- 朋友圈图标 -->
           <template v-else-if="tab.name === 'moments'">
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
@@ -77,7 +77,7 @@ const tabs = [
 function switchTab(name: string) {
   // 点击当前 tab 不跳转
   if (props.current === name) return
-  
+
   const tab = tabs.find(t => t.name === name)
   if (tab) {
     uni.reLaunch({ url: tab.path })
@@ -111,11 +111,11 @@ function switchTab(name: string) {
   gap: 4rpx;
   color: #999;
   transition: color 0.2s;
-  
+
   &.active {
     color: #07c160;
   }
-  
+
   &:active {
     opacity: 0.7;
   }
@@ -128,7 +128,7 @@ function switchTab(name: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   .icon {
     width: 48rpx;
     height: 48rpx;
@@ -156,3 +156,107 @@ function switchTab(name: string) {
   line-height: 1;
 }
 </style>
+<!--/*-->
+<!--<template>-->
+<!--  <view :class="{ dark: isDark }">-->
+<!--    <wd-tabbar-->
+<!--        :modelValue="current"-->
+<!--        fixed-->
+<!--        placeholder-->
+<!--        safe-area-inset-bottom-->
+<!--        bordered-->
+<!--        custom-class="app-tab-bar"-->
+<!--        @change="handleChange"-->
+<!--    >-->
+<!--      <wd-tabbar-item-->
+<!--          v-for="(item, index) in list"-->
+<!--          :key="index"-->
+<!--          :name="item.pagePath"-->
+<!--          :title="item.text"-->
+<!--          :value="item.badge > 0 ? item.badge : null"-->
+<!--          :icon="item.icon"-->
+<!--      >-->
+<!--      </wd-tabbar-item>-->
+<!--    </wd-tabbar>-->
+<!--  </view>-->
+<!--</template>-->
+
+<!--<script setup lang="ts">-->
+<!--import { computed } from 'vue'-->
+<!--import { useTheme } from '@/composables/useTheme'-->
+<!--// 保持原有的 store 引用-->
+<!--import { useAppStore } from '@/stores'-->
+
+<!--const props = defineProps<{-->
+<!--  active?: string-->
+<!--}>()-->
+
+<!--const { isDark } = useTheme()-->
+<!--const appStore = useAppStore()-->
+
+<!--// 核心修改：移除 image 路径，改用 Wot-UI 内置 Icon name-->
+<!--// 如果需要自定义 SVG，可以使用 custom-icon 插槽-->
+<!--const list = computed(() => [-->
+<!--  {-->
+<!--    pagePath: '/pages/index/index',-->
+<!--    text: '消息',-->
+<!--    icon: 'chat', // 对应 wd-icon name="chat"-->
+<!--    badge: appStore.unreadCount || 0-->
+<!--  },-->
+<!--  {-->
+<!--    pagePath: '/pages/contact/index',-->
+<!--    text: '通讯录',-->
+<!--    icon: 'user-circle', // 对应 wd-icon name="user-circle"-->
+<!--    badge: appStore.contactUnread || 0-->
+<!--  },-->
+<!--  {-->
+<!--    pagePath: '/pages/moment/index',-->
+<!--    text: '发现',-->
+<!--    icon: 'camera', // 对应 wd-icon name="camera"-->
+<!--    badge: appStore.momentUnread ? 1 : 0-->
+<!--  },-->
+<!--  {-->
+<!--    pagePath: '/pages/profile/index',-->
+<!--    text: '我的',-->
+<!--    icon: 'user', // 对应 wd-icon name="user"-->
+<!--    badge: 0-->
+<!--  }-->
+<!--])-->
+
+<!--const current = computed(() => {-->
+<!--  if (props.active) return props.active-->
+<!--  const pages = getCurrentPages()-->
+<!--  const page = pages[pages.length - 1]-->
+<!--  return '/' + page.route-->
+<!--})-->
+
+<!--function handleChange({ value }: { value: string }) {-->
+<!--  uni.switchTab({ url: value })-->
+<!--}-->
+<!--</script>-->
+
+<!--<style lang="scss" scoped>-->
+<!--:deep(.app-tab-bar) {-->
+<!--  background-color: var(&#45;&#45;bg-content) !important;-->
+
+<!--  // 覆盖选中态颜色，保持与原有设计一致-->
+<!--  .wd-tabbar-item.is-active {-->
+<!--    color: var(&#45;&#45;color-primary) !important;-->
+<!--  }-->
+<!--}-->
+
+<!--.dark {-->
+<!--  :deep(.app-tab-bar) {-->
+<!--    background-color: #1c1c1e !important;-->
+<!--    border-top-color: #333;-->
+
+<!--    .wd-tabbar-item {-->
+<!--      color: var(&#45;&#45;text-secondary);-->
+<!--      &.is-active {-->
+<!--        color: var(&#45;&#45;color-primary);-->
+<!--      }-->
+<!--    }-->
+<!--  }-->
+<!--}-->
+<!--</style>-->
+<!--*/-->

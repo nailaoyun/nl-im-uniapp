@@ -1,115 +1,138 @@
 <template>
   <view class="profile-page" :class="{ dark: isDark }">
-    <!-- 导航栏 -->
-    <app-nav-bar title="个人资料" />
-    
-    <!-- 头像区域 -->
-    <view class="header-section">
-      <view class="avatar-wrap" @click="changeAvatar">
-        <app-avatar
-          :src="user?.avatar"
-          :name="user?.name"
-          :size="160"
-          round
+    <!-- 顶部导航栏 (透明背景或自定义颜色) -->
+    <app-nav-bar title="" :left-arrow="false" :bordered="false" />
+
+    <!-- 用户信息卡片 -->
+    <view class="user-card" @click="goProfileEdit">
+      <view class="avatar-wrapper">
+        <wd-img
+            :src="userInfo.avatar"
+            width="120rpx"
+            height="120rpx"
+            round
+            mode="aspectFill"
         />
-        <view class="change-tip">点击更换</view>
+      </view>
+      <view class="info-wrapper">
+        <view class="name-row">
+          <text class="nickname">{{ userInfo.nickname || '未设置昵称' }}</text>
+          <wd-icon name="edit" size="16px" color="var(--text-secondary)" custom-class="edit-icon" />
+        </view>
+        <text class="account">账号: {{ userInfo.account || '--' }}</text>
+      </view>
+      <view class="arrow">
+        <wd-icon name="arrow-right" color="var(--text-tertiary)" />
       </view>
     </view>
 
-    <!-- 基本信息 -->
-    <wd-cell-group title="基本信息">
-      <wd-cell title="昵称" :value="user?.name || '未设置'" is-link @click="editField('name')" />
-      <wd-cell title="ID" :value="user?.id || '-'" />
-      <wd-cell title="个性签名" :value="user?.desc || '未设置'" is-link @click="editField('desc')" />
-      <wd-cell title="地区" :value="user?.region || '未设置'" is-link @click="editField('region')" />
-    </wd-cell-group>
+    <!-- 功能列表 -->
+    <view class="menu-list">
+      <wd-cell-group border>
+        <wd-cell title="我的动态" is-link to="/pages/moment/my" icon="moments" size="large" />
+        <wd-cell title="收藏夹" is-link to="/pages/collection/index" icon="star" size="large" />
+        <wd-cell title="相册" is-link to="/pages/album/index" icon="picture" size="large" />
+      </wd-cell-group>
 
-    <!-- 联系方式 -->
-    <wd-cell-group title="联系方式">
-      <wd-cell title="手机号" :value="formatPhone(user?.phone)" />
-      <wd-cell title="邮箱" :value="user?.email || '未绑定'" />
-    </wd-cell-group>
+      <view class="gap" />
 
-    <wd-toast />
+      <wd-cell-group border>
+        <wd-cell title="设置" is-link to="/pages/settings/index" icon="setting" size="large" />
+      </wd-cell-group>
+    </view>
+
+    <!-- 底部 TabBar -->
+    <app-tab-bar active="/pages/profile/index" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAuthStore } from '@/stores'
-import { useToast } from 'wot-design-uni'
 import { useTheme } from '@/composables/useTheme'
-import { resolveImageUrl } from '@/utils/image'
-import AppAvatar from '@/components/common/AppAvatar.vue'
+import { useAuthStore } from '@/stores'
+import AppNavBar from '@/components/common/AppNavBar.vue'
+import AppTabBar from '@/components/common/AppTabBar.vue'
 
-const authStore = useAuthStore()
-const toast = useToast()
 const { isDark } = useTheme()
+const authStore = useAuthStore()
 
-const user = computed(() => authStore.user)
+const userInfo = computed(() => authStore.userInfo || {})
 
-function formatPhone(phone?: string) {
-  if (!phone) return '未绑定'
-  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-}
-
-function changeAvatar() {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: (res) => {
-      // TODO: 上传头像
-      console.log('选择的图片:', res.tempFilePaths[0])
-      toast.show('头像上传功能开发中')
-    }
-  })
-}
-
-function editField(field: string) {
-  const value = field === 'name' ? user.value?.name : field === 'desc' ? user.value?.desc : user.value?.region
-  uni.navigateTo({
-    url: `/pages/profile/edit?field=${field}&value=${encodeURIComponent(value || '')}`
-  })
+function goProfileEdit() {
+  uni.navigateTo({ url: '/pages/profile/edit' })
 }
 </script>
 
 <style lang="scss" scoped>
 .profile-page {
   min-height: 100vh;
-  background: var(--bg-page);
+  background-color: var(--bg-page);
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 }
 
-.header-section {
+.user-card {
   display: flex;
-  justify-content: center;
-  padding: 60rpx 0;
-  background: var(--bg-content);
-  margin-bottom: 20rpx;
-}
-
-.avatar-wrap {
-  display: flex;
-  flex-direction: column;
   align-items: center;
+  padding: 40rpx 32rpx;
+  background-color: var(--bg-content);
+  margin-bottom: 24rpx;
+  transition: background-color 0.2s;
 
-  .avatar-placeholder {
-    width: 160rpx;
-    height: 160rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: #fff;
-    font-size: 64rpx;
-    font-weight: 600;
+  &:active {
+    background-color: var(--bg-active);
   }
 
-  .change-tip {
-    margin-top: 16rpx;
-    font-size: 26rpx;
-    color: var(--text-tertiary);
+  .avatar-wrapper {
+    margin-right: 32rpx;
+    border: 2rpx solid var(--border-color);
+    border-radius: 50%;
+    padding: 2rpx; // 模拟头像边框
+  }
+
+  .info-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .name-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12rpx;
+
+      .nickname {
+        font-size: 40rpx;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-right: 12rpx;
+      }
+
+      .edit-icon {
+        opacity: 0.6;
+      }
+    }
+
+    .account {
+      font-size: 28rpx;
+      color: var(--text-secondary);
+    }
+  }
+}
+
+.menu-list {
+  .gap {
+    height: 24rpx;
+  }
+}
+
+.dark {
+  .user-card {
+    background-color: var(--bg-content);
+  }
+
+  :deep(.wd-cell) {
+    background-color: var(--bg-content);
+    color: var(--text-primary);
   }
 }
 </style>
