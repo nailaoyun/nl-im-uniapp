@@ -80,7 +80,7 @@
           </view>
 
           <!-- 消息内容 -->
-          <view class="message-bubble" :class="getBubbleClass(msg)">
+          <view class="message-bubble" :class="getBubbleClass(msg)" @longpress="handleMessageLongPress(msg)">
             <!-- 文本消息 -->
             <text v-if="msg.message_type === 0" class="text-content">{{ msg.content }}</text>
 
@@ -142,11 +142,21 @@
 
     <!-- 输入区域 -->
     <view class="input-area">
+      <!-- @ 提及选择器 -->
+      <mention-picker
+        v-if="isGroupChat"
+        :show="showMentionPicker"
+        :users="mentionUsers"
+        @select="handleMentionSelect"
+        @close="showMentionPicker = false"
+      />
+
       <!-- 工具栏 -->
       <view class="toolbar">
         <wd-icon name="emotion" size="48rpx" class="tool-icon" @click="showEmoji = true" />
         <wd-icon name="picture" size="48rpx" class="tool-icon" @click="chooseImage" />
         <wd-icon name="folder" size="48rpx" class="tool-icon" @click="chooseFile" />
+        <wd-icon v-if="isGroupChat" name="at" size="48rpx" class="tool-icon" @click="triggerMention" />
       </view>
 
       <!-- 输入框 -->
@@ -159,6 +169,7 @@
           placeholder="输入消息..."
           no-border
           @confirm="sendTextMessage"
+          @input="onInputChange"
         />
       </view>
 
@@ -204,6 +215,65 @@
       </view>
     </wd-popup>
 
+    <!-- 消息操作菜单 -->
+    <wd-action-sheet
+      v-model="showMsgActions"
+      :actions="msgActionItems"
+      @select="onMsgActionSelect"
+      cancel-text="取消"
+    />
+
+    <!-- 文件确认弹窗 -->
+    <wd-popup v-model="showFileConfirm" position="center" custom-style="border-radius: 24rpx; width: 85%;">
+      <view class="file-confirm-modal">
+        <view class="modal-header">
+          <text class="modal-title">发送{{ pendingFile.type === 'image' ? '图片' : pendingFile.type === 'video' ? '视频' : '文件' }}</text>
+        </view>
+        
+        <!-- 图片预览 -->
+        <view v-if="pendingFile.type === 'image'" class="preview-area">
+          <image 
+            :src="pendingFile.path" 
+            mode="aspectFit" 
+            class="preview-image"
+          />
+        </view>
+        
+        <!-- 视频预览 -->
+        <view v-else-if="pendingFile.type === 'video'" class="preview-area">
+          <video 
+            :src="pendingFile.path" 
+            class="preview-video"
+            object-fit="contain"
+            :autoplay="false"
+            :show-center-play-btn="true"
+          />
+        </view>
+        
+        <!-- 文件预览 -->
+        <view v-else class="preview-area file-preview">
+          <view class="file-icon">
+            <wd-icon name="file" size="80rpx" color="var(--color-primary)" />
+          </view>
+          <view class="file-details">
+            <text class="file-name-preview">{{ pendingFile.name }}</text>
+            <text class="file-size-preview">{{ formatSize(pendingFile.size) }}</text>
+          </view>
+        </view>
+        
+        <!-- 文件信息 -->
+        <view v-if="pendingFile.type !== 'file'" class="file-info-bar">
+          <text class="info-name">{{ pendingFile.name }}</text>
+          <text v-if="pendingFile.size" class="info-size">{{ formatSize(pendingFile.size) }}</text>
+        </view>
+        
+        <view class="modal-footer">
+          <wd-button plain @click="cancelFileSend">取消</wd-button>
+          <wd-button type="primary" :loading="uploading" @click="confirmFileSend">发送</wd-button>
+        </view>
+      </view>
+    </wd-popup>
+
     <wd-toast />
   </view>
 </template>
@@ -223,7 +293,10 @@ import { useTheme } from '@/composables/useTheme'
 import { useWebRTC } from '@/composables/useWebRTC'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import CallWindow from '@/components/call/CallWindow.vue'
-import type { ChatMessage, Attachment } from '@/types/api'
+import MentionPicker from '@/components/chat/MentionPicker.vue'
+import type { MentionUser } from '@/components/chat/MentionPicker.vue'
+import * as roomApi from '@/api/modules/room'
+import type { ChatMessage, Attachment, GroupMember } from '@/types/api'
 
 const authStore = useAuthStore()
 const chatStore = useChatStore()
@@ -265,8 +338,69 @@ const showEmoji = ref(false)
 const playingAudioId = ref<number | null>(null)
 const page = ref(1)
 
+// 文件确认弹窗
+const showFileConfirm = ref(false)
+const uploading = ref(false)
+const pendingFile = ref<{
+  path: string
+  name: string
+  size: number
+  type: 'image' | 'video' | 'file'
+  messageType: number
+}>({
+  path: '',
+  name: '',
+  size: 0,
+  type: 'file',
+  messageType: 8
+})
+
+// 消息操作
+const showMsgActions = ref(false)
+const selectedMessage = ref<ChatMessage | null>(null)
+
+// @ 提及
+const showMentionPicker = ref(false)
+const groupMembers = ref<GroupMember[]>([])
+const isGroupChat = ref(false)
+const mentionUsers = computed<MentionUser[]>(() => {
+  return groupMembers.value
+    .filter(m => m.user_id !== currentUser.value?.id)
+    .map(m => ({
+      id: m.user_id,
+      name: m.nickname || m.user?.name || '未知',
+      avatar: m.user?.avatar
+    }))
+})
+
 // 计算属性
 const currentUser = computed(() => authStore.user)
+
+// 消息操作菜单项
+const msgActionItems = computed(() => {
+  if (!selectedMessage.value) return []
+  const msg = selectedMessage.value
+  const items: any[] = []
+
+  // 文本消息可以复制
+  if (msg.message_type === 0) {
+    items.push({ name: '复制', value: 'copy' })
+  }
+
+  // 自己发送的消息在2分钟内可撤回
+  if (msg.isSelf) {
+    const sendTime = new Date(msg.created_at).getTime()
+    const now = Date.now()
+    if (now - sendTime < 2 * 60 * 1000) {
+      items.push({ name: '撤回', value: 'recall' })
+    }
+  }
+
+  // 删除消息（本地删除）
+  items.push({ name: '删除', value: 'delete', color: '#fa5151' })
+
+  return items
+})
 const displayName = computed(() => targetUser.value?.name || chatName.value || '聊天')
 const targetUser = computed(() => {
   // 优先从联系人中获取目标用户信息
@@ -300,8 +434,16 @@ onLoad((options: any) => {
   chatName.value = decodeURIComponent(options?.name || '聊天')
   targetAvatar.value = decodeURIComponent(options?.avatar || '')
   
+  // 检查是否是群聊
+  isGroupChat.value = !targetId.value && !!roomId.value
+  
   loadMessages()
   setupWebSocket()
+  
+  // 群聊加载成员列表
+  if (isGroupChat.value && roomId.value) {
+    loadGroupMembers()
+  }
   
   // 如果带有 callType 参数，自动发起通话
   const callType = options?.callType
@@ -337,6 +479,16 @@ onUnmounted(() => {
     webrtc.endCall()
   }
 })
+
+// 加载群成员（用于 @ 功能）
+async function loadGroupMembers() {
+  if (!roomId.value) return
+  try {
+    groupMembers.value = await roomApi.getGroupMembers(roomId.value)
+  } catch (e) {
+    console.error('加载群成员失败:', e)
+  }
+}
 
 // 方法
 async function loadMessages() {
@@ -541,13 +693,20 @@ async function sendTextMessage() {
 function chooseImage() {
   showMore.value = false
   uni.chooseImage({
-    count: 9,
+    count: 1,
     sizeType: ['compressed'],
     sourceType: ['album'],
     success: async (res) => {
-      for (const path of res.tempFilePaths) {
-        await uploadAndSend(path, 1)
+      const filePath = res.tempFilePaths[0]
+      const fileInfo = await getFileInfo(filePath)
+      pendingFile.value = {
+        path: filePath,
+        name: fileInfo.name || '图片',
+        size: fileInfo.size,
+        type: 'image',
+        messageType: 1
       }
+      showFileConfirm.value = true
     }
   })
 }
@@ -558,7 +717,16 @@ function shootCamera() {
     count: 1,
     sourceType: ['camera'],
     success: async (res) => {
-      await uploadAndSend(res.tempFilePaths[0], 1)
+      const filePath = res.tempFilePaths[0]
+      const fileInfo = await getFileInfo(filePath)
+      pendingFile.value = {
+        path: filePath,
+        name: '拍摄图片',
+        size: fileInfo.size,
+        type: 'image',
+        messageType: 1
+      }
+      showFileConfirm.value = true
     }
   })
 }
@@ -571,7 +739,14 @@ function chooseFile() {
     type: 'file',
     success: async (res: any) => {
       const file = res.tempFiles[0]
-      await uploadAndSend(file.path, 8, file.name)
+      pendingFile.value = {
+        path: file.path,
+        name: file.name || '文件',
+        size: file.size || 0,
+        type: 'file',
+        messageType: 8
+      }
+      showFileConfirm.value = true
     }
   })
   // #endif
@@ -580,7 +755,16 @@ function chooseFile() {
   uni.chooseFile({
     count: 1,
     success: async (res: any) => {
-      await uploadAndSend(res.tempFilePaths[0], 8)
+      const filePath = res.tempFilePaths[0]
+      const fileInfo = await getFileInfo(filePath)
+      pendingFile.value = {
+        path: filePath,
+        name: fileInfo.name,
+        size: fileInfo.size,
+        type: 'file',
+        messageType: 8
+      }
+      showFileConfirm.value = true
     }
   })
   // #endif
@@ -593,14 +777,16 @@ function chooseFile() {
   input.onchange = async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0]
     if (file) {
-      // 读取文件为临时路径
-      const reader = new FileReader()
-      reader.onload = async () => {
-        // 创建一个临时 blob URL
-        const blobUrl = URL.createObjectURL(file)
-        await uploadAndSend(blobUrl, 8, file.name)
+      // 创建一个临时 blob URL
+      const blobUrl = URL.createObjectURL(file)
+      pendingFile.value = {
+        path: blobUrl,
+        name: file.name,
+        size: file.size,
+        type: 'file',
+        messageType: 8
       }
-      reader.readAsArrayBuffer(file)
+      showFileConfirm.value = true
     }
   }
   input.click()
@@ -796,9 +982,35 @@ function chooseVideo() {
     sourceType: ['album', 'camera'],
     maxDuration: 60,
     success: async (res) => {
-      await uploadAndSend(res.tempFilePath, 3, res.name)
+      const fileInfo = await getFileInfo(res.tempFilePath)
+      pendingFile.value = {
+        path: res.tempFilePath,
+        name: res.name || fileInfo.name || '视频',
+        size: res.size || fileInfo.size,
+        type: 'video',
+        messageType: 3
+      }
+      showFileConfirm.value = true
     }
   })
+}
+
+// 取消文件发送
+function cancelFileSend() {
+  showFileConfirm.value = false
+  pendingFile.value = { path: '', name: '', size: 0, type: 'file', messageType: 8 }
+}
+
+// 确认文件发送
+async function confirmFileSend() {
+  uploading.value = true
+  try {
+    await uploadAndSend(pendingFile.value.path, pendingFile.value.messageType, pendingFile.value.name)
+    showFileConfirm.value = false
+    pendingFile.value = { path: '', name: '', size: 0, type: 'file', messageType: 8 }
+  } finally {
+    uploading.value = false
+  }
 }
 
 function goBack() {
@@ -891,6 +1103,102 @@ function onAvatarClick(msg: ChatMessage) {
   uni.navigateTo({
     url: `/pages/contact/detail?userId=${userId}`
   })
+}
+
+// ========== 消息操作 ==========
+function handleMessageLongPress(msg: ChatMessage) {
+  selectedMessage.value = msg
+  showMsgActions.value = true
+}
+
+async function onMsgActionSelect(action: { value: string }) {
+  if (!selectedMessage.value) return
+  const msg = selectedMessage.value
+  showMsgActions.value = false
+
+  switch (action.value) {
+    case 'copy':
+      copyMessage(msg)
+      break
+    case 'recall':
+      await recallMessage(msg)
+      break
+    case 'delete':
+      deleteMessage(msg)
+      break
+  }
+}
+
+// 复制消息
+function copyMessage(msg: ChatMessage) {
+  if (msg.message_type !== 0) return
+  
+  uni.setClipboardData({
+    data: msg.content || '',
+    success: () => {
+      toast.success('已复制')
+    },
+    fail: () => {
+      toast.error('复制失败')
+    }
+  })
+}
+
+// 撤回消息
+async function recallMessage(msg: ChatMessage) {
+  try {
+    await messageApi.recallMessage(msg.id)
+    // 将消息转为撤回消息
+    const index = messages.value.findIndex(m => m.id === msg.id)
+    if (index > -1) {
+      messages.value[index] = {
+        ...messages.value[index],
+        message_type: 5, // 系统消息类型
+        content: '你撤回了一条消息'
+      }
+    }
+    toast.success('已撤回')
+  } catch (e: any) {
+    toast.error(e.message || '撤回失败')
+  }
+}
+
+// 删除消息（本地删除）
+function deleteMessage(msg: ChatMessage) {
+  const index = messages.value.findIndex(m => m.id === msg.id)
+  if (index > -1) {
+    messages.value.splice(index, 1)
+    chatStore.removeMessage(roomId.value, msg.id)
+    toast.success('已删除')
+  }
+}
+
+// ========== @ 提及功能 ==========
+// 监听输入变化
+function onInputChange(e: any) {
+  const value = e.detail?.value || inputText.value
+  // 检查最后输入的字符是否是 @
+  if (value.endsWith('@') && isGroupChat.value) {
+    showMentionPicker.value = true
+  }
+}
+
+// 手动触发 @
+function triggerMention() {
+  inputText.value += '@'
+  showMentionPicker.value = true
+}
+
+// 选择 @ 的用户
+function handleMentionSelect(user: MentionUser) {
+  // 将 @ 后面加上用户名和空格
+  // 如果最后一个字符是 @，则不重复添加
+  if (inputText.value.endsWith('@')) {
+    inputText.value = inputText.value.slice(0, -1) + `@${user.name} `
+  } else {
+    inputText.value += `@${user.name} `
+  }
+  showMentionPicker.value = false
 }
 </script>
 
@@ -1117,6 +1425,108 @@ function onAvatarClick(msg: ChatMessage) {
   text {
     font-size: 24rpx;
     color: var(--text-secondary);
+  }
+}
+
+// 文件确认弹窗样式
+.file-confirm-modal {
+  padding: 32rpx;
+  background: var(--bg-content);
+
+  .modal-header {
+    text-align: center;
+    margin-bottom: 32rpx;
+
+    .modal-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+  }
+
+  .preview-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 24rpx;
+    background: var(--bg-page);
+    border-radius: 16rpx;
+    overflow: hidden;
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 400rpx;
+    }
+
+    .preview-video {
+      width: 100%;
+      max-height: 400rpx;
+    }
+
+    &.file-preview {
+      flex-direction: column;
+      padding: 40rpx;
+      gap: 20rpx;
+
+      .file-icon {
+        width: 120rpx;
+        height: 120rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.1);
+        border-radius: 24rpx;
+      }
+
+      .file-details {
+        text-align: center;
+      }
+
+      .file-name-preview {
+        display: block;
+        font-size: 28rpx;
+        color: var(--text-primary);
+        word-break: break-all;
+        margin-bottom: 8rpx;
+      }
+
+      .file-size-preview {
+        display: block;
+        font-size: 24rpx;
+        color: var(--text-tertiary);
+      }
+    }
+  }
+
+  .file-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16rpx 20rpx;
+    background: var(--bg-hover);
+    border-radius: 12rpx;
+    margin-bottom: 24rpx;
+
+    .info-name {
+      flex: 1;
+      font-size: 26rpx;
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .info-size {
+      font-size: 24rpx;
+      color: var(--text-tertiary);
+      margin-left: 16rpx;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16rpx;
   }
 }
 </style>

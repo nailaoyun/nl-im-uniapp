@@ -100,6 +100,18 @@ export const useChatStore = defineStore('chat', () => {
     messages.value[roomId] = []
   }
 
+  /**
+   * 移除单条消息
+   */
+  function removeMessage(roomId: string, messageId: number) {
+    if (messages.value[roomId]) {
+      const index = messages.value[roomId].findIndex(m => m.id === messageId)
+      if (index > -1) {
+        messages.value[roomId].splice(index, 1)
+      }
+    }
+  }
+
   // 群通知相关状态
   const lastGroupNotification = ref<{ room_id: string; type: string; data: any } | null>(null)
   const myMuteStatus = ref<Record<string, string | null>>({}) // room_id -> muted_until
@@ -149,6 +161,7 @@ export const useChatStore = defineStore('chat', () => {
     updateContactLastMsg,
     incrementUnread,
     clearRoomMessages,
+    removeMessage,
     setLastGroupNotification,
     setMyMuteStatus,
     isMyMuted,

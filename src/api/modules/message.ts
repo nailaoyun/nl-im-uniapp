@@ -26,3 +26,8 @@ export function syncMessages(roomId: string, page = 1, pageSize = 50) {
     page_size: pageSize
   })
 }
+
+// 撤回消息
+export function recallMessage(messageId: number) {
+  return request.post<void>('/messages/recall', { message_id: messageId })
+}

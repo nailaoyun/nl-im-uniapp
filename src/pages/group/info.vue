@@ -247,6 +247,39 @@
       cancel-text="取消"
     />
 
+    <!-- 禁言时长选择弹窗 -->
+    <wd-popup v-model="showMuteModal" position="bottom" safe-area-inset-bottom custom-style="border-radius: 24rpx 24rpx 0 0;">
+      <view class="mute-modal">
+        <view class="modal-header">
+          <text class="modal-title">禁言成员</text>
+          <text class="modal-subtitle">选择禁言 {{ mutingMember?.nickname || mutingMember?.user?.name || '该成员' }} 的时长</text>
+        </view>
+        <view class="mute-options">
+          <view class="mute-option" @click="confirmMute(600)">
+            <text>10分钟</text>
+          </view>
+          <view class="mute-option" @click="confirmMute(3600)">
+            <text>1小时</text>
+          </view>
+          <view class="mute-option" @click="confirmMute(43200)">
+            <text>12小时</text>
+          </view>
+          <view class="mute-option" @click="confirmMute(86400)">
+            <text>1天</text>
+          </view>
+          <view class="mute-option" @click="confirmMute(604800)">
+            <text>7天</text>
+          </view>
+          <view class="mute-option danger" @click="confirmMute(0)">
+            <text>永久禁言</text>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <wd-button block plain @click="showMuteModal = false">取消</wd-button>
+        </view>
+      </view>
+    </wd-popup>
+
     <wd-toast />
     <wd-message-box />
   </view>
@@ -288,6 +321,10 @@ const showCallModal = ref(false)
 const showAdminModal = ref(false)
 const showTransferModal = ref(false)
 const showMemberActions = ref(false)
+const showMuteModal = ref(false)
+
+// 禁言操作
+const mutingMember = ref<GroupMember | null>(null)
 
 // 管理员设置
 const selectedAdminIds = ref<Set<string>>(new Set())
@@ -557,11 +594,22 @@ async function setMemberRole(member: GroupMember, role: number) {
   }
 }
 
-async function muteMember(member: GroupMember) {
+function muteMember(member: GroupMember) {
+  mutingMember.value = member
+  showMuteModal.value = true
+}
+
+async function confirmMute(duration: number) {
+  if (!mutingMember.value) return
   try {
-    // 默认禁言1小时
-    await roomApi.muteGroupMember(roomId.value, member.user_id, 3600)
-    toast.success('已禁言1小时')
+    await roomApi.muteGroupMember(roomId.value, mutingMember.value.user_id, duration)
+    const durationText = duration === 0 ? '永久' : 
+      duration < 3600 ? `${duration / 60}分钟` : 
+      duration < 86400 ? `${duration / 3600}小时` : 
+      `${duration / 86400}天`
+    toast.success(`已禁言${durationText}`)
+    showMuteModal.value = false
+    mutingMember.value = null
     loadGroupInfo()
   } catch (e) {
     toast.error('操作失败')
@@ -1002,5 +1050,39 @@ function initAdminSelection() {
   display: flex;
   justify-content: flex-end;
   gap: 16rpx;
+}
+
+// 禁言弹窗样式
+.mute-modal {
+  background: var(--bg-content);
+
+  .mute-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16rpx;
+    padding: 32rpx;
+  }
+
+  .mute-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24rpx 16rpx;
+    background: var(--bg-hover);
+    border-radius: 16rpx;
+    font-size: 28rpx;
+    color: var(--text-primary);
+    transition: all 0.2s;
+
+    &:active {
+      transform: scale(0.98);
+      background: var(--bg-active);
+    }
+
+    &.danger {
+      background: rgba(249, 115, 22, 0.1);
+      color: #f97316;
+    }
+  }
 }
 </style>

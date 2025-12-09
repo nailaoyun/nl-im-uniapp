@@ -69,6 +69,12 @@
       <template v-else-if="activeTab === 'groups'">
         <wd-status-tip v-if="contactGroups.length === 0 && ungroupedContacts.length === 0" tip="暂无联系人" />
         <template v-else>
+          <!-- 分组操作提示 -->
+          <view class="group-tip">
+            <text>长按分组名可编辑，长按联系人可移动分组</text>
+            <wd-button size="small" type="primary" plain @click="showCreateGroupModal = true">新建分组</wd-button>
+          </view>
+
           <!-- 未分组 -->
           <view v-if="ungroupedContacts.length > 0" class="contact-group">
             <view class="group-header" @click="toggleCollapse(0)">
@@ -85,6 +91,7 @@
                 :key="contact.id"
                 class="contact-item"
                 @click="goContactDetail(contact)"
+                @longpress="handleContactLongPress(contact)"
               >
                 <app-avatar
                   :src="contact.user?.avatar"
@@ -106,7 +113,7 @@
             :key="group.id"
             class="contact-group"
           >
-            <view class="group-header" @click="toggleCollapse(group.id)">
+            <view class="group-header" @click="toggleCollapse(group.id)" @longpress="handleGroupLongPress(group)">
               <wd-icon 
                 :name="collapsedIds.includes(group.id) ? 'arrow-right' : 'arrow-down'" 
                 size="28rpx" 
@@ -120,6 +127,7 @@
                 :key="contact.id"
                 class="contact-item"
                 @click="goContactDetail(contact)"
+                @longpress="handleContactLongPress(contact)"
               >
                 <app-avatar
                   :src="contact.user?.avatar"
@@ -284,7 +292,68 @@
       </text>
     </view>
 
+    <!-- 联系人操作菜单 -->
+    <wd-action-sheet
+      v-model="showContactActions"
+      :actions="contactActionItems"
+      @select="onContactActionSelect"
+      cancel-text="取消"
+    />
+
+    <!-- 分组操作菜单 -->
+    <wd-action-sheet
+      v-model="showGroupActions"
+      :actions="groupActionItems"
+      @select="onGroupActionSelect"
+      cancel-text="取消"
+    />
+
+    <!-- 移动到分组选择 -->
+    <wd-action-sheet
+      v-model="showMoveGroupModal"
+      :actions="moveGroupActions"
+      @select="onMoveGroupSelect"
+      cancel-text="取消"
+    />
+
+    <!-- 创建分组弹窗 -->
+    <wd-popup v-model="showCreateGroupModal" position="center" custom-style="border-radius: 24rpx; width: 80%;">
+      <view class="create-group-modal">
+        <view class="modal-title">新建分组</view>
+        <wd-input v-model="newGroupName" placeholder="请输入分组名称" clearable />
+        <view class="modal-footer">
+          <wd-button plain @click="showCreateGroupModal = false">取消</wd-button>
+          <wd-button type="primary" :loading="creating" @click="handleCreateGroup">确定</wd-button>
+        </view>
+      </view>
+    </wd-popup>
+
+    <!-- 重命名分组弹窗 -->
+    <wd-popup v-model="showRenameGroupModal" position="center" custom-style="border-radius: 24rpx; width: 80%;">
+      <view class="create-group-modal">
+        <view class="modal-title">重命名分组</view>
+        <wd-input v-model="renameGroupName" placeholder="请输入新名称" clearable />
+        <view class="modal-footer">
+          <wd-button plain @click="showRenameGroupModal = false">取消</wd-button>
+          <wd-button type="primary" :loading="renaming" @click="handleRenameGroup">确定</wd-button>
+        </view>
+      </view>
+    </wd-popup>
+
+    <!-- 修改备注弹窗 -->
+    <wd-popup v-model="showRemarkModal" position="center" custom-style="border-radius: 24rpx; width: 80%;">
+      <view class="create-group-modal">
+        <view class="modal-title">修改备注</view>
+        <wd-input v-model="remarkName" placeholder="请输入备注名" clearable />
+        <view class="modal-footer">
+          <wd-button plain @click="showRemarkModal = false">取消</wd-button>
+          <wd-button type="primary" :loading="savingRemark" @click="handleSaveRemark">确定</wd-button>
+        </view>
+      </view>
+    </wd-popup>
+
     <wd-toast />
+    <wd-message-box />
     
     <!-- 自定义 TabBar -->
     <app-tab-bar current="contacts" />
@@ -298,6 +367,7 @@ import { useContactStore, useChatStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import { generateColor } from '@/utils/format'
 import { resolveImageUrl } from '@/utils/image'
+import { useToast, useMessage } from 'wot-design-uni'
 import * as contactApi from '@/api/modules/contact'
 import * as roomApi from '@/api/modules/room'
 import AppAvatar from '@/components/common/AppAvatar.vue'
@@ -322,6 +392,8 @@ interface GroupChat {
 const contactStore = useContactStore()
 const chatStore = useChatStore()
 const { isDark } = useTheme()
+const toast = useToast()
+const messageBox = useMessage()
 
 // Tab 配置
 const tabs = [
@@ -338,6 +410,24 @@ const loading = ref(false)
 const collapsedIds = ref<(number | string)[]>([])
 const contactGroups = ref<ContactGroup[]>([])
 const groupChats = ref<GroupChat[]>([])
+
+// 联系人操作相关
+const showContactActions = ref(false)
+const selectedContact = ref<Contact | null>(null)
+const showMoveGroupModal = ref(false)
+const showRemarkModal = ref(false)
+const remarkName = ref('')
+const savingRemark = ref(false)
+
+// 分组操作相关
+const showGroupActions = ref(false)
+const selectedGroup = ref<ContactGroup | null>(null)
+const showCreateGroupModal = ref(false)
+const showRenameGroupModal = ref(false)
+const newGroupName = ref('')
+const renameGroupName = ref('')
+const creating = ref(false)
+const renaming = ref(false)
 
 // 计算属性
 const contacts = computed(() => chatStore.contacts)
@@ -387,6 +477,31 @@ const alphabetGroupedContacts = computed(() => {
 const createdGroups = computed(() => groupChats.value.filter(g => g.category === 'created'))
 const managedGroups = computed(() => groupChats.value.filter(g => g.category === 'managed'))
 const joinedGroups = computed(() => groupChats.value.filter(g => g.category === 'joined'))
+
+// 联系人操作菜单项
+const contactActionItems = [
+  { name: '修改备注', value: 'remark' },
+  { name: '移动到分组', value: 'move' },
+  { name: '删除好友', value: 'delete', color: '#fa5151' }
+]
+
+// 分组操作菜单项
+const groupActionItems = [
+  { name: '重命名', value: 'rename' },
+  { name: '删除分组', value: 'delete', color: '#fa5151' }
+]
+
+// 移动到分组选项
+const moveGroupActions = computed(() => {
+  const actions: any[] = [{ name: '未分组', value: 0 }]
+  contactGroups.value.forEach(g => {
+    // 排除当前所在分组
+    if (selectedContact.value?.group_id !== g.id) {
+      actions.push({ name: g.group_name, value: g.id })
+    }
+  })
+  return actions
+})
 
 // 生命周期
 onMounted(() => {
@@ -472,6 +587,178 @@ function goGroupChat(group: GroupChat) {
 function scrollToLetter(letter: string) {
   // TODO: 实现滚动到指定字母
   console.log('Scroll to:', letter)
+}
+
+// ========== 联系人操作 ==========
+function handleContactLongPress(contact: Contact) {
+  selectedContact.value = contact
+  remarkName.value = contact.remark_name || ''
+  showContactActions.value = true
+}
+
+function onContactActionSelect(action: { value: string }) {
+  showContactActions.value = false
+  switch (action.value) {
+    case 'remark':
+      showRemarkModal.value = true
+      break
+    case 'move':
+      showMoveGroupModal.value = true
+      break
+    case 'delete':
+      handleDeleteContact()
+      break
+  }
+}
+
+async function handleSaveRemark() {
+  if (!selectedContact.value) return
+  savingRemark.value = true
+  try {
+    await contactApi.updateContact(selectedContact.value.id.toString(), {
+      remark_name: remarkName.value
+    })
+    // 更新本地数据
+    const idx = chatStore.contacts.findIndex(c => c.id === selectedContact.value?.id)
+    if (idx > -1) {
+      chatStore.contacts[idx].remark_name = remarkName.value
+    }
+    showRemarkModal.value = false
+    toast.success('备注已修改')
+  } catch (e) {
+    toast.error('修改失败')
+  } finally {
+    savingRemark.value = false
+  }
+}
+
+async function onMoveGroupSelect(action: { value: number }) {
+  if (!selectedContact.value) return
+  showMoveGroupModal.value = false
+  try {
+    await contactApi.updateContact(selectedContact.value.id.toString(), {
+      group_id: action.value || 0
+    })
+    // 更新本地数据
+    const idx = chatStore.contacts.findIndex(c => c.id === selectedContact.value?.id)
+    if (idx > -1) {
+      chatStore.contacts[idx].group_id = action.value || 0
+    }
+    toast.success('已移动到分组')
+  } catch (e) {
+    toast.error('移动失败')
+  }
+}
+
+async function handleDeleteContact() {
+  if (!selectedContact.value) return
+  try {
+    await messageBox.confirm({
+      title: '删除好友',
+      msg: `确定要删除好友"${selectedContact.value.remark_name || selectedContact.value.user?.name || '未知'}"吗？`
+    })
+    await contactApi.deleteContact(selectedContact.value.id.toString())
+    // 从本地列表移除
+    const idx = chatStore.contacts.findIndex(c => c.id === selectedContact.value?.id)
+    if (idx > -1) {
+      chatStore.contacts.splice(idx, 1)
+    }
+    toast.success('已删除')
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      toast.error('删除失败')
+    }
+  }
+}
+
+// ========== 分组操作 ==========
+function handleGroupLongPress(group: ContactGroup) {
+  selectedGroup.value = group
+  renameGroupName.value = group.group_name
+  showGroupActions.value = true
+}
+
+function onGroupActionSelect(action: { value: string }) {
+  showGroupActions.value = false
+  switch (action.value) {
+    case 'rename':
+      showRenameGroupModal.value = true
+      break
+    case 'delete':
+      handleDeleteGroup()
+      break
+  }
+}
+
+async function handleCreateGroup() {
+  if (!newGroupName.value.trim()) {
+    toast.warning('请输入分组名称')
+    return
+  }
+  creating.value = true
+  try {
+    const newGroup = await contactApi.createGroup({ group_name: newGroupName.value.trim() })
+    contactGroups.value.push(newGroup)
+    showCreateGroupModal.value = false
+    newGroupName.value = ''
+    toast.success('分组已创建')
+  } catch (e) {
+    toast.error('创建失败')
+  } finally {
+    creating.value = false
+  }
+}
+
+async function handleRenameGroup() {
+  if (!selectedGroup.value || !renameGroupName.value.trim()) {
+    toast.warning('请输入分组名称')
+    return
+  }
+  renaming.value = true
+  try {
+    await contactApi.updateGroup(selectedGroup.value.id, { group_name: renameGroupName.value.trim() })
+    // 更新本地数据
+    const idx = contactGroups.value.findIndex(g => g.id === selectedGroup.value?.id)
+    if (idx > -1) {
+      contactGroups.value[idx].group_name = renameGroupName.value.trim()
+    }
+    showRenameGroupModal.value = false
+    toast.success('分组已重命名')
+  } catch (e) {
+    toast.error('重命名失败')
+  } finally {
+    renaming.value = false
+  }
+}
+
+async function handleDeleteGroup() {
+  if (!selectedGroup.value) return
+  const contactsInGroup = getGroupContacts(selectedGroup.value.id)
+  try {
+    await messageBox.confirm({
+      title: '删除分组',
+      msg: contactsInGroup.length > 0 
+        ? `该分组下有 ${contactsInGroup.length} 位好友，删除后好友将移至未分组。确定要删除吗？`
+        : '确定要删除该分组吗？'
+    })
+    await contactApi.deleteGroup(selectedGroup.value.id)
+    // 从本地列表移除
+    const idx = contactGroups.value.findIndex(g => g.id === selectedGroup.value?.id)
+    if (idx > -1) {
+      contactGroups.value.splice(idx, 1)
+    }
+    // 将该分组下的好友移至未分组
+    chatStore.contacts.forEach(c => {
+      if (c.group_id === selectedGroup.value?.id) {
+        c.group_id = 0
+      }
+    })
+    toast.success('分组已删除')
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      toast.error('删除失败')
+    }
+  }
 }
 </script>
 
@@ -742,5 +1029,40 @@ function scrollToLetter(letter: string) {
 // 底部安全区
 .bottom-safe-area {
   height: calc(40rpx + env(safe-area-inset-bottom));
+}
+
+// 分组提示
+.group-tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 30rpx;
+  background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.05);
+  margin-bottom: 16rpx;
+  
+  text {
+    font-size: 24rpx;
+    color: var(--text-tertiary);
+  }
+}
+
+// 弹窗样式
+.create-group-modal {
+  padding: 40rpx;
+  
+  .modal-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 32rpx;
+  }
+  
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16rpx;
+    margin-top: 32rpx;
+  }
 }
 </style>
