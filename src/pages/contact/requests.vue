@@ -1,5 +1,8 @@
 <template>
-  <view class="requests-page">
+  <view class="requests-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="新朋友" />
+    
     <view v-if="loading" class="loading-state">
       <wd-loading />
       <text>加载中...</text>
@@ -13,16 +16,12 @@
         :key="item.id"
         class="request-item"
       >
-        <wd-img
-          v-if="item.from_user?.avatar"
-          :src="item.from_user.avatar"
-          width="96rpx"
-          height="96rpx"
+        <app-avatar
+          :src="item.from_user?.avatar"
+          :name="item.from_user?.name"
+          :size="96"
           radius="8rpx"
         />
-        <view v-else class="avatar-placeholder" :style="{ background: generateColor(item.from_user?.name || '') }">
-          {{ item.from_user?.name?.charAt(0) || '?' }}
-        </view>
 
         <view class="request-info">
           <text class="name">{{ item.from_user?.name || '未知用户' }}</text>
@@ -50,11 +49,15 @@ import { ref, onMounted } from 'vue'
 import { useContactStore } from '@/stores'
 import * as contactApi from '@/api/modules/contact'
 import { generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { useToast } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { FriendRequest } from '@/types/api'
 
 const contactStore = useContactStore()
 const toast = useToast()
+const { isDark } = useTheme()
 
 const loading = ref(true)
 const requests = ref<FriendRequest[]>([])

@@ -1,5 +1,5 @@
 <template>
-  <view class="search-page">
+  <view class="search-page" :class="{ dark: isDark }">
     <!-- 搜索栏 -->
     <view class="search-header safe-area-top">
       <wd-search
@@ -50,16 +50,13 @@
           @click="goDetail(item)"
         >
           <template #icon>
-            <wd-img
-              v-if="item.avatar"
-              :src="item.avatar"
-              width="80rpx"
-              height="80rpx"
-              radius="8rpx"
-              custom-style="margin-right: 24rpx;"
-            />
-            <view v-else class="avatar-placeholder" :style="{ background: generateColor(item.name || '') }">
-              {{ item.name?.charAt(0) || '?' }}
+            <view class="result-avatar">
+              <app-avatar
+                :src="item.avatar"
+                :name="item.name"
+                :size="80"
+                radius="8rpx"
+              />
             </view>
           </template>
         </wd-cell>
@@ -72,8 +69,11 @@
 import { ref, watch } from 'vue'
 import * as contactApi from '@/api/modules/contact'
 import { generateColor } from '@/utils/format'
+import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { User } from '@/types/api'
 
+const { isDark } = useTheme()
 const keyword = ref('')
 const loading = ref(false)
 const searched = ref(false)
@@ -214,16 +214,7 @@ function goDetail(item: User) {
   gap: 20rpx;
 }
 
-.avatar-placeholder {
-  width: 80rpx;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8rpx;
+.result-avatar {
   margin-right: 24rpx;
-  color: #fff;
-  font-size: 32rpx;
-  font-weight: 600;
 }
 </style>

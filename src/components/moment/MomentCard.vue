@@ -25,20 +25,20 @@
         <wd-img
           v-for="(url, index) in mediaUrls"
           :key="index"
-          :src="url"
+          :src="resolveImageUrl(url)"
           :width="imageSize"
           :height="imageSize"
           mode="aspectFill"
           radius="8rpx"
           enable-preview
-          :preview-src-list="mediaUrls"
+          :preview-src-list="mediaUrls.map(resolveImageUrl)"
         />
       </view>
 
       <!-- 视频 -->
       <view v-if="moment.media_type === 2" class="card-video">
         <video
-          :src="mediaUrls[0]"
+          :src="resolveImageUrl(mediaUrls[0])"
           class="video-player"
           object-fit="cover"
           :show-fullscreen-btn="true"
@@ -85,6 +85,7 @@
 import { computed } from 'vue'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import { formatTime } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { parseMediaUrls } from '@/types/moment'
 import type { Moment } from '@/types/moment'
 
@@ -217,3 +218,10 @@ function onAction() {
   }
 }
 </style>
+
+
+
+
+
+
+

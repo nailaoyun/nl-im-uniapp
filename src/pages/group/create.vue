@@ -1,5 +1,8 @@
 <template>
   <view class="create-page">
+    <!-- 导航栏 -->
+    <app-nav-bar title="创建群聊" />
+    
     <!-- 群名称 -->
     <wd-cell-group>
       <wd-input
@@ -34,16 +37,12 @@
             :model-value="selectedIds.includes(contact.contact_user_id)"
             @change="toggleSelect(contact)"
           />
-          <wd-img
-            v-if="contact.user?.avatar"
-            :src="contact.user.avatar"
-            width="72rpx"
-            height="72rpx"
+          <app-avatar
+            :src="contact.user?.avatar"
+            :name="contact.remark_name || contact.user?.name"
+            :size="72"
             radius="8rpx"
           />
-          <view v-else class="avatar-placeholder" :style="{ background: generateColor(contact.user?.name || '') }">
-            {{ contact.user?.name?.charAt(0) || '?' }}
-          </view>
           <text class="name">{{ contact.remark_name || contact.user?.name || '未知' }}</text>
         </view>
       </template>
@@ -72,6 +71,7 @@ import * as contactApi from '@/api/modules/contact'
 import * as roomApi from '@/api/modules/room'
 import { generateColor } from '@/utils/format'
 import { useToast } from 'wot-design-uni'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { Contact } from '@/types/api'
 
 const toast = useToast()

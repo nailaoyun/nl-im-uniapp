@@ -47,6 +47,7 @@
     "@uni-helper/unh": "^0.2.7",
     "@uni-helper/uni-types": "^1.0.0-alpha.7",
     "@uni-helper/vite-plugin-uni-components": "^0.2.3",
+    "@uni-ku/root": "^1.4.1",
     "@vue/runtime-core": "3.4.21",
     "@vue/tsconfig": "^0.8.1",
     "eslint": "^9.39.1",

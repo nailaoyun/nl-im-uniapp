@@ -1,5 +1,8 @@
 <template>
-  <view class="login-page">
+  <view class="login-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="登录" :left-arrow="false" />
+    
     <!-- Logo -->
     <view class="logo-section">
       <view class="logo">
@@ -75,10 +78,12 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores'
 import { useToast, useMessage } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
 
 const authStore = useAuthStore()
 const toast = useToast()
 const message = useMessage()
+const { isDark } = useTheme()
 
 // 表单数据
 const form = ref({
@@ -107,7 +112,7 @@ async function handleLogin() {
     })
     toast.success('登录成功')
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/index/index' })
+      uni.reLaunch({ url: '/pages/index/index' })
     }, 1000)
   } catch (error: any) {
     toast.error(error.message || '登录失败')

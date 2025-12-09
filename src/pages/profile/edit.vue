@@ -1,5 +1,8 @@
 <template>
-  <view class="edit-page">
+  <view class="edit-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="编辑资料" />
+    
     <view class="form-item">
       <input
         v-model="value"
@@ -15,7 +18,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useTheme } from '@/composables/useTheme'
 
+const { isDark } = useTheme()
 const field = ref('')
 const value = ref('')
 const placeholder = ref('')
@@ -65,7 +70,7 @@ function save() {
 <style lang="scss" scoped>
 .edit-page {
   padding: 30rpx;
-  background: #fff;
+  background: var(--bg-content);
   min-height: 100vh;
 }
 
@@ -75,9 +80,10 @@ function save() {
   .input {
     width: 100%;
     padding: 24rpx;
-    background: #f5f5f5;
+    background: var(--bg-page);
     border-radius: 12rpx;
     font-size: 32rpx;
+    color: var(--text-primary);
   }
 
   .counter {
@@ -85,13 +91,13 @@ function save() {
     right: 24rpx;
     bottom: 24rpx;
     font-size: 24rpx;
-    color: #999;
+    color: var(--text-tertiary);
   }
 }
 
 .save-btn {
   margin-top: 60rpx;
-  background: #07c160;
+  background: var(--color-primary);
   color: #fff;
   font-size: 32rpx;
   border-radius: 12rpx;

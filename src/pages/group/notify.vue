@@ -1,5 +1,8 @@
 <template>
   <view class="notify-page">
+    <!-- 导航栏 -->
+    <app-nav-bar title="群通知" />
+    
     <view v-if="loading" class="loading-state">
       <wd-loading />
       <text>加载中...</text>

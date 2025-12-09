@@ -149,3 +149,8 @@ export function getGroupSettings(roomId: string) {
     updated_at: string
   }>(`/groups/${roomId}/settings`)
 }
+
+// 更新我在群里的昵称
+export function updateMyNickname(roomId: string, nickname: string) {
+  return request.post<void>(`/groups/${roomId}/nickname`, { nickname })
+}

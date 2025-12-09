@@ -1,5 +1,8 @@
 <template>
-  <view class="detail-page">
+  <view class="detail-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="好友详情" />
+    
     <view v-if="loading" class="loading-state">
       <wd-loading />
       <text>加载中...</text>
@@ -8,16 +11,12 @@
     <template v-else-if="contact">
       <!-- 用户信息 -->
       <view class="header-section">
-        <wd-img
-          v-if="contact.user?.avatar"
-          :src="contact.user.avatar"
-          width="140rpx"
-          height="140rpx"
+        <app-avatar
+          :src="contact.user?.avatar"
+          :name="contact.remark_name || contact.user?.name"
+          :size="140"
           radius="12rpx"
         />
-        <view v-else class="avatar-placeholder" :style="{ background: generateColor(contact.user?.name || '') }">
-          {{ contact.user?.name?.charAt(0) || '?' }}
-        </view>
         <view class="user-info">
           <text class="name">{{ contact.remark_name || contact.user?.name || '未知' }}</text>
           <text class="id">ID: {{ contact.user?.id || '-' }}</text>
@@ -52,7 +51,20 @@
 
       <!-- 操作按钮 -->
       <view class="actions-section">
-        <wd-button type="primary" block @click="goChat">发消息</wd-button>
+        <view class="action-row">
+          <wd-button type="primary" class="flex-btn" @click="goChat">
+            <wd-icon name="chat" size="36rpx" />
+            <text>发消息</text>
+          </wd-button>
+          <wd-button type="info" class="flex-btn" @click="startAudioCall">
+            <wd-icon name="phone" size="36rpx" />
+            <text>语音</text>
+          </wd-button>
+          <wd-button type="success" class="flex-btn" @click="startVideoCall">
+            <wd-icon name="video" size="36rpx" />
+            <text>视频</text>
+          </wd-button>
+        </view>
         <wd-button type="error" block plain @click="deleteFriend">删除好友</wd-button>
       </view>
     </template>
@@ -67,23 +79,31 @@ import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import * as contactApi from '@/api/modules/contact'
 import { generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { useToast, useMessage } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { Contact } from '@/types/api'
 
 const toast = useToast()
 const messageBox = useMessage()
+const { isDark } = useTheme()
 
 const loading = ref(true)
 const contact = ref<Contact | null>(null)
 const contactId = ref('')
+const userId = ref('')
 
 onLoad((options: any) => {
   contactId.value = options?.id || ''
+  userId.value = options?.userId || ''
 })
 
 onMounted(async () => {
   if (contactId.value) {
     await loadContact()
+  } else if (userId.value) {
+    await loadContactByUserId()
   }
 })
 
@@ -99,10 +119,45 @@ async function loadContact() {
   }
 }
 
+// 通过用户 ID 查找联系人
+async function loadContactByUserId() {
+  loading.value = true
+  try {
+    // 获取所有联系人，找到对应的用户
+    const contacts = await contactApi.getContacts()
+    const found = contacts.find((c: Contact) => c.contact_user_id === userId.value || c.user_id === userId.value)
+    if (found) {
+      contact.value = await contactApi.getContactDetail(found.id?.toString() || '')
+    } else {
+      toast.warning('未找到该联系人')
+      setTimeout(() => uni.navigateBack(), 1500)
+    }
+  } catch (error) {
+    console.error('加载联系人失败:', error)
+    toast.error('加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 function goChat() {
   if (!contact.value) return
   uni.navigateTo({
-    url: `/pages/chat/index?id=${contact.value.contact_user_id}&roomId=${contact.value.room_id || ''}&name=${encodeURIComponent(contact.value.remark_name || contact.value.user?.name || '')}`
+    url: `/pages/chat/index?targetId=${contact.value.contact_user_id}&roomId=${contact.value.room_id || ''}&name=${encodeURIComponent(contact.value.remark_name || contact.value.user?.name || '')}&avatar=${encodeURIComponent(contact.value.user?.avatar || '')}`
+  })
+}
+
+function startAudioCall() {
+  if (!contact.value) return
+  uni.navigateTo({
+    url: `/pages/chat/index?targetId=${contact.value.contact_user_id}&roomId=${contact.value.room_id || ''}&name=${encodeURIComponent(contact.value.remark_name || contact.value.user?.name || '')}&avatar=${encodeURIComponent(contact.value.user?.avatar || '')}&callType=audio`
+  })
+}
+
+function startVideoCall() {
+  if (!contact.value) return
+  uni.navigateTo({
+    url: `/pages/chat/index?targetId=${contact.value.contact_user_id}&roomId=${contact.value.room_id || ''}&name=${encodeURIComponent(contact.value.remark_name || contact.value.user?.name || '')}&avatar=${encodeURIComponent(contact.value.user?.avatar || '')}&callType=video`
   })
 }
 
@@ -238,5 +293,18 @@ async function deleteFriend() {
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+
+  .action-row {
+    display: flex;
+    gap: 20rpx;
+  }
+
+  .flex-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+  }
 }
 </style>

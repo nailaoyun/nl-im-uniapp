@@ -1,5 +1,8 @@
 <template>
-  <view class="detail-page">
+  <view class="detail-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="动态详情" />
+    
     <view v-if="loading" class="loading">
       <text>加载中...</text>
     </view>
@@ -122,9 +125,12 @@ import { ref, onMounted } from 'vue'
 import { useMomentStore } from '@/stores'
 import { formatTime } from '@/utils/format'
 import { parseMediaUrls } from '@/types/moment'
+import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { Moment } from '@/types/moment'
 
 const momentStore = useMomentStore()
+const { isDark } = useTheme()
 
 const loading = ref(true)
 const moment = ref<Moment | null>(null)
@@ -185,7 +191,7 @@ async function sendComment() {
 <style lang="scss" scoped>
 .detail-page {
   min-height: 100vh;
-  background: #ededed;
+  background: var(--bg-page);
   padding-bottom: 120rpx;
 }
 
@@ -194,11 +200,11 @@ async function sendComment() {
   justify-content: center;
   align-items: center;
   padding: 60rpx;
-  color: #999;
+  color: var(--text-tertiary);
 }
 
 .moment-content {
-  background: #fff;
+  background: var(--bg-content);
   padding: 30rpx;
   margin-bottom: 20rpx;
 
@@ -217,7 +223,7 @@ async function sendComment() {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #07c160;
+      background: var(--color-primary);
       color: #fff;
       font-size: 32rpx;
     }
@@ -226,14 +232,14 @@ async function sendComment() {
       .name {
         display: block;
         font-size: 32rpx;
-        color: #576b95;
+        color: var(--text-link);
         font-weight: 500;
       }
 
       .time {
         display: block;
         font-size: 24rpx;
-        color: #999;
+        color: var(--text-tertiary);
         margin-top: 8rpx;
       }
     }
@@ -241,7 +247,7 @@ async function sendComment() {
 
   .content {
     font-size: 32rpx;
-    color: #333;
+    color: var(--text-primary);
     line-height: 1.6;
     margin-bottom: 20rpx;
   }
@@ -280,7 +286,7 @@ async function sendComment() {
 
       text {
         font-size: 28rpx;
-        color: #666;
+        color: var(--text-secondary);
 
         &.liked {
           color: #fa5151;
@@ -291,19 +297,19 @@ async function sendComment() {
 }
 
 .comments-section {
-  background: #fff;
+  background: var(--bg-content);
   padding: 30rpx;
 
   .section-title {
     font-size: 28rpx;
-    color: #999;
+    color: var(--text-tertiary);
     margin-bottom: 24rpx;
   }
 
   .empty-comments {
     text-align: center;
     padding: 40rpx;
-    color: #999;
+    color: var(--text-tertiary);
   }
 }
 
@@ -322,7 +328,7 @@ async function sendComment() {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #07c160;
+    background: var(--color-primary);
     color: #fff;
     font-size: 24rpx;
   }
@@ -337,21 +343,21 @@ async function sendComment() {
 
       .name {
         font-size: 28rpx;
-        color: #576b95;
+        color: var(--text-link);
       }
 
       .time {
         font-size: 24rpx;
-        color: #999;
+        color: var(--text-tertiary);
       }
     }
 
     .comment-text {
       font-size: 28rpx;
-      color: #333;
+      color: var(--text-primary);
 
       .reply-to {
-        color: #576b95;
+        color: var(--text-link);
       }
     }
   }
@@ -366,16 +372,17 @@ async function sendComment() {
   align-items: center;
   padding: 16rpx 20rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
-  background: #fff;
+  background: var(--bg-content);
   box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
 
   .input {
     flex: 1;
     height: 72rpx;
     padding: 0 24rpx;
-    background: #f5f5f5;
+    background: var(--bg-page);
     border-radius: 36rpx;
     font-size: 28rpx;
+    color: var(--text-primary);
   }
 
   .send-btn {
@@ -383,7 +390,7 @@ async function sendComment() {
     padding: 0 32rpx;
     height: 72rpx;
     line-height: 72rpx;
-    background: #07c160;
+    background: var(--color-primary);
     color: #fff;
     font-size: 28rpx;
     border-radius: 36rpx;

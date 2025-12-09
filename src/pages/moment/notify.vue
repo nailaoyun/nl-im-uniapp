@@ -1,5 +1,8 @@
 <template>
-  <view class="notify-page">
+  <view class="notify-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="消息通知" />
+    
     <view v-if="loading && notifications.length === 0" class="loading-state">
       <wd-loading />
       <text>加载中...</text>
@@ -67,10 +70,13 @@ import { useMomentStore } from '@/stores'
 import { formatTime, generateColor } from '@/utils/format'
 import { parseMediaUrls } from '@/types/moment'
 import { useToast } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { MomentNotification } from '@/types/moment'
 
 const momentStore = useMomentStore()
 const toast = useToast()
+const { isDark } = useTheme()
 
 const loadState = ref<'loading' | 'finished' | 'error'>('loading')
 

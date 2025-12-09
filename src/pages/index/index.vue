@@ -5,20 +5,16 @@
       <view class="navbar-content">
         <!-- 左侧头像 -->
         <view class="navbar-left" @click="openDrawer">
-          <wd-img
-            v-if="user?.avatar"
-            :src="user.avatar"
-            width="64rpx"
-            height="64rpx"
+          <app-avatar
+            :src="user?.avatar"
+            :name="user?.name"
+            :size="64"
             round
           />
-          <view v-else class="avatar-placeholder avatar-sm">
-            {{ user?.name?.charAt(0) || '?' }}
-          </view>
         </view>
 
         <!-- 标题 -->
-        <view class="navbar-title">消息</view>
+        <view class="navbar-title">{{ user?.name || '消息' }}</view>
 
         <!-- 右侧加号 -->
         <view class="navbar-right">
@@ -61,24 +57,14 @@
           <view class="conversation-item" @click="goChat(item)">
             <!-- 头像 -->
             <view class="avatar-wrap">
-              <wd-img
-                v-if="item.avatar"
+              <app-avatar
                 :src="item.avatar"
-                width="96rpx"
-                height="96rpx"
+                :name="item.name"
+                :size="96"
                 radius="8rpx"
+                :badge="item.is_muted ? 0 : item.unread_count"
+                :dot="item.is_muted && item.unread_count > 0"
               />
-              <view v-else class="avatar-placeholder avatar-md" :style="{ background: generateColor(item.name || '') }">
-                {{ item.name?.charAt(0) || '?' }}
-              </view>
-              <!-- 未读数 -->
-              <wd-badge
-                v-if="item.unread_count > 0 && !item.is_muted"
-                :value="item.unread_count"
-                :max="99"
-                class="unread-badge"
-              />
-              <view v-else-if="item.unread_count > 0 && item.is_muted" class="unread-dot" />
             </view>
 
             <!-- 内容 -->
@@ -120,21 +106,18 @@
     <wd-popup
       v-model="showDrawer"
       position="left"
-      custom-style="width: 70%; height: 100%;"
+      custom-style="width: 70%; height: 100%; z-index: 1000;"
+      :z-index="1000"
     >
       <view class="drawer-content">
         <!-- 用户信息 -->
         <view class="drawer-header">
-          <wd-img
-            v-if="user?.avatar"
-            :src="user.avatar"
-            width="120rpx"
-            height="120rpx"
+          <app-avatar
+            :src="user?.avatar"
+            :name="user?.name"
+            :size="120"
             round
           />
-          <view v-else class="avatar-placeholder avatar-lg">
-            {{ user?.name?.charAt(0) || '?' }}
-          </view>
           <text class="drawer-name">{{ user?.name || '未登录' }}</text>
           <text class="drawer-desc">{{ user?.desc || '这个人很懒，什么都没写' }}</text>
         </view>
@@ -143,11 +126,7 @@
         <view class="drawer-menu">
           <wd-cell title="个人资料" icon="user" is-link @click="goProfile" />
           <wd-cell title="设置" icon="setting" is-link @click="goSettings" />
-          <wd-cell title="深色模式" icon="picture" center>
-            <template #value>
-              <wd-switch v-model="isDark" @change="toggleTheme" />
-            </template>
-          </wd-cell>
+          <wd-cell title="深色模式" icon="picture" :value="themeText" is-link @click="goTheme" />
         </view>
 
         <!-- 退出登录 -->
@@ -160,6 +139,9 @@
     <!-- Toast 组件 -->
     <wd-toast />
     <wd-message-box />
+    
+    <!-- 自定义 TabBar -->
+    <app-tab-bar current="messages" />
   </view>
 </template>
 
@@ -169,12 +151,26 @@ import { onShow } from '@dcloudio/uni-app'
 import { useAuthStore, useConversationStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import { formatMessageTime, generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { useToast, useMessage } from 'wot-design-uni'
+import AppAvatar from '@/components/common/AppAvatar.vue'
+import AppTabBar from '@/components/common/AppTabBar.vue'
 import type { Conversation } from '@/types/conversation'
 
 const authStore = useAuthStore()
 const conversationStore = useConversationStore()
-const { isDark, toggleTheme } = useTheme()
+const { isDark } = useTheme()
+
+// 主题显示文本
+const themeText = computed(() => {
+  const mode = uni.getStorageSync('nl_im_theme_mode') || 'system'
+  const texts: Record<string, string> = {
+    system: '跟随系统',
+    light: '浅色模式',
+    dark: '深色模式'
+  }
+  return texts[mode] || '跟随系统'
+})
 const toast = useToast()
 const messageBox = useMessage()
 
@@ -227,7 +223,7 @@ function goSearch() {
 function goChat(item: Conversation) {
   conversationStore.clearUnread(item.target_id)
   uni.navigateTo({
-    url: `/pages/chat/index?roomId=${item.room_id || ''}&targetId=${item.target_id}&name=${encodeURIComponent(item.name || '')}`
+    url: `/pages/chat/index?roomId=${item.room_id || ''}&targetId=${item.target_id}&name=${encodeURIComponent(item.name || '')}&avatar=${encodeURIComponent(item.avatar || '')}`
   })
 }
 
@@ -282,6 +278,11 @@ function goProfile() {
 function goSettings() {
   showDrawer.value = false
   uni.navigateTo({ url: '/pages/settings/index' })
+}
+
+function goTheme() {
+  showDrawer.value = false
+  uni.navigateTo({ url: '/pages/settings/theme' })
 }
 
 async function logout() {
@@ -354,7 +355,7 @@ async function logout() {
   top: calc(88rpx + 80rpx + var(--status-bar-height, 0));
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
   background: var(--bg-content);
 }
 
@@ -492,13 +493,15 @@ async function logout() {
   display: flex;
   flex-direction: column;
   background: var(--bg-page);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .drawer-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80rpx 30rpx 40rpx;
+  padding: 40rpx 30rpx 40rpx;
+  padding-top: calc(40rpx + var(--status-bar-height, 44px));
   background: var(--bg-content);
 }
 

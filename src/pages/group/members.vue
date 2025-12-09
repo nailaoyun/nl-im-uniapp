@@ -1,5 +1,8 @@
 <template>
   <view class="members-page">
+    <!-- 导航栏 -->
+    <app-nav-bar title="群成员" />
+    
     <!-- 搜索框 -->
     <view class="search-section">
       <wd-search
@@ -20,18 +23,16 @@
         :key="member.user_id"
         :title="member.nickname || member.user?.name || '未知'"
         is-link
+        @click="goMemberDetail(member)"
       >
         <template #icon>
-          <wd-img
-            v-if="member.user?.avatar"
-            :src="member.user.avatar"
-            width="80rpx"
-            height="80rpx"
-            radius="8rpx"
-            custom-style="margin-right: 24rpx;"
-          />
-          <view v-else class="avatar-placeholder" :style="{ background: generateColor(member.user?.name || '') }">
-            {{ member.user?.name?.charAt(0) || '?' }}
+          <view class="member-avatar-wrap">
+            <app-avatar
+              :src="member.user?.avatar"
+              :name="member.nickname || member.user?.name"
+              :size="80"
+              radius="8rpx"
+            />
           </view>
         </template>
         <template #value>
@@ -48,6 +49,8 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import * as roomApi from '@/api/modules/room'
 import { generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { GroupMember } from '@/types/api'
 
 const loading = ref(true)
@@ -86,6 +89,11 @@ async function loadMembers() {
     loading.value = false
   }
 }
+
+function goMemberDetail(member: GroupMember) {
+  // 跳转到成员详情页
+  uni.navigateTo({ url: `/pages/contact/detail?userId=${member.user_id}` })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -108,16 +116,7 @@ async function loadMembers() {
   gap: 20rpx;
 }
 
-.avatar-placeholder {
-  width: 80rpx;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8rpx;
+.member-avatar-wrap {
   margin-right: 24rpx;
-  color: #fff;
-  font-size: 32rpx;
-  font-weight: 600;
 }
 </style>

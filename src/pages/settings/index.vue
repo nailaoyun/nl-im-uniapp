@@ -1,5 +1,8 @@
 <template>
-  <view class="settings-page">
+  <view class="settings-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="设置" />
+    
     <wd-cell-group title="账号设置">
       <wd-cell title="个人资料" icon="user" is-link @click="goProfile" />
       <wd-cell title="账号与安全" icon="shield" is-link @click="goSecurity" />
@@ -8,11 +11,7 @@
     <wd-cell-group title="通用设置">
       <wd-cell title="消息通知" icon="bell" is-link @click="goNotification" />
       <wd-cell title="隐私设置" icon="eye-close" is-link @click="goPrivacy" />
-      <wd-cell title="深色模式" icon="picture" center>
-        <template #value>
-          <wd-switch v-model="isDark" @change="toggleTheme" />
-        </template>
-      </wd-cell>
+      <wd-cell title="深色模式" icon="picture" :value="themeText" is-link @click="goTheme" />
       <wd-cell title="清除缓存" icon="delete" :value="cacheSize" is-link @click="clearCache" />
     </wd-cell-group>
 
@@ -33,17 +32,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import { useToast, useMessage } from 'wot-design-uni'
 
 const authStore = useAuthStore()
-const { isDark, toggleTheme } = useTheme()
+const { isDark } = useTheme()
 const toast = useToast()
 const messageBox = useMessage()
 
 const cacheSize = ref('0 KB')
+
+// 主题显示文本
+const themeText = computed(() => {
+  const mode = uni.getStorageSync('nl_im_theme_mode') || 'system'
+  const texts: Record<string, string> = {
+    system: '跟随系统',
+    light: '浅色模式',
+    dark: '深色模式'
+  }
+  return texts[mode] || '跟随系统'
+})
 
 onMounted(() => {
   calculateCacheSize()
@@ -77,6 +87,10 @@ function goNotification() {
 
 function goPrivacy() {
   toast.show('隐私设置功能开发中')
+}
+
+function goTheme() {
+  uni.navigateTo({ url: '/pages/settings/theme' })
 }
 
 async function clearCache() {

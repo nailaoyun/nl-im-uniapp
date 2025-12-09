@@ -1,18 +1,17 @@
 <template>
-  <view class="profile-page">
+  <view class="profile-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="个人资料" />
+    
     <!-- 头像区域 -->
     <view class="header-section">
       <view class="avatar-wrap" @click="changeAvatar">
-        <wd-img
-          v-if="user?.avatar"
-          :src="user.avatar"
-          width="160rpx"
-          height="160rpx"
+        <app-avatar
+          :src="user?.avatar"
+          :name="user?.name"
+          :size="160"
           round
         />
-        <view v-else class="avatar-placeholder">
-          {{ user?.name?.charAt(0) || '?' }}
-        </view>
         <view class="change-tip">点击更换</view>
       </view>
     </view>
@@ -39,9 +38,13 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores'
 import { useToast } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
+import { resolveImageUrl } from '@/utils/image'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 
 const authStore = useAuthStore()
 const toast = useToast()
+const { isDark } = useTheme()
 
 const user = computed(() => authStore.user)
 

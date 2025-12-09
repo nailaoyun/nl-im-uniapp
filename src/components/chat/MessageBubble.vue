@@ -105,3 +105,10 @@ const bubbleClass = computed(() => {
   }
 }
 </style>
+
+
+
+
+
+
+

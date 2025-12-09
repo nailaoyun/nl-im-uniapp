@@ -1,7 +1,7 @@
 <template>
   <view class="app-empty">
     <wd-status-tip :image="image" :tip="description" />
-    <slot />
+      <slot />
   </view>
 </template>
 

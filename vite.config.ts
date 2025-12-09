@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import Components from '@uni-helper/vite-plugin-uni-components'
 import { WotResolver } from '@uni-helper/vite-plugin-uni-components/resolvers'
+import UniKuRoot from '@uni-ku/root'
 import Uni from '@uni-helper/plugin-uni'
 
 export default defineConfig({
@@ -17,6 +18,8 @@ export default defineConfig({
       dts: true,
       resolvers: [WotResolver()]
     }),
+    // https://github.com/niceyou/uni-ku-root - 全局共享 ConfigProvider
+    UniKuRoot(),
     // https://uni-helper.js.org/plugin-uni
     Uni(),
   ],

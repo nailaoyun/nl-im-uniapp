@@ -1,136 +1,76 @@
 <template>
-  <view class="app-navbar" :class="{ dark: isDark }">
-    <view class="navbar-status-bar" />
-    <view class="navbar-content">
-      <!-- 左侧 -->
-      <view class="navbar-left" @click="onLeftClick">
-        <slot name="left">
-          <template v-if="showBack">
-            <wd-icon name="arrow-left" size="44rpx" />
-          </template>
-          <template v-else-if="showAvatar">
-            <wd-img
-              v-if="avatarUrl"
-              :src="avatarUrl"
-              width="64rpx"
-              height="64rpx"
-              round
-            />
-            <view v-else class="avatar-placeholder">
-              {{ avatarText }}
-            </view>
-          </template>
-        </slot>
-      </view>
-
-      <!-- 标题 -->
-      <view class="navbar-title">
-        <slot name="title">
-          <text class="title-text">{{ title }}</text>
-        </slot>
-      </view>
-
-      <!-- 右侧 -->
-      <view class="navbar-right" @click="onRightClick">
-        <slot name="right" />
-      </view>
-    </view>
-  </view>
+  <wd-navbar
+    :title="title"
+    :left-arrow="leftArrow"
+    :fixed="fixed"
+    :placeholder="placeholder"
+    :bordered="bordered"
+    :safe-area-inset-top="safeAreaInsetTop"
+    :z-index="zIndex"
+    custom-class="app-navbar"
+    @click-left="onClickLeft"
+    @click-right="onClickRight"
+  >
+    <template v-if="$slots.left" #left>
+      <slot name="left" />
+    </template>
+    <template v-if="$slots.title" #title>
+      <slot name="title" />
+    </template>
+    <template v-if="$slots.right" #right>
+      <slot name="right" />
+    </template>
+  </wd-navbar>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useTheme } from '@/composables/useTheme'
-
 interface Props {
   title?: string
-  showBack?: boolean
-  showAvatar?: boolean
-  avatarUrl?: string
-  avatarText?: string
+  leftArrow?: boolean
+  fixed?: boolean
+  placeholder?: boolean
+  bordered?: boolean
+  safeAreaInsetTop?: boolean
+  zIndex?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: '',
-  showBack: false,
-  showAvatar: false,
-  avatarUrl: '',
-  avatarText: '?'
+  leftArrow: true,
+  fixed: true,
+  placeholder: true,
+  bordered: true,
+  safeAreaInsetTop: true,
+  zIndex: 100
 })
 
 const emit = defineEmits<{
-  (e: 'left-click'): void
-  (e: 'right-click'): void
+  (e: 'click-left'): void
+  (e: 'click-right'): void
 }>()
 
-const { isDark } = useTheme()
-
-function onLeftClick() {
-  if (props.showBack) {
-    uni.navigateBack()
+function onClickLeft() {
+  emit('click-left')
+  // 默认返回上一页
+  if (props.leftArrow) {
+    uni.navigateBack({
+      fail: () => {
+        // 如果没有上一页，则跳转到首页
+        uni.reLaunch({ url: '/pages/index/index' })
+      }
+    })
   }
-  emit('left-click')
 }
 
-function onRightClick() {
-  emit('right-click')
+function onClickRight() {
+  emit('click-right')
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .app-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: var(--nav-bg);
-}
-
-.navbar-status-bar {
-  height: var(--status-bar-height, 0);
-}
-
-.navbar-content {
-  display: flex;
-  align-items: center;
-  height: 88rpx;
-  padding: 0 30rpx;
-}
-
-.navbar-left {
-  min-width: 80rpx;
-  color: var(--text-primary);
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-
-  .title-text {
-    font-size: 36rpx;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-}
-
-.navbar-right {
-  min-width: 80rpx;
-  display: flex;
-  justify-content: flex-end;
-  color: var(--text-primary);
-}
-
-.avatar-placeholder {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 28rpx;
-  font-weight: 600;
+  --wot-navbar-bg-color: var(--nav-bg, #ededed);
+  --wot-navbar-title-color: var(--text-primary, #333);
+  --wot-navbar-icon-color: var(--text-primary, #333);
 }
 </style>

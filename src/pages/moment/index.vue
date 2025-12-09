@@ -28,7 +28,7 @@
         <view class="user-info">
           <wd-img
             v-if="user?.avatar"
-            :src="user.avatar"
+            :src="resolveImageUrl(user.avatar)"
             width="120rpx"
             height="120rpx"
             radius="8rpx"
@@ -59,7 +59,7 @@
             <view class="moment-avatar">
               <wd-img
                 v-if="moment.user?.avatar"
-                :src="moment.user.avatar"
+                :src="resolveImageUrl(moment.user.avatar)"
                 width="80rpx"
                 height="80rpx"
                 radius="8rpx"
@@ -84,20 +84,20 @@
                 <wd-img
                   v-for="(url, index) in parseMediaUrls(moment.media_urls)"
                   :key="index"
-                  :src="url"
+                  :src="resolveImageUrl(url)"
                   :width="getImageSize(moment)"
                   :height="getImageSize(moment)"
                   mode="aspectFill"
                   radius="8rpx"
                   enable-preview
-                  :preview-src-list="parseMediaUrls(moment.media_urls)"
+                  :preview-src-list="parseMediaUrls(moment.media_urls).map(resolveImageUrl)"
                 />
               </view>
 
               <!-- 视频 -->
               <view v-if="moment.media_type === 2" class="moment-video">
                 <video
-                  :src="parseMediaUrls(moment.media_urls)[0]"
+                  :src="resolveImageUrl(parseMediaUrls(moment.media_urls)[0])"
                   class="video-player"
                   object-fit="cover"
                   :show-fullscreen-btn="true"
@@ -160,6 +160,9 @@
 
     <wd-toast />
     <wd-message-box />
+    
+    <!-- 自定义 TabBar -->
+    <app-tab-bar current="moments" />
   </view>
 </template>
 
@@ -169,8 +172,10 @@ import { onShow } from '@dcloudio/uni-app'
 import { useAuthStore, useMomentStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import { formatTime, generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { parseMediaUrls } from '@/types/moment'
 import { useToast, useMessage } from 'wot-design-uni'
+import AppTabBar from '@/components/common/AppTabBar.vue'
 import type { Moment } from '@/types/moment'
 
 const authStore = useAuthStore()
@@ -362,7 +367,7 @@ function getImageSize(moment: Moment): string {
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
 }
 
 // 封面区域

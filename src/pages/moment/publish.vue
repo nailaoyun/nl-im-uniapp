@@ -1,5 +1,5 @@
 <template>
-  <view class="publish-page">
+  <view class="publish-page" :class="{ dark: isDark }">
     <!-- 导航栏 -->
     <wd-navbar
       title="发布动态"
@@ -88,9 +88,11 @@
 import { ref, computed } from 'vue'
 import { useMomentStore } from '@/stores'
 import { useToast } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
 
 const momentStore = useMomentStore()
 const toast = useToast()
+const { isDark } = useTheme()
 
 // 表单数据
 const content = ref('')
@@ -311,3 +313,10 @@ async function publish() {
   margin-top: 20rpx;
 }
 </style>
+
+
+
+
+
+
+

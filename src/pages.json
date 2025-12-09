@@ -2,7 +2,10 @@
   "easycom": {
     "autoscan": true,
     "custom": {
-      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue"
+      "^wd-(.*)": "wot-design-uni/components/wd-$1/wd-$1.vue",
+      "^app-nav-bar$": "@/components/common/AppNavBar.vue",
+      "^app-tab-bar$": "@/components/common/AppTabBar.vue",
+      "^app-avatar$": "@/components/common/AppAvatar.vue"
     }
   },
   "pages": [
@@ -16,6 +19,7 @@
     {
       "path": "pages/chat/index",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "聊天",
         "enablePullDownRefresh": false
       }
@@ -30,24 +34,28 @@
     {
       "path": "pages/contact/detail",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "好友详情"
       }
     },
     {
       "path": "pages/contact/add",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "添加好友"
       }
     },
     {
       "path": "pages/contact/requests",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "新朋友"
       }
     },
     {
       "path": "pages/contact/groups",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "群聊"
       }
     },
@@ -61,43 +69,57 @@
     {
       "path": "pages/moment/detail",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "动态详情"
       }
     },
     {
       "path": "pages/moment/publish",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "发布动态"
       }
     },
     {
       "path": "pages/moment/notify",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "消息通知"
       }
     },
     {
       "path": "pages/login/index",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "登录"
       }
     },
     {
       "path": "pages/profile/index",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "个人资料"
       }
     },
     {
       "path": "pages/profile/edit",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "编辑资料"
       }
     },
     {
       "path": "pages/settings/index",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "设置"
+      }
+    },
+    {
+      "path": "pages/settings/theme",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "深色模式"
       }
     },
     {
@@ -110,24 +132,28 @@
     {
       "path": "pages/group/info",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "群信息"
       }
     },
     {
       "path": "pages/group/create",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "创建群聊"
       }
     },
     {
       "path": "pages/group/members",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "群成员"
       }
     },
     {
       "path": "pages/group/notify",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "群通知"
       }
     }
@@ -138,32 +164,6 @@
     "navigationBarBackgroundColor": "#ededed",
     "backgroundColor": "#ededed",
     "backgroundTextStyle": "dark"
-  },
-  "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#07c160",
-    "backgroundColor": "#f7f7f7",
-    "borderStyle": "white",
-    "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "消息",
-        "iconPath": "static/icons/chat.png",
-        "selectedIconPath": "static/icons/chat-active.png"
-      },
-      {
-        "pagePath": "pages/contact/index",
-        "text": "联系人",
-        "iconPath": "static/icons/contact.png",
-        "selectedIconPath": "static/icons/contact-active.png"
-      },
-      {
-        "pagePath": "pages/moment/index",
-        "text": "朋友圈",
-        "iconPath": "static/icons/moment.png",
-        "selectedIconPath": "static/icons/moment-active.png"
-      }
-    ]
   },
   "subPackages": []
 }

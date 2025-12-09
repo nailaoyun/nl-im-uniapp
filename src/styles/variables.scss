@@ -61,8 +61,11 @@ page {
   --switch-off: #e5e5e5;
 }
 
-// 暗色主题
-page.dark {
+// 暗色主题 (支持多种选择器以兼容 H5)
+page.dark,
+.dark,
+html.dark,
+body.dark {
   // 背景色
   --bg-page: #111111;
   --bg-content: #1e1e1e;
@@ -99,3 +102,10 @@ page.dark {
   // 开关
   --switch-off: #444444;
 }
+
+
+
+
+
+
+

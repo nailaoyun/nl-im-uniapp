@@ -1,8 +1,8 @@
 <template>
   <view class="app-avatar" :style="avatarStyle" @click="onClick">
     <wd-img
-      v-if="src"
-      :src="src"
+      v-if="resolvedSrc"
+      :src="resolvedSrc"
       :width="sizeRpx"
       :height="sizeRpx"
       :round="round"
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 
 interface Props {
   src?: string
@@ -52,6 +53,23 @@ const props = withDefaults(defineProps<Props>(), {
   badge: 0,
   dot: false,
   bgColor: ''
+})
+
+// 判断是否为有效图片 URL
+function isValidImageUrl(url?: string): boolean {
+  if (!url) return false
+  // 有效 URL: http/https/data URI 或以 /uploads/ 开头
+  return url.startsWith('http://') || 
+         url.startsWith('https://') || 
+         url.startsWith('data:') || 
+         url.startsWith('/uploads/')
+}
+
+// 处理图片 URL，添加域名前缀，并验证是否为有效图片 URL
+const resolvedSrc = computed(() => {
+  // 先检查原始 src 是否为有效图片路径
+  if (!isValidImageUrl(props.src)) return ''
+  return resolveImageUrl(props.src)
 })
 
 const emit = defineEmits<{
@@ -113,3 +131,10 @@ function onClick() {
   border: 2rpx solid var(--bg-content);
 }
 </style>
+
+
+
+
+
+
+

@@ -1,5 +1,8 @@
 <template>
-  <view class="add-page">
+  <view class="add-page" :class="{ dark: isDark }">
+    <!-- 导航栏 -->
+    <app-nav-bar title="添加好友" />
+    
     <!-- 搜索区域 -->
     <view class="search-section">
       <wd-search
@@ -26,16 +29,12 @@
           :key="item.id"
           class="result-item"
         >
-          <wd-img
-            v-if="item.avatar"
+          <app-avatar
             :src="item.avatar"
-            width="96rpx"
-            height="96rpx"
+            :name="item.name"
+            :size="96"
             radius="8rpx"
           />
-          <view v-else class="avatar-placeholder" :style="{ background: generateColor(item.name || '') }">
-            {{ item.name?.charAt(0) || '?' }}
-          </view>
 
           <view class="user-info">
             <text class="name">{{ item.name }}</text>
@@ -65,10 +64,13 @@ import { ref } from 'vue'
 import * as contactApi from '@/api/modules/contact'
 import { generateColor } from '@/utils/format'
 import { useToast, useMessage } from 'wot-design-uni'
+import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { User } from '@/types/api'
 
 const toast = useToast()
 const message = useMessage()
+const { isDark } = useTheme()
 
 const keyword = ref('')
 const loading = ref(false)
