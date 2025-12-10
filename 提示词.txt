@@ -2,3 +2,7 @@
 要求：
 
 本项目使用wot-ui，并且已经配置好暗色亮色模式的<wd-config-provider theme="dark">,你写的代码要适配wot-ui的暗色浅色模式
+
+
+
+2. 在 @nl-im-service 中区分搜索类型是新增好友的搜索还是我的好友搜索，修改好功能后同步到 @nl-im-uniapp 和 @nl-im-vue-ts 中，之改动关于这部分的代码，不要做其他功能的删减
