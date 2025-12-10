@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>主题设置 - 极简版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        // 统一暖色调暗黑颜色 (Warm Stone)
+                        warm: {
+                            950: '#0c0a09', // 极深背景
+                            900: '#1c1917', // 手机背景
+                            800: '#292524', // 卡片/组件背景
+                            700: '#44403c', // 边框
+                            600: '#57534e', // 辅助图标
+                            500: '#78716c', // 文本
+                            200: '#e7e5e4', // 主要文字
+                            100: '#f5f5f4', // 亮色文字
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style> .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); } </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5 bg-[#F5F7FA] dark:bg-warm-900">
+
+    <!-- 导航 -->
+    <div class="px-4 pt-12 pb-4 flex items-center gap-2 bg-transparent relative z-10">
+        <i data-lucide="chevron-left" class="w-6 h-6 text-gray-800 dark:text-warm-200 cursor-pointer" onclick="history.back()"></i>
+        <span class="text-lg font-bold text-gray-900 dark:text-warm-100">主题设置</span>
+    </div>
+
+    <div class="p-5">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+
+            <!-- 浅色模式 -->
+            <div onclick="selectTheme('light')" id="card-light" class="bg-white dark:bg-warm-800 rounded-2xl p-4 flex flex-col items-center gap-3 border-[2px] border-indigo-500 relative cursor-pointer shadow-sm transition-all">
+                <div class="w-16 h-20 rounded-lg border border-gray-100 overflow-hidden flex flex-col bg-white shadow-sm">
+                    <div class="h-4 bg-gray-50 border-b border-gray-100"></div>
+                    <div class="flex-1 bg-gray-50 m-1 rounded-sm"></div>
+                </div>
+                <span class="text-sm font-bold text-gray-900 dark:text-warm-200">浅色模式</span>
+                <div class="absolute top-3 right-3 text-indigo-500"><i data-lucide="check-circle-2" class="w-5 h-5 fill-current stroke-white"></i></div>
+            </div>
+
+            <!-- 深色模式 -->
+            <div onclick="selectTheme('dark')" id="card-dark" class="bg-white dark:bg-warm-800 rounded-2xl p-4 flex flex-col items-center gap-3 border-[2px] border-transparent relative cursor-pointer shadow-sm transition-all">
+                <!-- 预览图也使用 Warm 色系 -->
+                <div class="w-16 h-20 rounded-lg border border-warm-700 overflow-hidden flex flex-col bg-warm-900 shadow-inner">
+                    <div class="h-4 bg-warm-800 border-b border-warm-700"></div>
+                    <div class="flex-1 bg-warm-800 m-1 rounded-sm opacity-50"></div>
+                </div>
+                <span class="text-sm font-bold text-gray-900 dark:text-warm-200">深色模式</span>
+                <div class="absolute top-3 right-3 text-indigo-500 hidden" id="icon-dark"><i data-lucide="check-circle-2" class="w-5 h-5 fill-current stroke-white"></i></div>
+            </div>
+
+            <!-- 跟随系统 -->
+            <div onclick="selectTheme('system')" id="card-system" class="col-span-2 bg-white dark:bg-warm-800 rounded-2xl p-5 flex items-center gap-4 border-[2px] border-transparent relative cursor-pointer shadow-sm transition-all">
+                <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-warm-700 flex items-center justify-center text-gray-600 dark:text-warm-200">
+                    <i data-lucide="smartphone" class="w-6 h-6"></i>
+                </div>
+                <span class="text-sm font-bold text-gray-900 dark:text-warm-200">跟随系统</span>
+                <div class="absolute right-5 text-indigo-500 hidden" id="icon-system"><i data-lucide="check-circle-2" class="w-5 h-5 fill-current stroke-white"></i></div>
+            </div>
+
+        </div>
+
+        <p class="text-xs text-gray-400 dark:text-warm-500 px-2 leading-relaxed">
+            「跟随系统」开启后，将根据系统显示设置自动切换深色或浅色模式。
+        </p>
+    </div>
+
+</div>
+
+<script>
+    let currentMode = 'light';
+
+    function selectTheme(mode) {
+        currentMode = mode;
+        const html = document.documentElement;
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+
+        // UI State Update
+        document.querySelectorAll('[id^="card-"]').forEach(el => {
+            el.classList.remove('border-indigo-500');
+            el.classList.add('border-transparent');
+            el.querySelector('.absolute')?.classList.add('hidden');
+        });
+        const activeCard = document.getElementById(`card-${mode}`);
+        activeCard.classList.remove('border-transparent');
+        activeCard.classList.add('border-indigo-500');
+        activeCard.querySelector('.absolute')?.classList.remove('hidden');
+
+        // Theme Logic
+        let isDark = false;
+        if (mode === 'dark') isDark = true;
+        else if (mode === 'system') isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (isDark) {
+            html.classList.add('dark');
+            // 使用 Warm 950 作为背景，Warm 900 作为手机壳
+            body.className = "bg-warm-950 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-900 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            html.classList.remove('dark');
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5 bg-[#F5F7FA]";
+        }
+    }
+    window.onload = () => lucide.createIcons();
+</script>
+</body>
+</html>

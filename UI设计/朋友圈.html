@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>朋友圈 - 极简版</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: {
+                        warm: {
+                            950: '#0c0a09', 900: '#1c1917', 800: '#292524',
+                            700: '#44403c', 600: '#57534e', 500: '#78716c',
+                            200: '#e7e5e4', 100: '#f5f5f4',
+                        },
+                        // 朋友圈专用色
+                        link: { light: '#576b95', dark: '#7e95c5' },
+                        bgDetail: { light: '#f7f7f7', dark: '#292524' } // 评论区背景
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* 图片九宫格布局 */
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2, .grid-4 { grid-template-columns: repeat(2, 1fr); width: 66%; }
+        .grid-3, .grid-5, .grid-6, .grid-7, .grid-8, .grid-9 { grid-template-columns: repeat(3, 1fr); }
+
+        /* 评论区小三角 */
+        .triangle-up {
+            width: 0; height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid #f7f7f7; /* Light mode color */
+            position: absolute; top: -5px; left: 10px;
+        }
+        .dark .triangle-up { border-bottom-color: #292524; } /* Dark mode color */
+
+        /* 操作菜单动画 */
+        .action-menu-enter { opacity: 0; transform: translateX(10px) scale(0.95); pointer-events: none; }
+        .action-menu-active { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<!-- 主题切换 -->
+<div class="absolute right-6 top-6 md:right-20 md:top-auto flex flex-col gap-2 z-50">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 hover:scale-110 active:scale-95 transition-all border border-gray-100 dark:border-warm-700 ring-1 ring-black/5 dark:ring-white/10">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5 text-orange-400"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5 text-orange-200"></i>
+    </button>
+</div>
+
+<!-- 手机容器 -->
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5">
+
+    <!-- ================= 沉浸式导航栏 (Header) ================= -->
+    <div id="nav-header" class="absolute top-0 left-0 w-full z-20 px-5 pt-12 pb-3 flex items-center justify-between transition-colors duration-300">
+        <!-- 背景层 (通过JS控制透明度) -->
+        <div id="nav-bg" class="absolute inset-0 bg-white dark:bg-warm-900 opacity-0 border-b border-gray-100 dark:border-warm-800 transition-opacity duration-300"></div>
+
+        <!-- 内容层 -->
+        <div class="relative z-10 flex items-center gap-1 cursor-pointer group" onclick="alert('返回')">
+            <i data-lucide="chevron-left" id="nav-icon-left" class="w-7 h-7 text-white transition-colors duration-300"></i>
+        </div>
+
+        <div class="relative z-10">
+            <span id="nav-title" class="text-[17px] font-bold text-gray-900 dark:text-warm-100 opacity-0 transition-opacity duration-300">朋友圈</span>
+        </div>
+
+        <div class="relative z-10 cursor-pointer" onclick="alert('跳转通知')">
+            <i data-lucide="bell" id="nav-icon-right" class="w-6 h-6 text-white transition-colors duration-300"></i>
+        </div>
+    </div>
+
+    <!-- ================= 滚动内容区域 ================= -->
+    <div id="scroll-view" class="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-warm-900 relative z-0">
+
+        <!-- 1. 封面图区域 -->
+        <div class="relative h-[340px] mb-8 group cursor-pointer">
+            <!-- 封面图 -->
+            <img src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?w=800&q=80" class="w-full h-full object-cover">
+            <!-- 底部阴影遮罩 -->
+            <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+            <!-- 用户信息 (悬挂在右下角) -->
+            <div class="absolute bottom-[-30px] right-4 flex items-end gap-3">
+                <span class="text-white font-bold text-lg mb-4 drop-shadow-md text-shadow">Kimi</span>
+                <div class="w-20 h-20 rounded-xl overflow-hidden border-[3px] border-white dark:border-warm-800 shadow-md bg-gray-200">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 动态列表 -->
+        <div id="feed-list" class="px-4 pb-24 space-y-8">
+            <!-- 动态内容由 JS 生成 -->
+        </div>
+
+    </div>
+
+    <!-- ================= 悬浮发布按钮 (FAB) ================= -->
+    <button onclick="alert('发布动态')" class="absolute bottom-[110px] right-5 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full shadow-xl shadow-green-500/30 flex items-center justify-center text-white active:scale-90 transition-transform z-30">
+        <i data-lucide="camera" class="w-7 h-7"></i>
+    </button>
+
+    <!-- ================= 底部 Tab Bar ================= -->
+    <div class="absolute bottom-0 w-full h-[84px] bg-white dark:bg-warm-900 border-t border-gray-100 dark:border-warm-800 flex items-center justify-around pb-6 smooth-transition z-20">
+        <div onclick="alert('跳转消息')" class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500 hover:text-gray-900 dark:hover:text-warm-200 cursor-pointer transition-colors">
+            <i data-lucide="message-circle" class="w-6 h-6"></i>
+            <span class="text-[10px] font-medium">消息</span>
+        </div>
+        <div onclick="alert('跳转联系人')" class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500 hover:text-gray-900 dark:hover:text-warm-200 cursor-pointer transition-colors">
+            <i data-lucide="users" class="w-6 h-6"></i>
+            <span class="text-[10px] font-medium">联系人</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-indigo-600 dark:text-orange-500 cursor-pointer">
+            <i data-lucide="compass" class="w-6 h-6 fill-current"></i>
+            <span class="text-[10px] font-bold">发现</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500 hover:text-gray-900 dark:hover:text-warm-200 cursor-pointer transition-colors">
+            <i data-lucide="user" class="w-6 h-6"></i>
+            <span class="text-[10px] font-medium">我的</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- 逻辑脚本 -->
+<script>
+    // --- 模拟数据 ---
+    const moments = [
+        {
+            id: 1,
+            user: { name: '林希', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' },
+            content: '周末的阳光真好，去爬山了！🏔️ 天气晴朗，心情舒畅。',
+            images: [
+                'https://images.unsplash.com/photo-1551632811-561732d1e306?w=400',
+                'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400',
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400',
+                'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=400'
+            ],
+            time: '20分钟前',
+            likes: ['张三', '李四', '王五'],
+            comments: [
+                { user: '张三', content: '景色真不错啊！' },
+                { user: '李四', content: '下次带我一个' }
+            ]
+        },
+        {
+            id: 2,
+            user: { name: '王经理', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150' },
+            content: '项目终于上线了，大家辛苦了！今晚聚餐走起 🍻',
+            images: ['https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400'],
+            time: '1小时前',
+            likes: ['Kimi', '小赵', '老陈', '林希'],
+            comments: []
+        },
+        {
+            id: 3,
+            user: { name: '陈晨', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' },
+            content: '分享一首好听的歌 🎵',
+            type: 'music', // 模拟非图片内容
+            time: '2小时前',
+            likes: [],
+            comments: []
+        },
+        {
+            id: 4,
+            user: { name: '韦雁', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150' },
+            content: '', // 纯图片
+            images: [
+                'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400',
+                'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+                'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400'
+            ],
+            time: '昨天',
+            likes: ['Kimi'],
+            comments: [
+                { user: 'Kimi', content: '看着就好吃 😋' }
+            ]
+        }
+    ];
+
+    let isDarkMode = false;
+    let activeMenuId = null; // 当前打开的操作菜单ID
+
+    const els = {
+        body: document.getElementById('body-bg'),
+        phone: document.getElementById('phone-container'),
+        scrollView: document.getElementById('scroll-view'),
+        navHeader: document.getElementById('nav-header'),
+        navBg: document.getElementById('nav-bg'),
+        navTitle: document.getElementById('nav-title'),
+        navIconLeft: document.getElementById('nav-icon-left'),
+        navIconRight: document.getElementById('nav-icon-right'),
+        feedList: document.getElementById('feed-list'),
+    };
+
+    window.onload = () => {
+        renderFeed();
+        lucide.createIcons();
+
+        // 滚动监听
+        els.scrollView.addEventListener('scroll', handleScroll);
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-area')) {
+                closeAllMenus();
+            }
+        });
+    };
+
+    // --- 滚动效果：沉浸式导航栏 ---
+    function handleScroll() {
+        const scrollTop = els.scrollView.scrollTop;
+        const threshold = 200; // 滚动多少像素后变色
+        let opacity = Math.min(scrollTop / threshold, 1);
+
+        // 1. 背景透明度
+        els.navBg.style.opacity = opacity;
+
+        // 2. 标题透明度
+        els.navTitle.style.opacity = opacity;
+
+        // 3. 图标颜色翻转 (白色 -> 黑色/暖白)
+        if (opacity > 0.6) {
+            // 变实色背景模式
+            const iconColor = isDarkMode ? 'text-warm-100' : 'text-gray-900';
+            els.navIconLeft.setAttribute('class', `w-7 h-7 transition-colors duration-300 ${iconColor}`);
+            els.navIconRight.setAttribute('class', `w-6 h-6 transition-colors duration-300 ${iconColor}`);
+        } else {
+            // 透明背景模式 (白色图标)
+            els.navIconLeft.setAttribute('class', `w-7 h-7 text-white transition-colors duration-300`);
+            els.navIconRight.setAttribute('class', `w-6 h-6 text-white transition-colors duration-300`);
+        }
+    }
+
+    // --- 渲染列表 ---
+    function renderFeed() {
+        els.feedList.innerHTML = moments.map(item => {
+            // 图片网格类名
+            let gridClass = '';
+            let imgSize = 'w-full h-full'; // 默认填满容器
+            let containerSize = 'h-auto';
+
+            if (item.images && item.images.length > 0) {
+                const count = item.images.length;
+                if (count === 1) {
+                    gridClass = 'grid-1';
+                    containerSize = 'max-w-[70%]'; // 单图不占满
+                } else if (count === 4) {
+                    gridClass = 'grid-2'; // 4张图显示为2x2
+                } else {
+                    gridClass = `grid-3`; // 其他情况3列
+                }
+            }
+
+            // 渲染图片 HTML
+            const imagesHtml = item.images ? `
+                    <div class="grid gap-1.5 mt-2 ${gridClass} ${item.images.length === 1 ? 'max-w-[200px]' : ''}">
+                        ${item.images.map(url => `
+                            <div class="aspect-square bg-gray-100 dark:bg-warm-800 rounded-lg overflow-hidden cursor-pointer">
+                                <img src="${url}" class="w-full h-full object-cover hover:opacity-90 transition-opacity">
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '';
+
+            // 渲染点赞评论区 HTML
+            const hasInteraction = (item.likes && item.likes.length > 0) || (item.comments && item.comments.length > 0);
+            const interactionHtml = hasInteraction ? `
+                    <div class="mt-3 bg-gray-100 dark:bg-warm-800/60 rounded-[4px] p-3 relative text-[13px] leading-5">
+                        <div class="triangle-up"></div>
+
+                        ${item.likes.length ? `
+                        <div class="flex items-start gap-2 mb-1 text-indigo-600 dark:text-blue-400 font-medium">
+                            <i data-lucide="heart" class="w-3.5 h-3.5 mt-1 fill-current stroke-none"></i>
+                            <span>${item.likes.join('，')}</span>
+                        </div>
+                        ` : ''}
+
+                        ${item.likes.length && item.comments.length ? `<div class="h-[1px] bg-black/5 dark:bg-white/5 my-1"></div>` : ''}
+
+                        ${item.comments.length ? `
+                        <div class="space-y-1">
+                            ${item.comments.map(c => `
+                                <div>
+                                    <span class="text-indigo-600 dark:text-blue-400 font-medium cursor-pointer">${c.user}</span>
+                                    <span class="text-gray-800 dark:text-warm-200">：${c.content}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                ` : '';
+
+            return `
+                <div class="flex gap-3 border-b border-gray-100 dark:border-warm-800/50 pb-6 last:border-0">
+                    <!-- 头像 -->
+                    <div class="shrink-0">
+                        <img src="${item.user.avatar}" class="w-[42px] h-[42px] rounded-lg bg-gray-200 object-cover cursor-pointer">
+                    </div>
+
+                    <!-- 内容 -->
+                    <div class="flex-1 min-w-0 pt-1">
+                        <div class="font-bold text-[15px] text-indigo-600 dark:text-blue-400 mb-1 cursor-pointer">${item.user.name}</div>
+                        ${item.content ? `<div class="text-[15px] text-gray-900 dark:text-warm-100 leading-normal mb-1">${item.content}</div>` : ''}
+
+                        ${imagesHtml}
+
+                        <!-- 底部栏 -->
+                        <div class="flex items-center justify-between mt-3 h-6 relative action-area">
+                            <span class="text-xs text-gray-400 dark:text-warm-500">${item.time}</span>
+
+                            <!-- 两个点按钮 -->
+                            <div onclick="toggleActionMenu(${item.id})" class="w-8 h-5 bg-gray-100 dark:bg-warm-800/80 rounded-[4px] flex items-center justify-center cursor-pointer hover:bg-gray-200 dark:hover:bg-warm-700 transition-colors">
+                                <div class="flex gap-[3px]">
+                                    <div class="w-1 h-1 bg-indigo-600 dark:bg-blue-400 rounded-full"></div>
+                                    <div class="w-1 h-1 bg-indigo-600 dark:bg-blue-400 rounded-full"></div>
+                                </div>
+                            </div>
+
+                            <!-- 弹出菜单 -->
+                            <div id="menu-${item.id}" class="absolute right-10 top-[-6px] bg-gray-800 dark:bg-warm-700 text-white rounded-[4px] flex items-center overflow-hidden shadow-lg transition-all duration-200 action-menu-enter">
+                                <div class="flex items-center gap-1 px-4 py-2.5 cursor-pointer hover:bg-white/10 active:bg-white/20 transition-colors border-r border-white/10">
+                                    <i data-lucide="heart" class="w-4 h-4"></i>
+                                    <span class="text-xs font-medium">赞</span>
+                                </div>
+                                <div class="flex items-center gap-1 px-4 py-2.5 cursor-pointer hover:bg-white/10 active:bg-white/20 transition-colors">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                                    <span class="text-xs font-medium">评论</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${interactionHtml}
+                    </div>
+                </div>
+                `;
+        }).join('');
+    }
+
+    // --- 交互逻辑 ---
+    function toggleActionMenu(id) {
+        const menu = document.getElementById(`menu-${id}`);
+        const isActive = menu.classList.contains('action-menu-active');
+
+        // 先关闭所有
+        closeAllMenus();
+
+        if (!isActive) {
+            menu.classList.remove('action-menu-enter');
+            menu.classList.add('action-menu-active');
+            activeMenuId = id;
+        }
+        lucide.createIcons(); // 刷新图标（如果菜单是动态生成的）
+    }
+
+    function closeAllMenus() {
+        document.querySelectorAll('[id^="menu-"]').forEach(el => {
+            el.classList.remove('action-menu-active');
+            el.classList.add('action-menu-enter');
+        });
+        activeMenuId = null;
+    }
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        const html = document.documentElement;
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+
+        if (isDarkMode) {
+            html.classList.add('dark');
+            body.className = "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-900 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            html.classList.remove('dark');
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5";
+        }
+        // 触发一次滚动以更新 Header 图标颜色
+        handleScroll();
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+</script>
+</body>
+</html>

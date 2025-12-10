@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聊天详情 - 深度适配版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: {
+                        // 调整了暗色系的色值，增加深邃感和对比度
+                        warm: {
+                            950: '#0c0a09',
+                            900: '#1c1917',
+                            850: '#262626', // 新增：用于提升层级
+                            800: '#292524',
+                            700: '#44403c',
+                            200: '#e7e5e4',
+                            100: '#f5f5f4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* 气泡样式优化 */
+        .bubble-self {
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+        }
+        .bubble-other {
+            background: white;
+            color: #1f2937;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .dark .bubble-other {
+            background: #262626; /* Warm 850 */
+            color: #e7e5e4;
+            border: 1px solid #44403c; /* Warm 700 */
+        }
+
+        /* 语音播放动画 */
+        .wave-bar {
+            background-color: currentColor;
+            border-radius: 99px;
+            animation: none;
+        }
+        .playing .wave-bar {
+            animation: wave 0.8s infinite ease-in-out;
+        }
+        .playing .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+        .playing .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .playing .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .playing .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+    </style>
+</head>
+<body class="bg-[#F5F7FA] flex items-center justify-center min-h-screen font-sans transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<!-- 顶部控制区 -->
+<div class="absolute right-6 top-6 z-50 flex flex-col gap-2">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 transition-all border border-gray-100 dark:border-warm-700 hover:scale-105 active:scale-95">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5"></i>
+    </button>
+    <!-- 切换群聊/单聊 -->
+    <button onclick="toggleChatMode()" class="w-12 h-12 bg-indigo-500 text-white rounded-full shadow-lg flex items-center justify-center font-bold text-xs border border-white/20 hover:bg-indigo-600 active:scale-95" title="切换模式">
+        <span id="mode-text">Group</span>
+    </button>
+</div>
+
+<!-- 手机容器 -->
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5">
+
+    <!-- 1. 沉浸式导航栏 -->
+    <div class="absolute top-0 w-full z-20 px-4 pt-12 pb-3 flex items-center justify-between bg-white/90 dark:bg-warm-900/90 backdrop-blur-md border-b border-gray-100 dark:border-warm-800 transition-all duration-300">
+        <div class="flex items-center gap-1 cursor-pointer active:opacity-60" onclick="history.back()">
+            <i data-lucide="chevron-left" class="w-7 h-7 text-gray-800 dark:text-warm-100"></i>
+            <div class="flex flex-col">
+                <span id="chat-title" class="text-[17px] font-bold text-gray-900 dark:text-warm-100 leading-tight transition-colors">林希</span>
+                <div id="chat-status" class="flex items-center gap-1 transition-opacity duration-300">
+                    <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                    <span class="text-[10px] text-gray-400 dark:text-warm-400 font-medium">手机在线</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-5 pr-2">
+            <i data-lucide="phone" class="w-6 h-6 text-gray-600 dark:text-warm-400 hover:text-indigo-600 dark:hover:text-orange-400 transition-colors cursor-pointer"></i>
+            <i data-lucide="video" class="w-6 h-6 text-gray-600 dark:text-warm-400 hover:text-indigo-600 dark:hover:text-orange-400 transition-colors cursor-pointer"></i>
+            <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-600 dark:text-warm-400 cursor-pointer"></i>
+        </div>
+    </div>
+
+    <!-- 2. 消息列表容器 -->
+    <div id="chat-area" class="flex-1 bg-[#F5F7FA] dark:bg-[#121212] overflow-y-auto custom-scrollbar px-4 pt-28 pb-24 space-y-6 transition-colors duration-300">
+        <!-- 动态内容由 JS 渲染 -->
+    </div>
+
+    <!-- 3. 底部输入栏 -->
+    <div class="absolute bottom-0 w-full bg-white dark:bg-warm-900 px-4 py-3 pb-8 border-t border-gray-100 dark:border-warm-800 flex items-end gap-3 transition-colors duration-300 z-20">
+        <i data-lucide="mic" class="w-7 h-7 text-gray-500 dark:text-warm-400 mb-2 cursor-pointer hover:text-indigo-600 dark:hover:text-orange-400 transition-colors"></i>
+        <div class="flex-1 bg-gray-100 dark:bg-warm-800 rounded-2xl px-4 py-2.5 min-h-[44px] border border-transparent dark:border-warm-700 transition-colors">
+            <textarea placeholder="发送消息..." class="w-full bg-transparent outline-none text-sm text-gray-800 dark:text-warm-100 resize-none h-5 placeholder-gray-400 dark:placeholder-warm-500" rows="1"></textarea>
+        </div>
+        <i data-lucide="smile" class="w-7 h-7 text-gray-500 dark:text-warm-400 mb-2 cursor-pointer hover:text-indigo-600 dark:hover:text-orange-400 transition-colors"></i>
+        <i data-lucide="plus-circle" class="w-7 h-7 text-gray-500 dark:text-warm-400 mb-2 cursor-pointer hover:text-indigo-600 dark:hover:text-orange-400 transition-colors"></i>
+    </div>
+
+</div>
+
+<script>
+    // --- 数据配置 ---
+    // 模拟用户数据
+    const users = {
+        me: { id: 'me', name: 'Kimi', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100' },
+        linxi: { id: 'u1', name: '林希', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
+        weiyan: { id: 'u2', name: '韦雁', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
+        chenchen: { id: 'u3', name: '陈晨', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
+    };
+
+    // 单聊消息数据 (只有林希和自己)
+    const p2pMessages = [
+        { type: 'time', content: '10:45' },
+        { type: 'text', from: 'linxi', content: '周末去爬山吗？我发现一个很棒的地方 🏔️' },
+        { type: 'text', from: 'me', content: '好啊！正好想出去透透气。具体在哪里？' },
+        { type: 'image', from: 'linxi', content: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=400' },
+        { type: 'audio', from: 'linxi', duration: 12 },
+        { type: 'file', from: 'linxi', fileName: '登山路线图.pdf', size: '2.4 MB' }
+    ];
+
+    // 群聊消息数据 (林希、韦雁、陈晨、自己)
+    const groupMessages = [
+        { type: 'time', content: '11:20' },
+        { type: 'text', from: 'weiyan', content: '@所有人 本周五下午3点开会，请大家准时参加。' },
+        { type: 'text', from: 'chenchen', content: '收到，需要准备什么资料吗？' },
+        { type: 'video', from: 'linxi', cover: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=400', duration: '00:15' },
+        { type: 'text', from: 'me', content: '好的，我会准时到。' },
+        { type: 'file', from: 'weiyan', fileName: '会议议程_v1.docx', size: '18 KB' }
+    ];
+
+    let isDarkMode = false;
+    let isGroupMode = false;
+    let playingAudioEl = null;
+
+    // --- 核心渲染逻辑 ---
+    function renderMessages(data) {
+        const container = document.getElementById('chat-area');
+        let html = '';
+
+        data.forEach(msg => {
+            if (msg.type === 'time') {
+                html += `
+                        <div class="flex justify-center">
+                            <span class="text-xs text-gray-400 dark:text-warm-600 bg-gray-100 dark:bg-warm-800/50 px-2 py-1 rounded transition-colors">${msg.content}</span>
+                        </div>`;
+                return;
+            }
+
+            const isMe = msg.from === 'me';
+            const user = users[msg.from];
+            const alignClass = isMe ? 'flex-row-reverse' : '';
+            const bubbleClass = isMe ? 'bubble-self' : 'bubble-other';
+
+            // 群聊显示昵称
+            const nameHtml = (isGroupMode && !isMe)
+                ? `<span class="text-[10px] text-gray-400 dark:text-warm-500 mb-1 ml-1">${user.name}</span>`
+                : '';
+
+            // 内容渲染
+            let contentHtml = '';
+
+            // 1. 文本
+            if (msg.type === 'text') {
+                contentHtml = `<div class="${bubbleClass} p-3 rounded-2xl shadow-sm max-w-full text-[15px] leading-relaxed break-words border-transparent transition-colors">${msg.content}</div>`;
+            }
+            // 2. 图片
+            else if (msg.type === 'image') {
+                contentHtml = `<img src="${msg.content}" class="rounded-2xl shadow-sm border border-gray-100 dark:border-warm-700 w-48 bg-gray-200 dark:bg-warm-800 transition-colors">`;
+            }
+            // 3. 语音 (新增交互)
+            else if (msg.type === 'audio') {
+                const iconColor = isMe ? 'text-white/80' : 'text-gray-500 dark:text-warm-400';
+                contentHtml = `
+                        <div onclick="playAudio(this)" class="${bubbleClass} p-3 rounded-2xl shadow-sm flex items-center gap-3 min-w-[100px] cursor-pointer active:opacity-80 transition-opacity border-transparent">
+                            <i data-lucide="rss" class="w-4 h-4 rotate-45 ${iconColor}"></i>
+                            <div class="flex items-end gap-1 h-3 visualizer">
+                                <div class="w-1 h-1 wave-bar ${isMe?'bg-white':'bg-gray-500 dark:bg-warm-400'}"></div>
+                                <div class="w-1 h-2 wave-bar ${isMe?'bg-white':'bg-gray-500 dark:bg-warm-400'}"></div>
+                                <div class="w-1 h-3 wave-bar ${isMe?'bg-white':'bg-gray-500 dark:bg-warm-400'}"></div>
+                                <div class="w-1 h-2 wave-bar ${isMe?'bg-white':'bg-gray-500 dark:bg-warm-400'}"></div>
+                            </div>
+                            <span class="text-sm font-medium ml-auto">${msg.duration}"</span>
+                        </div>`;
+            }
+            // 4. 视频
+            else if (msg.type === 'video') {
+                contentHtml = `
+                        <div class="relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-warm-700 group cursor-pointer w-48 aspect-video bg-black transition-colors">
+                            <img src="${msg.cover}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-10 h-10 bg-black/30 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
+                                    <i data-lucide="play" class="w-4 h-4 text-white fill-current ml-0.5"></i>
+                                </div>
+                            </div>
+                            <span class="absolute bottom-2 right-2 text-[10px] text-white font-medium bg-black/50 px-1.5 py-0.5 rounded backdrop-blur-sm">${msg.duration}</span>
+                        </div>`;
+            }
+            // 5. 文件
+            else if (msg.type === 'file') {
+                const iconBg = isMe ? 'bg-white/20 text-white' : 'bg-orange-100 dark:bg-orange-900/30 text-orange-500';
+                const textColor = isMe ? 'text-white' : 'text-gray-900 dark:text-warm-100';
+                const subColor = isMe ? 'text-white/70' : 'text-gray-400 dark:text-warm-500';
+
+                contentHtml = `
+                        <div class="${bubbleClass} p-3 rounded-2xl shadow-md flex items-center gap-3 pr-4 border-transparent transition-colors min-w-[220px]">
+                            <div class="w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center shrink-0">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex flex-col overflow-hidden">
+                                <span class="text-sm font-medium truncate ${textColor}">${msg.fileName}</span>
+                                <span class="text-[10px] ${subColor}">${msg.size}</span>
+                            </div>
+                        </div>`;
+            }
+
+            html += `
+                    <div class="flex gap-3 msg-row ${alignClass}">
+                        <img src="${user.avatar}" class="w-10 h-10 rounded-xl object-cover shrink-0 bg-gray-200 dark:bg-warm-800">
+                        <div class="flex flex-col ${isMe ? 'items-end' : ''} max-w-[75%]">
+                            ${nameHtml}
+                            ${contentHtml}
+                        </div>
+                    </div>
+                `;
+        });
+
+        container.innerHTML = html;
+        lucide.createIcons();
+
+        // 自动滚动到底部
+        setTimeout(() => container.scrollTop = container.scrollHeight, 100);
+    }
+
+    // --- 交互功能 ---
+
+    function playAudio(el) {
+        // 停止上一个播放
+        if (playingAudioEl) {
+            playingAudioEl.classList.remove('playing');
+        }
+
+        // 如果是点击同一个，则停止
+        if (playingAudioEl === el) {
+            playingAudioEl = null;
+            return;
+        }
+
+        // 开始播放新动画
+        el.classList.add('playing');
+        playingAudioEl = el;
+
+        // 模拟播放结束后停止 (3秒)
+        setTimeout(() => {
+            if (playingAudioEl === el) {
+                el.classList.remove('playing');
+                playingAudioEl = null;
+            }
+        }, 3000);
+    }
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        const html = document.documentElement;
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+
+        if (isDarkMode) {
+            html.classList.add('dark');
+            body.className = "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-950 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            html.classList.remove('dark');
+            body.className = "bg-[#F5F7FA] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5";
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+
+    function toggleChatMode() {
+        isGroupMode = !isGroupMode;
+        const modeText = document.getElementById('mode-text');
+        const title = document.getElementById('chat-title');
+        const status = document.getElementById('chat-status');
+
+        if (isGroupMode) {
+            modeText.textContent = 'P2P';
+            title.textContent = '产品讨论组 (12)';
+            status.classList.add('opacity-0'); // 群聊不显示在线状态
+            renderMessages(groupMessages);
+        } else {
+            modeText.textContent = 'Group';
+            title.textContent = '林希';
+            status.classList.remove('opacity-0'); // 单聊显示在线状态
+            renderMessages(p2pMessages);
+        }
+    }
+
+    // 初始化
+    window.onload = () => {
+        renderMessages(p2pMessages);
+        lucide.createIcons();
+    };
+</script>
+</body>
+</html>

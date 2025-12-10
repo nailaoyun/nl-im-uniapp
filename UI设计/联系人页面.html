@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>通讯录 - 极简版</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: {
+                        warm: {
+                            950: '#0c0a09', 900: '#1c1917', 800: '#292524',
+                            700: '#44403c', 600: '#57534e', 500: '#78716c',
+                            200: '#e7e5e4', 100: '#f5f5f4',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* 抽屉 & 模态框动画 */
+        .drawer-enter { transform: translateX(-100%); }
+        .drawer-active { transform: translateX(0); }
+        .mask-enter { opacity: 0; pointer-events: none; }
+        .mask-active { opacity: 1; pointer-events: auto; }
+        .modal-enter { opacity: 0; transform: scale(0.95); pointer-events: none; }
+        .modal-active { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .bottom-sheet-enter { transform: translateY(100%); }
+        .bottom-sheet-active { transform: translateY(0); }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<!-- 主题切换 -->
+<div class="absolute right-6 top-6 md:right-20 md:top-auto flex flex-col gap-2 z-50">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 hover:scale-110 active:scale-95 transition-all border border-gray-100 dark:border-warm-700 ring-1 ring-black/5 dark:ring-white/10">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5 text-orange-400"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5 text-orange-200"></i>
+    </button>
+</div>
+
+<!-- 手机容器 -->
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5">
+
+    <!-- ================= 抽屉 (Drawer) - 已同步 ================= -->
+    <div id="drawer-mask" onclick="closeDrawer()" class="absolute inset-0 bg-black/20 z-40 backdrop-blur-[2px] smooth-transition mask-enter"></div>
+    <div id="drawer-content" class="absolute top-0 left-0 w-[75%] h-full z-50 flex flex-col smooth-transition drawer-enter bg-white dark:bg-warm-900 shadow-2xl border-r border-gray-100 dark:border-warm-800">
+        <!-- 头部信息 -->
+        <div class="p-8 pt-16 border-b border-gray-100 dark:border-warm-800">
+            <div class="w-16 h-16 rounded-full border border-gray-200 dark:border-warm-700 overflow-hidden mb-4 shadow-sm">
+                <img id="drawer-avatar" src="" class="w-full h-full object-cover">
+            </div>
+            <div id="drawer-name" class="text-xl font-bold text-gray-900 dark:text-warm-100"></div>
+            <div id="drawer-bio" class="text-sm text-gray-500 dark:text-warm-400 mt-1"></div>
+        </div>
+
+        <!-- 菜单列表 (修复：添加了这部分) -->
+        <div class="flex-1 p-4 space-y-1">
+            <div class="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-warm-800 flex items-center gap-3 cursor-pointer smooth-transition">
+                <i data-lucide="user" class="w-5 h-5 text-gray-500 dark:text-warm-400"></i>
+                <span class="text-sm text-gray-700 dark:text-warm-200">个人资料</span>
+            </div>
+            <div class="p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-warm-800 flex items-center gap-3 cursor-pointer smooth-transition">
+                <i data-lucide="settings" class="w-5 h-5 text-gray-500 dark:text-warm-400"></i>
+                <span class="text-sm text-gray-700 dark:text-warm-200">设置</span>
+            </div>
+        </div>
+
+        <!-- 底部退出 -->
+        <div class="p-6">
+            <button class="w-full py-2.5 rounded-lg bg-red-50 dark:bg-warm-800 text-red-500 text-sm font-medium hover:bg-red-100 dark:hover:bg-warm-700 transition-colors">退出登录</button>
+        </div>
+    </div>
+
+    <!-- ================= 顶部 Header (含 Tab 切换) ================= -->
+    <div class="bg-white dark:bg-warm-900 smooth-transition z-10 shrink-0 border-b border-gray-100 dark:border-warm-800 flex flex-col">
+
+        <!-- Row 1: Navbar -->
+        <div class="px-5 pt-12 pb-2 flex items-center justify-between">
+            <div class="flex items-center gap-3 active:opacity-70 transition-opacity" onclick="openDrawer()">
+                <div class="relative">
+                    <img id="nav-avatar" src="" class="w-8 h-8 rounded-lg object-cover bg-gray-100 dark:bg-warm-800 ring-1 ring-black/5 dark:ring-white/10">
+                    <div class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-warm-900"></div>
+                </div>
+                <span class="text-xl font-bold text-gray-900 dark:text-warm-100 tracking-tight">通讯录</span>
+            </div>
+            <!-- 添加好友按钮 -->
+            <button onclick="alert('跳转添加好友页面')" class="w-8 h-8 rounded-full bg-gray-50 dark:bg-warm-800 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-warm-700 active:scale-95 transition-all text-gray-600 dark:text-warm-200">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Row 2: Search Bar -->
+        <div class="px-5 pb-3">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400 dark:text-warm-500"></i>
+                </div>
+                <input type="text" id="search-input" placeholder="搜索联系人/群聊" class="w-full h-9 bg-gray-100 dark:bg-warm-800 text-gray-900 dark:text-warm-100 rounded-lg pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-orange-500/20 transition-all placeholder-gray-400 dark:placeholder-warm-600">
+            </div>
+        </div>
+
+        <!-- Row 3: Segmented Control (Tabs) -->
+        <div class="px-5 pb-3">
+            <div class="flex p-1 bg-gray-100 dark:bg-warm-800 rounded-lg relative h-9">
+                <!-- Tab Background Slider -->
+                <div id="tab-slider" class="absolute top-1 bottom-1 w-[32%] bg-white dark:bg-warm-700 rounded-md shadow-sm transition-all duration-300 ease-out left-1"></div>
+
+                <button onclick="switchTab('groups')" class="flex-1 relative z-10 text-xs font-medium text-gray-600 dark:text-warm-200 transition-colors" id="tab-btn-groups">分组</button>
+                <button onclick="switchTab('friends')" class="flex-1 relative z-10 text-xs font-medium text-gray-500 dark:text-warm-500 transition-colors" id="tab-btn-friends">好友</button>
+                <button onclick="switchTab('chats')" class="flex-1 relative z-10 text-xs font-medium text-gray-500 dark:text-warm-500 transition-colors" id="tab-btn-chats">群聊</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 内容区域 (Tabs Content) ================= -->
+    <div id="content-area" class="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-warm-900 relative z-0">
+        <!-- 动态内容 -->
+    </div>
+
+    <!-- ================= 索引条 (仅好友Tab显示) ================= -->
+    <div id="index-bar" class="fixed right-[20px] top-[55%] -translate-y-1/2 bg-gray-100/80 dark:bg-warm-800/80 backdrop-blur-sm rounded-full py-2 px-1 z-20 hidden flex-col gap-1 shadow-sm border border-gray-100 dark:border-warm-700/50">
+        <!-- 索引由JS生成 -->
+    </div>
+
+    <!-- ================= 底部操作弹窗 (Action Sheet) ================= -->
+    <div id="action-sheet-mask" onclick="closeActionSheet()" class="absolute inset-0 bg-black/20 z-40 backdrop-blur-[1px] mask-enter smooth-transition"></div>
+    <div id="action-sheet" class="absolute bottom-0 left-0 w-full bg-white dark:bg-warm-900 rounded-t-2xl z-50 bottom-sheet-enter smooth-transition overflow-hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div class="p-4 border-b border-gray-100 dark:border-warm-800 text-center text-sm font-medium text-gray-500 dark:text-warm-400">操作</div>
+        <div id="action-items">
+            <!-- 动态生成 -->
+        </div>
+        <div class="h-2 bg-gray-50 dark:bg-warm-950"></div>
+        <button onclick="closeActionSheet()" class="w-full py-3.5 text-base font-medium text-gray-800 dark:text-warm-200 active:bg-gray-50 dark:active:bg-warm-800">取消</button>
+    </div>
+
+    <!-- ================= 底部 Tab Bar ================= -->
+    <div class="shrink-0 h-[84px] bg-white dark:bg-warm-900 border-t border-gray-100 dark:border-warm-800 flex items-center justify-around pb-6 smooth-transition z-20">
+        <div onclick="alert('跳转消息')" class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500 hover:text-gray-900 dark:hover:text-warm-200 cursor-pointer transition-colors">
+            <i data-lucide="message-circle" class="w-6 h-6"></i>
+            <span class="text-[10px] font-medium">消息</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-indigo-600 dark:text-orange-500 cursor-pointer">
+            <i data-lucide="users" class="w-6 h-6 fill-current"></i>
+            <span class="text-[10px] font-bold">联系人</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500 hover:text-gray-900 dark:hover:text-warm-200 cursor-pointer transition-colors">
+            <i data-lucide="compass" class="w-6 h-6"></i>
+            <span class="text-[10px] font-medium">发现</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500 hover:text-gray-900 dark:hover:text-warm-200 cursor-pointer transition-colors">
+            <i data-lucide="user" class="w-6 h-6"></i>
+            <span class="text-[10px] font-medium">我的</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- 逻辑脚本 -->
+<script>
+    // --- 模拟数据 ---
+    const currentUser = { name: 'Kimi', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', desc: 'Stay hungry.' };
+
+    // 分组数据
+    const groupsData = [
+        { id: 0, name: '未分组', count: 2, contacts: [
+                { id: 101, name: '张三', desc: '前端开发', avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150' },
+                { id: 102, name: '李四', desc: 'UI设计', avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150' }
+            ]},
+        { id: 1, name: '特别关心', count: 1, contacts: [
+                { id: 103, name: '林希', desc: '周末爬山', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' }
+            ]},
+        { id: 2, name: '同事', count: 3, contacts: [
+                { id: 104, name: '王经理', desc: '项目负责人', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150' },
+                { id: 105, name: '小赵', desc: '后端', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150' },
+                { id: 106, name: '老陈', desc: '运维', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150' }
+            ]}
+    ];
+
+    // 好友A-Z数据
+    const friendsData = [
+        { letter: 'A', contacts: [{ name: 'Alan', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150' }] },
+        { letter: 'C', contacts: [{ name: '陈晨', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' }] },
+        { letter: 'L', contacts: [{ name: '林希', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' }, { name: '李四', avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150' }] },
+        { letter: 'W', contacts: [{ name: '王经理', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150' }, { name: '韦雁', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150' }] },
+        { letter: 'Z', contacts: [{ name: '张三', avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150' }] },
+    ];
+
+    // 群聊数据
+    const chatsData = [
+        { id: 'c1', name: '我创建的群', count: 1, list: [{ name: '家庭群', avatar: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=150' }] },
+        { id: 'c2', name: '我加入的群', count: 2, list: [{ name: '产品讨论组', avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150' }, { name: '技术交流', avatar: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=150' }] }
+    ];
+
+    let state = {
+        activeTab: 'groups',
+        collapsedIds: [0], // 默认收起ID为0的分组
+        isDarkMode: false
+    };
+
+    const els = {
+        contentArea: document.getElementById('content-area'),
+        tabSlider: document.getElementById('tab-slider'),
+        indexBar: document.getElementById('index-bar'),
+        actionSheet: document.getElementById('action-sheet'),
+        actionSheetMask: document.getElementById('action-sheet-mask'),
+        actionItems: document.getElementById('action-items')
+    };
+
+    window.onload = () => {
+        initUser();
+        renderContent();
+        initIndexBar();
+        lucide.createIcons();
+    };
+
+    function initUser() {
+        document.getElementById('nav-avatar').src = currentUser.avatar;
+        document.getElementById('drawer-avatar').src = currentUser.avatar;
+        document.getElementById('drawer-name').textContent = currentUser.name;
+        document.getElementById('drawer-bio').textContent = currentUser.desc;
+    }
+
+    // --- 标签页切换 ---
+    function switchTab(tab) {
+        state.activeTab = tab;
+
+        // 更新 Slider 位置
+        const positions = { 'groups': '1%', 'friends': '34%', 'chats': '67%' };
+        els.tabSlider.style.left = positions[tab];
+
+        // 更新文字颜色
+        ['groups', 'friends', 'chats'].forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            if (t === tab) {
+                btn.classList.remove('text-gray-500', 'dark:text-warm-500');
+                btn.classList.add('text-gray-900', 'dark:text-warm-100', 'font-bold');
+            } else {
+                btn.classList.remove('text-gray-900', 'dark:text-warm-100', 'font-bold');
+                btn.classList.add('text-gray-500', 'dark:text-warm-500');
+            }
+        });
+
+        // 控制索引条显示
+        els.indexBar.style.display = tab === 'friends' ? 'flex' : 'none';
+
+        renderContent();
+    }
+
+    // --- 内容渲染 ---
+    function renderContent() {
+        let html = '';
+
+        if (state.activeTab === 'groups') {
+            // 1. 功能卡片
+            html += `
+                <div class="grid grid-cols-2 gap-3 px-4 pt-4 mb-2">
+                    <div class="bg-white dark:bg-warm-800 p-3 rounded-2xl flex items-center gap-3 shadow-sm border border-gray-50 dark:border-warm-800/50 active:scale-95 transition-transform cursor-pointer">
+                        <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-500">
+                            <i data-lucide="user-plus" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-800 dark:text-warm-100">新朋友</span>
+                            <span class="text-[10px] text-red-500 font-medium">3位请求</span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-warm-800 p-3 rounded-2xl flex items-center gap-3 shadow-sm border border-gray-50 dark:border-warm-800/50 active:scale-95 transition-transform cursor-pointer">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-800 dark:text-warm-100">群通知</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分组标题 -->
+                <div class="px-5 py-3 flex justify-between items-center">
+                    <span class="text-sm font-bold text-gray-400 dark:text-warm-500 uppercase tracking-wider">我的分组</span>
+                    <button class="text-xs bg-indigo-50 dark:bg-warm-800 text-indigo-600 dark:text-orange-400 px-2 py-1 rounded-md font-medium">新建</button>
+                </div>
+                `;
+
+            // 2. 分组列表
+            groupsData.forEach(g => {
+                const isCollapsed = state.collapsedIds.includes(g.id);
+                html += `
+                    <div class="mb-2 mx-4 bg-gray-50 dark:bg-warm-800/40 rounded-xl overflow-hidden border border-gray-100 dark:border-warm-800/50">
+                        <div onclick="toggleCollapse(${g.id})" class="p-3 flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-warm-800/80 transition-colors">
+                            <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-4 h-4 text-gray-400"></i>
+                            <span class="flex-1 text-sm font-bold text-gray-700 dark:text-warm-200">${g.name}</span>
+                            <span class="text-xs text-gray-400">${g.count}</span>
+                        </div>
+                        ${!isCollapsed ? `
+                        <div class="pl-2">
+                            ${g.contacts.map(c => renderContactCell(c, true)).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                    `;
+            });
+
+        } else if (state.activeTab === 'friends') {
+            friendsData.forEach(group => {
+                html += `
+                    <div id="anchor-${group.letter}" class="px-5 py-2 text-xs font-bold text-indigo-500 dark:text-orange-500 bg-gray-50/50 dark:bg-warm-900 sticky top-0 backdrop-blur-sm z-10">${group.letter}</div>
+                    <div class="px-4">
+                        ${group.contacts.map(c => renderContactCell(c)).join('')}
+                    </div>
+                    `;
+            });
+
+        } else if (state.activeTab === 'chats') {
+            chatsData.forEach(g => {
+                const isCollapsed = state.collapsedIds.includes(g.id);
+                html += `
+                    <div class="mb-3 mx-4 bg-gray-50 dark:bg-warm-800/40 rounded-xl overflow-hidden border border-gray-100 dark:border-warm-800/50">
+                        <div onclick="toggleCollapse('${g.id}')" class="p-4 flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-warm-800/80 transition-colors">
+                            <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-4 h-4 text-gray-400"></i>
+                            <span class="flex-1 text-sm font-bold text-gray-700 dark:text-warm-200">${g.name}</span>
+                            <span class="text-xs text-gray-400">${g.count}</span>
+                        </div>
+                        ${!isCollapsed ? `
+                        <div class="pl-2">
+                            ${g.list.map(c => renderContactCell(c, true)).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                    `;
+            });
+        }
+
+        // 底部安全距离
+        html += '<div class="h-20"></div>';
+
+        els.contentArea.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // 渲染单行联系人/群组
+    function renderContactCell(c, isNested = false) {
+        return `
+            <div oncontextmenu="openActionSheet('${c.name}'); return false;" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-warm-700/50 cursor-pointer transition-colors active:scale-[0.99]">
+                <img src="${c.avatar}" class="w-10 h-10 rounded-lg bg-gray-200 dark:bg-warm-700 object-cover shadow-sm">
+                <div class="flex-1 min-w-0 ${isNested ? '' : 'border-b border-gray-50 dark:border-warm-800/50 pb-3'}">
+                    <div class="text-sm font-medium text-gray-900 dark:text-warm-100">${c.name}</div>
+                    ${c.desc ? `<div class="text-xs text-gray-400 dark:text-warm-500 truncate mt-0.5">${c.desc}</div>` : ''}
+                </div>
+            </div>
+            `;
+    }
+
+    function toggleCollapse(id) {
+        const idx = state.collapsedIds.indexOf(id);
+        if (idx === -1) state.collapsedIds.push(id);
+        else state.collapsedIds.splice(idx, 1);
+        renderContent();
+    }
+
+    // --- 索引条 ---
+    function initIndexBar() {
+        const letters = friendsData.map(d => d.letter);
+        els.indexBar.innerHTML = letters.map(l =>
+            `<div onclick="scrollToAnchor('${l}')" class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-warm-400 cursor-pointer hover:bg-indigo-100 dark:hover:bg-orange-900 hover:text-indigo-600 dark:hover:text-orange-400">${l}</div>`
+        ).join('');
+    }
+
+    function scrollToAnchor(id) {
+        const el = document.getElementById(`anchor-${id}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // --- 底部操作菜单 ---
+    function openActionSheet(name) {
+        const items = [
+            { name: `修改 ${name} 的备注`, color: 'text-gray-800 dark:text-warm-200' },
+            { name: '移动到分组', color: 'text-gray-800 dark:text-warm-200' },
+            { name: '删除联系人', color: 'text-red-500' }
+        ];
+
+        els.actionItems.innerHTML = items.map(item => `
+                <button class="w-full py-3.5 text-sm font-medium ${item.color} active:bg-gray-50 dark:active:bg-warm-800 border-b border-gray-50 dark:border-warm-800/50 last:border-0">
+                    ${item.name}
+                </button>
+            `).join('');
+
+        els.actionSheetMask.classList.remove('mask-enter');
+        els.actionSheetMask.classList.add('mask-active');
+        els.actionSheet.classList.remove('bottom-sheet-enter');
+        els.actionSheet.classList.add('bottom-sheet-active');
+    }
+
+    function closeActionSheet() {
+        els.actionSheetMask.classList.remove('mask-active');
+        els.actionSheetMask.classList.add('mask-enter');
+        els.actionSheet.classList.remove('bottom-sheet-active');
+        els.actionSheet.classList.add('bottom-sheet-enter');
+    }
+
+    // --- 主题切换 ---
+    function toggleTheme() {
+        state.isDarkMode = !state.isDarkMode;
+        const html = document.documentElement;
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+
+        if (state.isDarkMode) {
+            html.classList.add('dark');
+            body.className = "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-900 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            html.classList.remove('dark');
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5";
+        }
+        renderContent(); // Re-render to update dynamic classes
+    }
+
+    // 抽屉逻辑 (同之前)
+    function openDrawer() {
+        document.getElementById('drawer-mask').classList.remove('mask-enter');
+        document.getElementById('drawer-mask').classList.add('mask-active');
+        document.getElementById('drawer-content').classList.remove('drawer-enter');
+        document.getElementById('drawer-content').classList.add('drawer-active');
+    }
+    function closeDrawer() {
+        document.getElementById('drawer-mask').classList.remove('mask-active');
+        document.getElementById('drawer-mask').classList.add('mask-enter');
+        document.getElementById('drawer-content').classList.remove('drawer-active');
+        document.getElementById('drawer-content').classList.add('drawer-enter');
+    }
+</script>
+</body>
+</html>

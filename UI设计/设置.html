@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>设置 - 极简版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { warm: { 950: '#0c0a09', 900: '#1c1917', 800: '#292524', 700: '#44403c', 200: '#e7e5e4' } } } } }
+    </script>
+    <style> .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); } </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<div class="absolute right-6 top-6 z-50">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 border border-gray-100 dark:border-warm-700">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5"></i>
+    </button>
+</div>
+
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5 bg-[#F5F7FA] dark:bg-[#121212]">
+
+    <!-- 导航 -->
+    <div class="px-4 pt-12 pb-4 flex items-center gap-2 bg-transparent relative z-10">
+        <i data-lucide="chevron-left" class="w-6 h-6 text-gray-800 dark:text-warm-200 cursor-pointer" onclick="history.back()"></i>
+        <span class="text-lg font-bold text-gray-900 dark:text-warm-100">设置</span>
+    </div>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar px-4 pb-8 space-y-6">
+
+        <!-- 分组 1: 账号 -->
+        <div>
+            <div class="text-xs text-gray-400 dark:text-warm-500 ml-3 mb-2 font-medium">账号</div>
+            <div class="bg-white dark:bg-warm-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-warm-800/50">
+                <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">账号管理</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                </div>
+                <div class="flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">隐私设置</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分组 2: 通用 -->
+        <div>
+            <div class="text-xs text-gray-400 dark:text-warm-500 ml-3 mb-2 font-medium">通用</div>
+            <div class="bg-white dark:bg-warm-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-warm-800/50">
+                <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">新消息通知</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                </div>
+                <!-- 跳转到主题设置 -->
+                <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer" onclick="window.location.href='ThemeSetting.html'">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">主题设置</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400">自动</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">通用设置</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                </div>
+                <div class="flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer" onclick="alert('清理完成')">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">清理缓存</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400">12.5MB</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分组 3: 关于 -->
+        <div>
+            <div class="bg-white dark:bg-warm-900 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-warm-800/50">
+                <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">帮助与反馈</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                </div>
+                <div class="flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                    <span class="text-sm font-medium text-gray-800 dark:text-warm-200">关于我们</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400">v1.0.0</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 退出登录 -->
+        <button class="w-full py-3.5 bg-white dark:bg-warm-900 rounded-2xl text-red-500 font-bold text-sm shadow-sm border border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors">
+            退出登录
+        </button>
+
+    </div>
+</div>
+
+<script>
+    let isDarkMode = false;
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.documentElement.classList.toggle('dark');
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+        if (isDarkMode) {
+            body.className = "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-950 border-warm-800 ring-white/10 shadow-black/50 bg-[#121212]";
+        } else {
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5 bg-[#F5F7FA]";
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+    window.onload = () => lucide.createIcons();
+</script>
+</body>
+</html>

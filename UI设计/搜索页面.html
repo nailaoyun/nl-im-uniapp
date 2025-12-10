@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>搜索 - 极简版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        // 暖色调暗黑颜色 (Warm Stone)
+                        warm: {
+                            950: '#0c0a09', // 极深背景
+                            900: '#1c1917', // 手机背景
+                            800: '#292524', // 卡片/抽屉背景
+                            700: '#44403c', // 边框/分割线
+                            600: '#57534e', // 辅助图标
+                            200: '#e7e5e4', // 主要文字
+                            100: '#f5f5f4', // 亮色文字
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .smooth-transition {
+            transition-property: background-color, border-color, color, fill, stroke, opacity;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<!-- 外部切换开关 -->
+<div class="absolute right-6 top-6 z-50">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 hover:scale-110 active:scale-95 transition-all border border-gray-100 dark:border-warm-700 ring-1 ring-black/5 dark:ring-white/10" title="切换主题">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5 text-orange-400"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5 text-orange-200"></i>
+    </button>
+</div>
+
+<!-- 手机容器 -->
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5 bg-[#F5F7FA] dark:bg-warm-900">
+
+    <!-- 搜索头 -->
+    <div class="bg-white dark:bg-warm-900 px-4 pt-12 pb-3 flex items-center gap-3 border-b border-gray-50 dark:border-warm-800/50 z-10 transition-colors duration-300">
+        <div class="flex-1 bg-gray-100 dark:bg-warm-800 rounded-xl h-9 flex items-center px-3 gap-2 transition-colors duration-300">
+            <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+            <input type="text" placeholder="搜索" class="flex-1 bg-transparent text-sm text-gray-900 dark:text-warm-200 outline-none placeholder-gray-400" id="search-input" autofocus>
+            <i data-lucide="x-circle" class="w-4 h-4 text-gray-400 hidden cursor-pointer" id="clear-btn"></i>
+        </div>
+        <span class="text-sm text-indigo-600 dark:text-orange-400 font-medium cursor-pointer" onclick="history.back()">取消</span>
+    </div>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-5 bg-[#F5F7FA] dark:bg-warm-900 transition-colors duration-300">
+
+        <!-- 历史记录 -->
+        <div id="history-section">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-sm font-bold text-gray-900 dark:text-warm-100 transition-colors">搜索历史</span>
+                <i data-lucide="trash-2" class="w-4 h-4 text-gray-400 cursor-pointer hover:text-red-500 transition-colors"></i>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1.5 bg-white dark:bg-warm-800 text-xs text-gray-600 dark:text-warm-300 rounded-lg shadow-sm border border-gray-100 dark:border-warm-800/50 cursor-pointer hover:bg-gray-50 dark:hover:bg-warm-700 transition-colors">林希</span>
+                <span class="px-3 py-1.5 bg-white dark:bg-warm-800 text-xs text-gray-600 dark:text-warm-300 rounded-lg shadow-sm border border-gray-100 dark:border-warm-800/50 cursor-pointer hover:bg-gray-50 dark:hover:bg-warm-700 transition-colors">产品讨论组</span>
+                <span class="px-3 py-1.5 bg-white dark:bg-warm-800 text-xs text-gray-600 dark:text-warm-300 rounded-lg shadow-sm border border-gray-100 dark:border-warm-800/50 cursor-pointer hover:bg-gray-50 dark:hover:bg-warm-700 transition-colors">文件助手</span>
+            </div>
+        </div>
+
+        <!-- 搜索结果 (默认隐藏) -->
+        <div id="result-section" class="hidden">
+            <div class="text-xs text-gray-400 mb-3 ml-2">联系人</div>
+            <div class="bg-white dark:bg-warm-800 rounded-2xl overflow-hidden shadow-sm border border-gray-50 dark:border-warm-800/50 transition-colors duration-300">
+                <div class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-warm-700 cursor-pointer transition-colors border-b border-gray-50 dark:border-warm-800/50">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" class="w-10 h-10 rounded-lg bg-gray-200 dark:bg-warm-700 object-cover">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-gray-900 dark:text-warm-200"><span class="text-indigo-600 dark:text-orange-400">林</span>希</span>
+                        <span class="text-xs text-gray-400">ID: 2023433</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-warm-700 cursor-pointer transition-colors">
+                    <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=100" class="w-10 h-10 rounded-lg bg-gray-200 dark:bg-warm-700 object-cover">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-gray-900 dark:text-warm-200">森<span class="text-indigo-600 dark:text-orange-400">林</span>公园小分队</span>
+                        <span class="text-xs text-gray-400">包含: 林希</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const input = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-btn');
+    const historySec = document.getElementById('history-section');
+    const resultSec = document.getElementById('result-section');
+
+    input.addEventListener('input', (e) => {
+        if (e.target.value.trim().length > 0) {
+            clearBtn.classList.remove('hidden');
+            historySec.classList.add('hidden');
+            resultSec.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+            historySec.classList.remove('hidden');
+            resultSec.classList.add('hidden');
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        historySec.classList.remove('hidden');
+        resultSec.classList.add('hidden');
+    });
+
+    // 添加主题切换逻辑
+    let isDarkMode = false;
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        const html = document.documentElement;
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+
+        if (isDarkMode) {
+            html.classList.add('dark');
+            // 使用 Warm 950 作为背景，Warm 900 作为手机壳
+            body.className = "bg-warm-950 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-900 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            html.classList.remove('dark');
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5 bg-[#F5F7FA]";
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+
+    window.onload = () => lucide.createIcons();
+</script>
+</body>
+</html>

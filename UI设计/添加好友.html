@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加好友 - 暖色暗黑版</title>
+
+    <!-- 1. 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 2. 引入 Lucide 图标库 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- 3. 配置 Tailwind 主题颜色 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        // 定义暖色调暗黑颜色 (Stone)
+                        warm: {
+                            950: '#0c0a09', // 极深背景
+                            900: '#1c1917', // 手机背景
+                            800: '#292524', // 卡片背景
+                            700: '#44403c', // 边框/分割线
+                            200: '#e7e5e4', // 主要文字
+                            400: '#a8a29e', // 次要文字
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* 隐藏滚动条但保留功能 */
+        .custom-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .custom-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 加载动画 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom {
+            animation: spin 1s linear infinite;
+        }
+
+        /* 简单的淡入动画 */
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 状态切换时的平滑过渡 */
+        .smooth-transition {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 500ms;
+        }
+    </style>
+</head>
+<body class="bg-gray-200 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+    <!-- ==========================================
+         外部切换开关 (位于手机容器外)
+    ========================================== -->
+    <div class="absolute right-6 top-6 md:right-20 md:top-auto flex flex-col gap-2 z-50">
+        <button
+            onclick="toggleTheme()"
+            class="w-14 h-14 bg-white dark:bg-warm-800 rounded-full shadow-xl flex items-center justify-center text-gray-600 dark:text-orange-300 hover:scale-110 active:scale-95 transition-all border-4 border-white dark:border-warm-700 ring-1 ring-black/5"
+            title="切换日/夜模式"
+        >
+            <i data-lucide="sun" class="block dark:hidden w-6 h-6 text-orange-400"></i>
+            <i data-lucide="moon" class="hidden dark:block w-6 h-6 text-orange-200"></i>
+        </button>
+        <span class="text-xs font-bold text-center text-gray-500 dark:text-warm-400 mt-1 uppercase tracking-wider">Theme</span>
+    </div>
+
+
+    <!-- ==========================================
+         手机容器
+    ========================================== -->
+    <div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5">
+
+        <!-- ================= 顶部背景区域 (Header) ================= -->
+        <div class="relative w-full h-[360px] shrink-0 rounded-bl-[60px] rounded-br-[280px] overflow-hidden z-0 shadow-sm smooth-transition">
+
+           <!-- 1. 背景渐变：日间蓝紫 vs 夜间暖橙 -->
+           <!-- Day: Blue/Purple, Night: Deep Warm Brown/Orange/Red -->
+           <div id="header-gradient" class="absolute inset-0 bg-gradient-to-br from-[#4b6cb7] to-[#8E9EFE] smooth-transition opacity-100"></div>
+
+           <!-- 2. 梦幻光影 -->
+           <div id="blob-1" class="absolute top-[-50px] left-[-50px] w-[350px] h-[350px] bg-[#3B4FA8] opacity-80 blur-[70px] rounded-full mix-blend-multiply smooth-transition"></div>
+           <div id="blob-2" class="absolute top-[20px] right-[-60px] w-[300px] h-[300px] bg-[#82E1FF] opacity-40 blur-[60px] rounded-full mix-blend-overlay smooth-transition"></div>
+
+           <!-- 3. 装饰线条 -->
+           <div class="absolute top-[20px] right-[-20px] w-[150px] h-[150px] border border-white/10 rounded-full"></div>
+        </div>
+
+        <!-- ================= 顶部内容层 (Foreground) ================= -->
+        <div class="absolute top-0 left-0 w-full h-[360px] flex flex-col z-10 pointer-events-none">
+
+            <!-- 导航栏 -->
+            <div class="px-6 pt-12 pb-2 flex justify-between items-center text-white pointer-events-auto">
+                <button class="p-2 -ml-2 rounded-full hover:bg-white/10 transition active:scale-95">
+                    <i data-lucide="chevron-left" class="w-7 h-7"></i>
+                </button>
+                <span class="text-lg font-bold tracking-wide opacity-95">添加好友</span>
+                <button class="p-2 -mr-2 rounded-full hover:bg-white/10 transition active:scale-95">
+                    <i data-lucide="more-horizontal" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- 大标题 -->
+            <div class="px-6 mt-8 flex-1">
+                <h1 class="text-[36px] font-black italic tracking-wide mb-1 text-white drop-shadow-md smooth-transition"
+                    style="font-family: -apple-system, sans-serif;">
+                    发现新朋友
+                </h1>
+                <p id="subtitle" class="text-sm font-bold opacity-80 tracking-widest uppercase text-blue-50 smooth-transition">Expanding your circle</p>
+            </div>
+
+            <!-- 搜索框 -->
+            <div class="px-6 pb-14 pointer-events-auto">
+                <div id="search-box" class="relative flex items-center w-full h-12 rounded-full shadow-xl transition-all duration-300 active:scale-[0.99] border bg-white border-gray-50 shadow-blue-900/10 text-gray-700">
+                    <div id="search-icon-wrapper" class="pl-5 pr-3 text-gray-400 smooth-transition">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </div>
+                    <input
+                        type="text"
+                        id="search-input"
+                        class="w-full h-full bg-transparent outline-none placeholder-gray-400 text-base font-medium smooth-transition"
+                        placeholder="请输入账号/手机号"
+                        autocomplete="off"
+                    />
+                    <button
+                        id="clear-btn"
+                        onclick="clearSearch()"
+                        class="mr-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-warm-700 hover:text-gray-600 transition hidden"
+                    >
+                        <i data-lucide="x" class="w-4 h-4 fill-current"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 下半部分内容列表 (Dynamic Content) ================= -->
+        <div id="content-area" class="flex-1 overflow-y-auto custom-scrollbar relative z-0 mt-[-40px] pt-2 px-4">
+            <!-- Content will be injected here by JS -->
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+         JavaScript 逻辑
+    ========================================== -->
+    <script>
+        // --- 数据 ---
+        const MOCK_USERS = [
+            { id: '3803408', name: '王权', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
+            { id: '2023433', name: '珊宋', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
+            { id: '2010001', name: '韦雁', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=150&q=80' },
+            { id: '2010333', name: '顾祢', avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80' },
+            { id: '2011234', name: '林希', avatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&w=150&q=80' },
+            { id: '2015678', name: '陈晨', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80' },
+        ];
+
+        // --- 状态 ---
+        let state = {
+            view: 'initial', // initial, loading, empty, results
+            query: '',
+            addedIds: [],
+            isDarkMode: false
+        };
+
+        // --- DOM 元素引用 ---
+        const els = {
+            body: document.getElementById('body-bg'),
+            phone: document.getElementById('phone-container'),
+            headerGradient: document.getElementById('header-gradient'),
+            blob1: document.getElementById('blob-1'),
+            blob2: document.getElementById('blob-2'),
+            subtitle: document.getElementById('subtitle'),
+            searchBox: document.getElementById('search-box'),
+            searchInput: document.getElementById('search-input'),
+            searchIconWrapper: document.getElementById('search-icon-wrapper'),
+            clearBtn: document.getElementById('clear-btn'),
+            contentArea: document.getElementById('content-area'),
+        };
+
+        // --- 初始化 ---
+        window.onload = () => {
+            renderContent();
+            lucide.createIcons();
+
+            // 绑定输入事件
+            els.searchInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                state.query = val;
+
+                if (val.length > 0) {
+                    els.clearBtn.classList.remove('hidden');
+                    setState('loading');
+
+                    // 模拟防抖搜索
+                    if (window.searchTimer) clearTimeout(window.searchTimer);
+                    window.searchTimer = setTimeout(() => {
+                        if (val === '0000') {
+                            setState('empty');
+                        } else {
+                            setState('results');
+                        }
+                    }, 1200);
+                } else {
+                    els.clearBtn.classList.add('hidden');
+                    setState('initial');
+                }
+            });
+        };
+
+        // --- 核心功能函数 ---
+
+        function setState(view) {
+            state.view = view;
+            renderContent();
+        }
+
+        function clearSearch() {
+            state.query = '';
+            els.searchInput.value = '';
+            els.clearBtn.classList.add('hidden');
+            setState('initial');
+        }
+
+        function toggleAdd(id) {
+            if (!state.addedIds.includes(id)) {
+                state.addedIds.push(id);
+                // 重新渲染当前列表项的按钮状态
+                const btn = document.getElementById(`btn-${id}`);
+                if (btn) {
+                    btn.textContent = '已发送';
+                    if (state.isDarkMode) {
+                         btn.className = "px-5 py-1.5 rounded-full text-sm font-bold transition-all duration-300 bg-warm-700 text-warm-400 cursor-default";
+                    } else {
+                         btn.className = "px-5 py-1.5 rounded-full text-sm font-bold transition-all duration-300 bg-gray-100 text-gray-400 cursor-default";
+                    }
+                    btn.disabled = true;
+                }
+            }
+        }
+
+        function toggleTheme() {
+            state.isDarkMode = !state.isDarkMode;
+            const isDark = state.isDarkMode;
+            const html = document.documentElement;
+
+            // 1. 切换 HTML class 以触发 Tailwind dark: 样式
+            if (isDark) {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+
+            // 2. 切换外部背景
+            els.body.className = isDark
+                ? "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative"
+                : "bg-gray-200 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+
+            // 3. 切换手机容器样式 (Warm Stone vs White)
+            els.phone.className = isDark
+                ? "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-900 border-warm-800 ring-white/10 shadow-black/50"
+                : "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5";
+
+            // 4. 切换头部渐变 (Warm Ember vs Cool Blue)
+            // 暗色模式：使用 暖橙/深红/棕色 渐变
+            els.headerGradient.className = isDark
+                ? "absolute inset-0 bg-gradient-to-br from-[#7c2d12] to-[#b45309] smooth-transition opacity-90" // Warm Ember
+                : "absolute inset-0 bg-gradient-to-br from-[#4b6cb7] to-[#8E9EFE] smooth-transition opacity-100"; // Cool Blue
+
+            // 5. 切换光影 (Blob Colors)
+            els.blob1.className = isDark
+                ? "absolute top-[-50px] left-[-50px] w-[350px] h-[350px] bg-[#451a03] opacity-80 blur-[70px] rounded-full mix-blend-multiply smooth-transition"
+                : "absolute top-[-50px] left-[-50px] w-[350px] h-[350px] bg-[#3B4FA8] opacity-80 blur-[70px] rounded-full mix-blend-multiply smooth-transition";
+
+            els.blob2.className = isDark
+                ? "absolute top-[20px] right-[-60px] w-[300px] h-[300px] bg-[#fdba74] opacity-30 blur-[60px] rounded-full mix-blend-overlay smooth-transition"
+                : "absolute top-[20px] right-[-60px] w-[300px] h-[300px] bg-[#82E1FF] opacity-40 blur-[60px] rounded-full mix-blend-overlay smooth-transition";
+
+            // 6. 切换副标题文字
+            els.subtitle.className = isDark
+                ? "text-sm font-bold opacity-80 tracking-widest uppercase text-orange-100 smooth-transition"
+                : "text-sm font-bold opacity-80 tracking-widest uppercase text-blue-50 smooth-transition";
+
+            // 7. 切换搜索框
+            els.searchBox.className = isDark
+                ? "relative flex items-center w-full h-12 rounded-full shadow-xl transition-all duration-300 active:scale-[0.99] border bg-warm-800 border-warm-700 shadow-black/20 text-warm-200"
+                : "relative flex items-center w-full h-12 rounded-full shadow-xl transition-all duration-300 active:scale-[0.99] border bg-white border-gray-50 shadow-blue-900/10 text-gray-700";
+
+            els.searchIconWrapper.className = isDark ? "pl-5 pr-3 text-warm-400 smooth-transition" : "pl-5 pr-3 text-gray-400 smooth-transition";
+            els.searchInput.className = isDark
+                ? "w-full h-full bg-transparent outline-none placeholder-warm-500 text-base font-medium smooth-transition"
+                : "w-full h-full bg-transparent outline-none placeholder-gray-400 text-base font-medium smooth-transition";
+
+            // 重新渲染内容区以更新列表样式
+            renderContent();
+
+            // 刷新图标
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+
+        // --- 渲染器 ---
+
+        function renderContent() {
+            const isDark = state.isDarkMode;
+            let html = '';
+
+            // 样式配置 helper
+            const styles = {
+                scanCard: isDark
+                    ? "bg-gradient-to-r from-[#ea580c] to-[#f97316] shadow-lg shadow-orange-900/30 ring-white/10 hover:brightness-110"
+                    : "bg-gradient-to-r from-[#5B7FFF] to-[#8C9EFF] shadow-xl shadow-blue-500/20 ring-white/50 hover:brightness-105",
+                scanIconBg: isDark ? "bg-black/20 border-white/20" : "bg-white/20 border-white/40",
+                listTitle: isDark ? "text-warm-400" : "text-gray-400",
+                cardBg: isDark ? "bg-warm-800 border-warm-700 shadow-none hover:bg-warm-700" : "bg-white border-gray-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg",
+                textMain: isDark ? "text-warm-200" : "text-gray-800",
+                textSub: isDark ? "text-warm-400" : "text-gray-400",
+                avatarBorder: isDark ? "border-warm-700" : "border-gray-100",
+                btnAdd: isDark
+                    ? "bg-gradient-to-r from-[#c2410c] to-[#ea580c] text-white shadow-md shadow-orange-900/40 active:scale-95 hover:shadow-orange-500/30"
+                    : "bg-gradient-to-r from-[#5B7FFF] to-[#748EFF] text-white shadow-md shadow-blue-500/30 active:scale-95 hover:shadow-blue-500/50",
+                btnDisabled: isDark
+                    ? "bg-warm-700 text-warm-400 cursor-default"
+                    : "bg-gray-100 text-gray-400 cursor-default",
+                loadingBg: isDark ? "bg-warm-800 border-warm-700" : "bg-white border-gray-100 shadow-lg shadow-gray-200/50",
+                loadingText: isDark ? "text-warm-400" : "text-gray-400",
+                loadingSpinner: isDark ? "border-t-[#f97316]" : "border-t-[#5B7FFF]"
+            };
+
+            // 生成用户列表 HTML 字符串
+            const generateUserList = (users, delayBase = 0) => {
+                return users.map((user, index) => {
+                    const isAdded = state.addedIds.includes(user.id);
+                    return `
+                    <div class="w-full rounded-[20px] p-4 flex items-center transition-all duration-300 border ${styles.cardBg} fade-in-up"
+                         style="animation-delay: ${(index + delayBase) * 50}ms">
+                        <div class="w-12 h-12 rounded-full overflow-hidden mr-4 shrink-0 border ${styles.avatarBorder}">
+                            <img src="${user.avatar}" class="w-full h-full object-cover" alt="${user.name}">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-base ${styles.textMain}">${user.name}</h3>
+                            <p class="text-xs mt-0.5 font-medium ${styles.textSub}">ID: ${user.id}</p>
+                        </div>
+                        <button
+                            id="btn-${user.id}"
+                            onclick="toggleAdd('${user.id}')"
+                            ${isAdded ? 'disabled' : ''}
+                            class="px-5 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${isAdded ? styles.btnDisabled : styles.btnAdd}">
+                            ${isAdded ? '已发送' : '添加'}
+                        </button>
+                    </div>`;
+                }).join('');
+            };
+
+            // --- 视图逻辑 ---
+
+            if (state.view === 'initial') {
+                html = `
+                    <div class="fade-in-up duration-500">
+                        <!-- 扫一扫 -->
+                        <div class="w-full h-24 mb-6 rounded-[28px] flex items-center px-6 cursor-pointer transition-all duration-300 ring-1 ${styles.scanCard}">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center border mr-4 backdrop-blur-sm ${styles.scanIconBg}">
+                                <i data-lucide="scan-line" class="text-white w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1 text-white">
+                                <h3 class="text-lg font-bold tracking-wide">扫一扫</h3>
+                                <p class="text-xs opacity-90 font-medium">扫描二维码名片</p>
+                            </div>
+                            <div class="opacity-80">
+                                <i data-lucide="chevron-left" class="rotate-180 text-white w-5 h-5"></i>
+                            </div>
+                        </div>
+
+                        <!-- 推荐列表 -->
+                        <div class="mb-2 pl-1">
+                            <h3 class="text-xs font-bold uppercase tracking-wider mb-3 transition-colors ${styles.listTitle}">为您推荐</h3>
+                        </div>
+                        <div class="w-full space-y-3 pb-8 px-1">
+                            ${generateUserList(MOCK_USERS)}
+                        </div>
+                    </div>
+                `;
+            } else if (state.view === 'loading') {
+                html = `
+                    <div class="mt-8 mx-2 rounded-[24px] p-8 min-h-[200px] flex flex-col items-center justify-center fade-in-up duration-300 border ${styles.loadingBg}">
+                        <div class="w-10 h-10 border-4 rounded-full animate-spin-custom mb-3 border-opacity-30 ${styles.loadingSpinner}"></div>
+                        <p class="text-sm font-medium ${styles.loadingText}">正在搜索...</p>
+                    </div>
+                `;
+            } else if (state.view === 'empty') {
+                html = `
+                    <div class="mt-8 mx-2 rounded-[24px] p-8 min-h-[200px] flex flex-col items-center justify-center fade-in-up duration-300 border ${styles.loadingBg}">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3 ${isDark ? 'bg-warm-900' : 'bg-gray-50'}">
+                            <i data-lucide="search" class="w-6 h-6 text-gray-400"></i>
+                        </div>
+                        <p class="text-sm font-medium ${styles.loadingText}">未找到该用户</p>
+                    </div>
+                `;
+            } else if (state.view === 'results') {
+                html = `
+                    <div class="mt-4 fade-in-up duration-500">
+                        <div class="mb-2 pl-1">
+                            <h3 class="text-xs font-bold uppercase tracking-wider mb-3 ${styles.listTitle}">搜索结果</h3>
+                        </div>
+                        <div class="w-full space-y-3 pb-8 px-1">
+                            ${generateUserList(MOCK_USERS.slice(0, 3), 1)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 更新 DOM
+            els.contentArea.innerHTML = html;
+            lucide.createIcons();
+        }
+
+    </script>
+</body>
+</html>

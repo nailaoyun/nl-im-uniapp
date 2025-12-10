@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>个人中心 - 极简版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        warm: { 950: '#0c0a09', 900: '#1c1917', 800: '#292524', 700: '#44403c', 200: '#e7e5e4' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<div class="absolute right-6 top-6 z-50">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 border border-gray-100 dark:border-warm-700">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5"></i>
+    </button>
+</div>
+
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5">
+
+    <!-- 头部大卡片 -->
+    <div class="bg-white dark:bg-warm-900 rounded-b-[40px] shadow-sm pb-8 pt-12 px-6 relative z-10 transition-colors duration-300">
+        <div class="flex justify-between items-center mb-8">
+            <span class="text-2xl font-extrabold text-gray-900 dark:text-warm-200">我的</span>
+            <i data-lucide="settings" class="w-6 h-6 text-gray-400 dark:text-warm-200"></i>
+        </div>
+
+        <div class="flex items-center gap-5 mb-8">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="w-20 h-20 rounded-full border-4 border-gray-50 dark:border-warm-800 shadow-md">
+            <div class="flex-1">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-warm-200 mb-1">Kimi</h3>
+                <p class="text-sm text-gray-400">账号: kimi_2024</p>
+            </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
+        </div>
+
+        <div class="flex justify-between px-4">
+            <div class="text-center">
+                <div class="text-lg font-bold text-gray-900 dark:text-warm-200">12</div>
+                <div class="text-xs text-gray-400 mt-1">动态</div>
+            </div>
+            <div class="text-center">
+                <div class="text-lg font-bold text-gray-900 dark:text-warm-200">85</div>
+                <div class="text-xs text-gray-400 mt-1">好友</div>
+            </div>
+            <div class="text-center">
+                <div class="text-lg font-bold text-gray-900 dark:text-warm-200">3</div>
+                <div class="text-xs text-gray-400 mt-1">收藏</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 菜单列表 -->
+    <div class="flex-1 bg-gray-50 dark:bg-[#0c0a09] px-5 pt-6 transition-colors duration-300">
+        <div class="bg-white dark:bg-warm-900 rounded-2xl px-4 py-2 shadow-sm transition-colors duration-300">
+            <div class="flex items-center py-4 border-b border-gray-50 dark:border-warm-800/50">
+                <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center mr-4 text-white">
+                    <i data-lucide="aperture" class="w-5 h-5"></i>
+                </div>
+                <span class="flex-1 text-sm font-medium text-gray-900 dark:text-warm-200">我的动态</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+            </div>
+            <div class="flex items-center py-4 border-b border-gray-50 dark:border-warm-800/50">
+                <div class="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center mr-4 text-white">
+                    <i data-lucide="star" class="w-5 h-5"></i>
+                </div>
+                <span class="flex-1 text-sm font-medium text-gray-900 dark:text-warm-200">我的收藏</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+            </div>
+            <div class="flex items-center py-4">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center mr-4 text-white">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                </div>
+                <span class="flex-1 text-sm font-medium text-gray-900 dark:text-warm-200">相册</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="absolute bottom-0 w-full h-[84px] bg-white dark:bg-warm-900 border-t border-gray-100 dark:border-warm-800 flex items-center justify-around pb-6 smooth-transition z-20">
+        <div class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500">
+            <i data-lucide="message-circle" class="w-6 h-6"></i><span class="text-[10px] font-medium">消息</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500">
+            <i data-lucide="users" class="w-6 h-6"></i><span class="text-[10px] font-medium">联系人</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-400 dark:text-warm-500">
+            <i data-lucide="compass" class="w-6 h-6"></i><span class="text-[10px] font-medium">发现</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-indigo-600 dark:text-orange-500">
+            <i data-lucide="user" class="w-6 h-6 fill-current"></i><span class="text-[10px] font-bold">我的</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isDarkMode = false;
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.documentElement.classList.toggle('dark');
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+        if (isDarkMode) {
+            body.className = "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-950 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5";
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+    window.onload = () => lucide.createIcons();
+</script>
+</body>
+</html>

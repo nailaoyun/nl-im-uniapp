@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>资料详情 - 极简版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { warm: { 950: '#0c0a09', 900: '#1c1917', 800: '#292524', 200: '#e7e5e4' } } } } }
+    </script>
+    <style> .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); } </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative" id="body-bg">
+
+<div class="absolute right-6 top-6 z-50 flex flex-col gap-2">
+    <button onclick="toggleTheme()" class="w-12 h-12 bg-white dark:bg-warm-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-orange-300 border border-gray-100 dark:border-warm-700">
+        <i data-lucide="sun" class="block dark:hidden w-5 h-5"></i>
+        <i data-lucide="moon" class="hidden dark:block w-5 h-5"></i>
+    </button>
+    <!-- 模拟状态切换 -->
+    <button onclick="toggleFriendStatus()" class="w-12 h-12 bg-indigo-500 text-white rounded-full shadow-lg flex items-center justify-center font-bold text-xs border border-white/20" title="切换好友状态">
+        Status
+    </button>
+</div>
+
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5">
+
+    <!-- 视差背景 -->
+    <div class="absolute top-0 w-full h-[300px] overflow-hidden z-0">
+        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400" class="w-full h-full object-cover blur-xl scale-110 opacity-70">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-white dark:to-[#0c0a09]"></div>
+    </div>
+
+    <!-- 导航 -->
+    <div class="relative z-10 px-4 pt-12 pb-2 flex justify-between">
+        <i data-lucide="chevron-left" class="w-7 h-7 text-gray-800 dark:text-warm-200 cursor-pointer" onclick="history.back()"></i>
+        <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-800 dark:text-warm-200"></i>
+    </div>
+
+    <!-- 内容主体 -->
+    <div class="relative z-10 px-6 pt-8 flex-1 overflow-y-auto">
+        <!-- 身份卡片 -->
+        <div class="flex flex-col items-center mb-8">
+            <div class="w-32 h-32 rounded-full border-[6px] border-white dark:border-warm-800 shadow-xl overflow-hidden mb-4">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200" class="w-full h-full object-cover">
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-warm-100 mb-1">林希</h2>
+            <div class="flex gap-2 mb-4">
+                <span class="text-xs bg-gray-100 dark:bg-warm-800 text-gray-500 dark:text-warm-400 px-2 py-0.5 rounded">ID: 2023433</span>
+                <span class="text-xs bg-gray-100 dark:bg-warm-800 text-gray-500 dark:text-warm-400 px-2 py-0.5 rounded">北京</span>
+            </div>
+            <p class="text-sm text-gray-500 text-center leading-relaxed max-w-[200px]">周末喜欢去爬山 🏔️ 热爱摄影和前端技术。</p>
+        </div>
+
+        <!-- 好友状态显示的信息 -->
+        <div id="friend-info" class="bg-white dark:bg-warm-900 rounded-2xl shadow-sm border border-gray-50 dark:border-warm-800/50 overflow-hidden mb-6 transition-all duration-300">
+            <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50 active:bg-gray-50 dark:active:bg-warm-800 transition-colors cursor-pointer">
+                <span class="text-sm font-medium text-gray-700 dark:text-warm-200">设置备注</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">林希</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                </div>
+            </div>
+            <div class="flex items-center justify-between p-4 border-b border-gray-50 dark:border-warm-800/50">
+                <span class="text-sm font-medium text-gray-700 dark:text-warm-200">置顶聊天</span>
+                <div class="w-10 h-6 bg-gray-200 dark:bg-warm-700 rounded-full relative cursor-pointer"><div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div></div>
+            </div>
+            <div class="flex items-center justify-between p-4">
+                <span class="text-sm font-medium text-gray-700 dark:text-warm-200">消息免打扰</span>
+                <div class="w-10 h-6 bg-indigo-500 rounded-full relative cursor-pointer"><div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div></div>
+            </div>
+        </div>
+
+        <!-- 非好友状态显示的信息 (简介) -->
+        <div id="stranger-info" class="hidden bg-white dark:bg-warm-900 rounded-2xl shadow-sm border border-gray-50 dark:border-warm-800/50 overflow-hidden mb-6 p-5">
+            <h3 class="text-sm font-bold text-gray-900 dark:text-warm-100 mb-3">个人简介</h3>
+            <div class="flex gap-2 mb-2">
+                <span class="text-xs text-gray-400 w-12">来源</span>
+                <span class="text-xs text-gray-700 dark:text-warm-300">通过群聊"技术交流群"添加</span>
+            </div>
+            <div class="flex gap-2">
+                <span class="text-xs text-gray-400 w-12">签名</span>
+                <span class="text-xs text-gray-700 dark:text-warm-300">Stay hungry, stay foolish.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部悬浮操作栏 -->
+    <div class="bg-white dark:bg-warm-900 border-t border-gray-100 dark:border-warm-800 px-6 py-4 pb-8 rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-20">
+
+        <!-- 场景 A: 是好友 -->
+        <div id="dock-friend" class="transition-all duration-300">
+            <div class="flex gap-4 mb-4">
+                <button class="flex-1 h-12 rounded-2xl bg-gray-100 dark:bg-warm-800 text-gray-800 dark:text-warm-200 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-warm-700 transition-colors">
+                    <i data-lucide="phone" class="w-5 h-5"></i>
+                </button>
+                <button class="flex-[2] h-12 rounded-2xl bg-indigo-600 dark:bg-orange-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 dark:shadow-orange-900/30 hover:opacity-90 active:scale-95 transition-all">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    <span>发消息</span>
+                </button>
+                <button class="flex-1 h-12 rounded-2xl bg-gray-100 dark:bg-warm-800 text-gray-800 dark:text-warm-200 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-warm-700 transition-colors">
+                    <i data-lucide="video" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="text-center">
+                <span class="text-xs text-gray-400 underline cursor-pointer hover:text-red-500">删除好友</span>
+            </div>
+        </div>
+
+        <!-- 场景 B: 非好友 -->
+        <div id="dock-stranger" class="hidden transition-all duration-300">
+            <button class="w-full h-12 rounded-2xl bg-indigo-600 dark:bg-orange-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 dark:shadow-orange-900/30 hover:opacity-90 active:scale-95 transition-all" onclick="alert('发送好友请求')">
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+                <span>添加到通讯录</span>
+            </button>
+        </div>
+
+    </div>
+
+</div>
+<script>
+    let isDarkMode = false;
+    let isFriend = true; // 默认是好友
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.documentElement.classList.toggle('dark');
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+        if (isDarkMode) {
+            body.className = "bg-[#0c0a09] flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-warm-950 border-warm-800 ring-white/10 shadow-black/50";
+        } else {
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4 transition-colors duration-500 overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[40px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col smooth-transition bg-white border-white ring-black/5";
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+
+    function toggleFriendStatus() {
+        isFriend = !isFriend;
+        const friendInfo = document.getElementById('friend-info');
+        const strangerInfo = document.getElementById('stranger-info');
+        const dockFriend = document.getElementById('dock-friend');
+        const dockStranger = document.getElementById('dock-stranger');
+
+        if (isFriend) {
+            // 显示好友界面
+            friendInfo.classList.remove('hidden');
+            strangerInfo.classList.add('hidden');
+            dockFriend.classList.remove('hidden');
+            dockStranger.classList.add('hidden');
+        } else {
+            // 显示陌生人界面
+            friendInfo.classList.add('hidden');
+            strangerInfo.classList.remove('hidden');
+            dockFriend.classList.add('hidden');
+            dockStranger.classList.remove('hidden');
+        }
+    }
+
+    window.onload = () => lucide.createIcons();
+</script>
+</body>
+</html>
