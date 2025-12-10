@@ -1,15 +1,16 @@
 <template>
   <view class="search-page" :class="{ dark: isDark }">
-    <!-- 搜索栏 -->
+    <!-- 搜索栏 (增加 safe-area-top) -->
     <view class="search-header safe-area-top">
       <wd-search
-        v-model="keyword"
-        placeholder="搜索"
-        show-action
-        focus
-        @search="doSearch"
-        @cancel="goBack"
-        @clear="clearKeyword"
+          v-model="keyword"
+          placeholder="搜索"
+          show-action
+          focus
+          @search="doSearch"
+          @cancel="goBack"
+          @clear="clearKeyword"
+          custom-style="background: transparent;"
       />
     </view>
 
@@ -20,14 +21,14 @@
         <text class="clear" @click="clearHistory">清空</text>
       </view>
       <view class="history-tags">
-        <wd-tag
-          v-for="(item, index) in history"
-          :key="index"
-          round
-          @click="searchHistory(item)"
+        <view
+            v-for="(item, index) in history"
+            :key="index"
+            class="history-tag"
+            @click="searchHistory(item)"
         >
           {{ item }}
-        </wd-tag>
+        </view>
       </view>
     </view>
 
@@ -41,25 +42,26 @@
       <wd-status-tip v-else-if="results.length === 0 && searched" tip="未找到相关结果" />
 
       <template v-else-if="results.length > 0">
-        <wd-cell
-          v-for="item in results"
-          :key="item.id"
-          :title="item.name"
-          :label="item.desc"
-          is-link
-          @click="goDetail(item)"
-        >
-          <template #icon>
-            <view class="result-avatar">
-              <app-avatar
+        <view class="result-list">
+          <view
+              v-for="item in results"
+              :key="item.id"
+              class="result-item"
+              @click="goDetail(item)"
+          >
+            <app-avatar
                 :src="item.avatar"
                 :name="item.name"
-                :size="80"
-                radius="8rpx"
-              />
+                :size="88"
+                radius="12rpx"
+            />
+            <view class="result-info">
+              <text class="name">{{ item.name }}</text>
+              <text class="desc">{{ item.desc || '暂无签名' }}</text>
             </view>
-          </template>
-        </wd-cell>
+            <wd-icon name="arrow-right" size="32rpx" color="var(--text-tertiary)" />
+          </view>
+        </view>
       </template>
     </view>
   </view>
@@ -161,60 +163,67 @@ function goDetail(item: User) {
 .search-page {
   min-height: 100vh;
   background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
 }
 
 .search-header {
   background: var(--bg-content);
+  padding: 10rpx 20rpx;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .safe-area-top {
-  padding-top: var(--status-bar-height, 0);
+  padding-top: var(--status-bar-height);
 }
 
 .history-section {
-  background: var(--bg-content);
-  margin-top: 20rpx;
   padding: 30rpx;
-
   .section-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 24rpx;
-
-    .title {
-      font-size: 28rpx;
-      color: var(--text-tertiary);
-    }
-
-    .clear {
-      font-size: 28rpx;
-      color: var(--text-tertiary);
-    }
+    display: flex; justify-content: space-between; margin-bottom: 24rpx;
+    .title { font-size: 28rpx; font-weight: 600; color: var(--text-primary); }
+    .clear { font-size: 26rpx; color: var(--text-tertiary); }
   }
-
   .history-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
+    display: flex; flex-wrap: wrap; gap: 20rpx;
+    .history-tag {
+      background: var(--bg-content); padding: 10rpx 24rpx; border-radius: 30rpx;
+      font-size: 26rpx; color: var(--text-secondary);
+      &:active { opacity: 0.7; }
+    }
   }
 }
 
 .results-section {
-  background: var(--bg-content);
-  margin-top: 20rpx;
+  flex: 1;
+  background: var(--bg-page);
 }
 
 .loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60rpx;
-  color: var(--text-tertiary);
-  gap: 20rpx;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding-top: 100rpx; color: var(--text-tertiary); gap: 20rpx;
 }
 
-.result-avatar {
-  margin-right: 24rpx;
+.result-list {
+  padding: 20rpx;
+}
+
+.result-item {
+  display: flex; align-items: center;
+  background: var(--bg-content);
+  padding: 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
+  transition: opacity 0.2s;
+
+  &:active { opacity: 0.8; }
+
+  .result-info {
+    flex: 1; margin-left: 24rpx; display: flex; flex-direction: column;
+    .name { font-size: 32rpx; font-weight: 600; color: var(--text-primary); }
+    .desc { font-size: 24rpx; color: var(--text-tertiary); margin-top: 6rpx; }
+  }
 }
 </style>

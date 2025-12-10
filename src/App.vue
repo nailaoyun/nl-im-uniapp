@@ -13,7 +13,7 @@ const conversationStore = useConversationStore()
 function handleGlobalMessage(message: ChatMessage) {
   // 忽略信令消息
   if (message.message_type === 6) return
-  
+
   // 更新会话列表
   const isSelf = message.sender_user_id === authStore.user?.id
   conversationStore.handleMessageUpdate(message, isSelf, false)
@@ -23,7 +23,7 @@ function handleGlobalMessage(message: ChatMessage) {
 async function initWebSocket() {
   const userId = authStore.user?.id
   if (!userId) return
-  
+
   try {
     await wsManager.connect(userId)
     // 注册全局消息处理器
@@ -44,7 +44,7 @@ onShow(async () => {
   console.log('App Show')
   // 检查登录状态
   const isAuth = await authStore.checkAuth()
-  
+
   // 如果已登录，初始化 WebSocket
   if (isAuth && authStore.user?.id) {
     initWebSocket()
@@ -56,6 +56,11 @@ onShow(async () => {
 @import '@/styles/variables.scss';
 @import '@/styles/common.scss';
 
+/* 移除全局硬编码 padding，交由各页面 nav-bar 处理 */
+#app {
+  /* padding-top: calc(var(--status-bar-height) + 40rpx); REMOVED */
+}
+
 /* 全局样式 */
 page {
   background-color: var(--bg-page);
@@ -64,11 +69,11 @@ page {
   font-size: 28rpx;
   line-height: 1.5;
 
-  // wot-design-uni 主题色覆盖
-  --wot-color-theme: #07c160;
-  --wot-color-success: #07c160;
-  --wot-color-danger: #fa5151;
-  --wot-color-warning: #ffc300;
+  // wot-design-uni 主题色覆盖 (使用 CSS 变量)
+  --wot-color-theme: var(--color-primary);
+  --wot-color-success: var(--color-success);
+  --wot-color-danger: var(--color-danger);
+  --wot-color-warning: var(--color-warning);
 }
 
 /* 暗色模式下的 wot-design-uni 组件适配 */

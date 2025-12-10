@@ -59,53 +59,49 @@ page {
   // 开关
   --switch-on: #07c160;
   --switch-off: #e5e5e5;
+
+  // 状态栏高度变量 (小程序/App会自动注入，H5需fallback)
+  --status-bar-height: 20px;
 }
 
-// 暗色主题 (支持多种选择器以兼容 H5)
+// 暗色主题 (Dark Mode - 高级灰优化)
 page.dark,
 .dark,
 html.dark,
 body.dark {
-  // 背景色
-  --bg-page: #111111;
-  --bg-content: #1e1e1e;
-  --bg-hover: #2a2a2a;
+  // 背景色 - 使用 #1c1c1e 替代纯黑
+  --bg-page: #1c1c1e;
+  --bg-content: #2c2c2e;
+  --bg-hover: #3a3a3c;
   --bg-mask: rgba(0, 0, 0, 0.7);
-  --bg-card: #1e1e1e;
+  --bg-card: #2c2c2e;
 
   // 文字颜色
-  --text-primary: #e5e5e5;
-  --text-secondary: #a0a0a0;
-  --text-tertiary: #666666;
-  --text-placeholder: #444444;
+  --text-primary: #f2f2f7; // 柔和白
+  --text-secondary: #aeaeb2;
+  --text-tertiary: #636366;
+  --text-placeholder: #505055;
   --text-link: #7b9ad0;
 
   // 边框颜色
-  --border-color: #333333;
-  --divider-color: #2a2a2a;
+  --border-color: #38383a;
+  --divider-color: #38383a;
 
   // 导航栏
-  --nav-bg: #1a1a1a;
+  --nav-bg: #1c1c1e;
   --nav-text: #ffffff;
 
   // 标签栏
-  --tabbar-bg: #1a1a1a;
+  --tabbar-bg: #1c1c1e;
 
   // 消息气泡
-  --bubble-self: #2d5c2e;
-  --bubble-other: #2a2a2a;
+  --bubble-self: #2d5c2e; // 深绿
+  --bubble-other: #2c2c2e;
   --bubble-system: rgba(255, 255, 255, 0.1);
 
   // 搜索框
-  --search-bg: #2a2a2a;
+  --search-bg: #2c2c2e;
 
   // 开关
-  --switch-off: #444444;
+  --switch-off: #3a3a3c;
 }
-
-
-
-
-
-
-
