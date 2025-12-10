@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>通话系统演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: {
+                        warm: { 950: '#0c0a09', 900: '#1c1917', 800: '#292524', 700: '#44403c', 200: '#e7e5e4' }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* 核心动画定义 */
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.3); opacity: 0; } }
+        @keyframes ripple { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(2.5); opacity: 0; } }
+        @keyframes pop-in { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* 组件样式 */
+        .glow-bg { position: absolute; width: 500px; height: 500px; border-radius: 50%; filter: blur(80px); opacity: 0.4; animation: blob 10s infinite ease-in-out; }
+        .avatar-ripple { position: absolute; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; inset: -10px; animation: ripple 2s infinite linear; }
+        .delay-500 { animation-delay: 0.5s; }
+
+        .video-grid { display: grid; gap: 8px; padding: 12px; height: 100%; align-content: start; box-sizing: border-box; }
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr 1fr; grid-auto-rows: min-content; }
+
+        /* 最小化悬浮窗 */
+        .minimized-window {
+            position: absolute; top: 120px; right: 16px; width: 100px; height: 140px;
+            background: #1c1c1e; border-radius: 16px; border: 1px solid rgba(255,255,255,0.15);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 60; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+        }
+        .minimized-window:active { transform: scale(0.95); }
+
+        /* 头像堆叠 */
+        .avatar-stack-item { border: 2px solid white; border-radius: 50%; margin-left: -12px; position: relative; z-index: 1; }
+        .dark .avatar-stack-item { border-color: #292524; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans overflow-hidden relative" id="body-bg">
+
+<!-- 调试控制台 -->
+<div class="absolute top-4 left-4 z-50 flex flex-col gap-2 bg-white/90 dark:bg-warm-900/90 p-3 rounded-2xl shadow-xl backdrop-blur-md text-xs border border-gray-100 dark:border-white/10 w-44 transition-all hover:opacity-100 opacity-80">
+    <div class="font-bold mb-2 text-gray-500 dark:text-gray-400 px-1">调试操作</div>
+    <button onclick="triggerIncoming('group')" class="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-3 py-2 rounded-lg hover:bg-indigo-100 transition-colors dark:bg-indigo-900/30 dark:text-indigo-300"><i data-lucide="phone-incoming" class="w-3 h-3"></i> 来电 (群聊)</button>
+    <button onclick="triggerIncoming('p2p')" class="flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-300"><i data-lucide="user" class="w-3 h-3"></i> 来电 (单聊)</button>
+    <button onclick="showMemberSelector()" class="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-2 rounded-lg hover:bg-emerald-100 transition-colors dark:bg-emerald-900/30 dark:text-emerald-300"><i data-lucide="plus-circle" class="w-3 h-3"></i> 发起通话</button>
+    <div class="h-px bg-gray-200 dark:bg-white/10 my-1"></div>
+    <button onclick="toggleTheme()" class="flex items-center gap-2 bg-gray-100 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors dark:bg-white/10 dark:text-gray-300"><i data-lucide="moon" class="w-3 h-3"></i> 切换主题</button>
+</div>
+
+<!-- 手机容器 -->
+<div id="phone-container" class="relative w-full max-w-[375px] h-[812px] rounded-[48px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col bg-[#F5F7FA] border-white ring-black/5 transition-colors duration-500">
+
+    <!-- ================= 基础界面 (模拟聊天页) ================= -->
+    <div class="flex-1 flex flex-col relative z-0 bg-[#F5F7FA] dark:bg-[#121212] transition-colors">
+        <!-- 导航栏 -->
+        <div class="h-[100px] bg-white/80 dark:bg-warm-900/80 backdrop-blur-md flex items-end pb-3 px-5 justify-between border-b border-gray-100 dark:border-warm-800 transition-colors z-20">
+            <div class="flex items-center gap-1">
+                <i data-lucide="chevron-left" class="w-6 h-6 text-gray-800 dark:text-warm-200"></i>
+                <span class="font-bold text-lg text-gray-900 dark:text-warm-100">产品设计组 (12)</span>
+            </div>
+            <i data-lucide="more-horizontal" class="w-6 h-6 text-gray-800 dark:text-warm-200"></i>
+        </div>
+
+        <!-- 1. 群聊通话横幅 (GroupCallBanner) -->
+        <!-- 逻辑：显示正在进行的通话，点击加入 -->
+        <div id="call-banner" class="hidden mx-4 my-3 p-3 bg-white dark:bg-warm-800 rounded-2xl shadow-sm border border-gray-100 dark:border-warm-700/50 flex items-center justify-between animate-[slide-up_0.3s_ease-out]">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center relative overflow-hidden shrink-0 shadow-lg shadow-emerald-500/20">
+                    <div class="absolute inset-0 bg-white/20 animate-[pulse-ring_2s_infinite]"></div>
+                    <i data-lucide="video" class="w-5 h-5 text-white relative z-10"></i>
+                </div>
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-gray-800 dark:text-warm-100">通话进行中</span>
+                        <span class="text-[10px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium border border-emerald-100 dark:border-emerald-800">5人</span>
+                    </div>
+                    <!-- 头像堆叠 -->
+                    <div class="flex items-center mt-1 pl-3">
+                        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50" class="w-5 h-5 rounded-full object-cover avatar-stack-item">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50" class="w-5 h-5 rounded-full object-cover avatar-stack-item">
+                        <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50" class="w-5 h-5 rounded-full object-cover avatar-stack-item">
+                        <div class="w-5 h-5 rounded-full bg-gray-100 dark:bg-warm-700 border-2 border-white dark:border-warm-800 flex items-center justify-center text-[8px] text-gray-500 dark:text-gray-400 font-bold ml-[-8px] relative z-10">+2</div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="joinCallFromBanner()" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 transition-all">加入</button>
+        </div>
+
+        <!-- 聊天内容占位 -->
+        <div class="flex-1 p-4 space-y-6 opacity-40 overflow-hidden pointer-events-none">
+            <div class="flex gap-3">
+                <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+                <div class="bg-white dark:bg-warm-800 p-3 rounded-2xl rounded-tl-none w-48 h-12 shadow-sm"></div>
+            </div>
+            <div class="flex gap-3 flex-row-reverse">
+                <div class="w-10 h-10 bg-indigo-300 rounded-full"></div>
+                <div class="bg-indigo-500 p-3 rounded-2xl rounded-tr-none w-40 h-20 shadow-sm"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 2. 成员选择弹窗 (GroupCallModal) ================= -->
+    <div id="member-modal-mask" class="absolute inset-0 bg-black/40 z-30 hidden backdrop-blur-[2px] transition-opacity duration-300 opacity-0" onclick="closeMemberSelector()"></div>
+    <div id="member-modal" class="absolute bottom-0 w-full bg-white dark:bg-warm-900 rounded-t-[32px] z-40 transform translate-y-full transition-transform duration-300 flex flex-col max-h-[85%] shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+        <!-- Header -->
+        <div class="p-5 border-b border-gray-50 dark:border-warm-800 flex justify-between items-center">
+            <div>
+                <div class="font-bold text-lg text-gray-900 dark:text-warm-100">发起群通话</div>
+                <div class="text-xs text-gray-400 mt-0.5">选择成员加入通话</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gray-50 dark:bg-warm-800 flex items-center justify-center cursor-pointer hover:bg-gray-100 dark:hover:bg-warm-700 transition-colors" onclick="closeMemberSelector()">
+                <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="px-5 py-3 bg-gray-50/50 dark:bg-warm-900">
+            <div class="bg-gray-100 dark:bg-warm-800 h-9 rounded-xl flex items-center px-3 gap-2">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                <input type="text" placeholder="搜索成员" class="bg-transparent text-sm outline-none flex-1 dark:text-warm-100 placeholder-gray-400">
+            </div>
+        </div>
+
+        <!-- Member List -->
+        <div class="flex-1 overflow-y-auto p-5 pb-20">
+            <div class="grid grid-cols-4 gap-y-6 gap-x-2" id="member-grid">
+                <!-- JS 填充 -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="absolute bottom-0 w-full p-4 border-t border-gray-50 dark:border-warm-800 flex justify-between items-center bg-white dark:bg-warm-900 pb-8 rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+            <span class="text-sm text-gray-500">已选择 <span class="font-bold text-indigo-600 dark:text-indigo-400 text-lg mx-1 transition-all" id="selected-count">0</span> 人</span>
+            <div class="flex gap-3">
+                <button class="w-12 h-12 rounded-2xl bg-gray-50 dark:bg-warm-800 flex items-center justify-center text-gray-600 dark:text-warm-300 border border-gray-100 dark:border-warm-700 hover:bg-gray-100 active:scale-95 transition-all">
+                    <i data-lucide="phone" class="w-5 h-5"></i>
+                </button>
+                <button onclick="startGroupCall()" class="h-12 px-6 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 active:scale-95 transition-all gap-2 font-bold">
+                    <i data-lucide="video" class="w-5 h-5"></i>
+                    <span>开始</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 3. 全屏来电 (GroupCallIncoming) ================= -->
+    <div id="incoming-overlay" class="absolute inset-0 z-50 bg-[#0f172a] hidden flex-col items-center justify-center overflow-hidden">
+        <!-- 动态呼吸背景 -->
+        <div class="glow-bg bg-purple-600 top-[-20%] left-[-20%] animate-[blob_8s_infinite]"></div>
+        <div class="glow-bg bg-blue-600 bottom-[-20%] right-[-20%] animate-[blob_8s_infinite_reverse]"></div>
+        <div class="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-3xl"></div>
+
+        <div class="relative z-10 flex flex-col items-center w-full mt-[-80px] animate-[pop-in_0.5s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+            <!-- 头像波纹 -->
+            <div class="relative w-36 h-36 mb-8">
+                <div class="avatar-ripple animate-[ripple_2s_infinite]"></div>
+                <div class="avatar-ripple animate-[ripple_2s_infinite] delay-500"></div>
+                <img id="incoming-avatar" src="" class="w-full h-full rounded-full border-[6px] border-white/10 shadow-2xl relative z-10 object-cover">
+                <!-- 类型图标 -->
+                <div class="absolute bottom-1 right-1 bg-emerald-500 w-9 h-9 rounded-full flex items-center justify-center border-4 border-[#0f172a] z-20 shadow-lg">
+                    <i id="incoming-type-icon" data-lucide="video" class="w-4 h-4 text-white"></i>
+                </div>
+            </div>
+
+            <h2 class="text-3xl font-bold text-white mb-2 tracking-tight" id="incoming-name">User</h2>
+            <div class="flex items-center gap-2 mb-16">
+                <p class="text-white/60 text-sm" id="incoming-desc">邀请你加入群视频通话</p>
+                <div class="flex gap-1">
+                    <span class="w-1 h-1 bg-white/60 rounded-full animate-bounce"></span>
+                    <span class="w-1 h-1 bg-white/60 rounded-full animate-bounce delay-75"></span>
+                    <span class="w-1 h-1 bg-white/60 rounded-full animate-bounce delay-150"></span>
+                </div>
+            </div>
+
+            <!-- 底部操作按钮 -->
+            <div class="flex items-center gap-16 w-full justify-center px-10">
+                <!-- 拒绝 -->
+                <div class="flex flex-col items-center gap-3 group cursor-pointer" onclick="rejectCall()">
+                    <div class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/10 text-white group-hover:bg-red-500/20 group-active:scale-95 transition-all">
+                        <i data-lucide="phone-off" class="w-7 h-7"></i>
+                    </div>
+                    <span class="text-xs text-white/50 group-hover:text-white/80 transition-colors">拒绝</span>
+                </div>
+
+                <!-- 接听 -->
+                <div class="flex flex-col items-center gap-3 group cursor-pointer" onclick="acceptCall()">
+                    <div class="w-20 h-20 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.4)] group-hover:bg-emerald-400 group-hover:scale-105 group-active:scale-95 transition-all">
+                        <i data-lucide="phone" class="w-9 h-9 fill-current text-white animate-[pulse_2s_infinite]"></i>
+                    </div>
+                    <span class="text-xs text-white/50 group-hover:text-white/80 transition-colors">接听</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 4. 群通话窗口 (GroupCallWindow) ================= -->
+    <div id="group-call-window" class="absolute inset-0 z-50 bg-[#1c1c1e] hidden flex-col transition-all duration-500 ease-in-out">
+        <!-- Header (渐变遮罩) -->
+        <div class="h-[100px] pt-12 px-5 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent absolute top-0 w-full z-10 header-section pointer-events-none">
+            <div class="flex items-center gap-3 text-white pointer-events-auto">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]"></div>
+                <span class="text-sm font-medium tracking-wide">群聊通话</span>
+                <span class="text-xs text-white/50 font-mono pl-3 border-l border-white/10" id="call-timer">00:00</span>
+            </div>
+            <div class="w-9 h-9 bg-white/10 backdrop-blur rounded-full flex items-center justify-center cursor-pointer hover:bg-white/20 pointer-events-auto active:scale-90 transition-all" onclick="minimizeCall()">
+                <i data-lucide="minimize-2" class="w-4 h-4 text-white"></i>
+            </div>
+        </div>
+
+        <!-- Video Grid (核心区域) -->
+        <div class="flex-1 pt-0 pb-[120px] overflow-y-auto custom-scrollbar bg-[#1c1c1e]">
+            <div class="video-grid grid-2" id="video-container" style="padding-top: 100px;">
+                <!-- JS 生成 -->
+            </div>
+        </div>
+
+        <!-- Controls (底部控制栏) -->
+        <div class="h-[160px] absolute bottom-0 w-full bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-center justify-center gap-10 pb-8 controls-section z-20">
+            <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="toggleBtnState(this)">
+                <div class="w-14 h-14 rounded-full bg-white/10 border border-white/5 flex items-center justify-center hover:bg-white/20 backdrop-blur-md transition-all group-active:scale-95 icon-bg">
+                    <i data-lucide="mic" class="w-6 h-6 text-white icon-svg"></i>
+                </div>
+                <span class="text-[10px] text-white/50">静音</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="endCall()">
+                <div class="w-18 h-18 rounded-[28px] bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/30 hover:bg-red-600 transition-all group-active:scale-95 px-6 py-4">
+                    <i data-lucide="phone-off" class="w-8 h-8 text-white fill-current"></i>
+                </div>
+                <span class="text-[10px] text-white/50">挂断</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="toggleBtnState(this)">
+                <div class="w-14 h-14 rounded-full bg-white/10 border border-white/5 flex items-center justify-center hover:bg-white/20 backdrop-blur-md transition-all group-active:scale-95 icon-bg">
+                    <i data-lucide="video" class="w-6 h-6 text-white icon-svg"></i>
+                </div>
+                <span class="text-[10px] text-white/50">摄像头</span>
+            </div>
+        </div>
+
+        <!-- 最小化内容 -->
+        <div class="minimized-content hidden w-full h-full flex flex-col items-center justify-center bg-[#2c2c2e]" onclick="restoreCall()">
+            <i data-lucide="video" class="w-8 h-8 text-emerald-500 mb-2"></i>
+            <span class="text-white/90 text-xs font-mono" id="mini-timer">00:00</span>
+            <div class="absolute bottom-2 w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+        </div>
+    </div>
+
+    <!-- ================= 5. 单聊通话窗口 (CallWindow) ================= -->
+    <div id="p2p-call-window" class="absolute inset-0 z-50 bg-[#111] hidden flex-col transition-all duration-300">
+        <!-- 模糊背景 -->
+        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800" class="absolute inset-0 w-full h-full object-cover opacity-40 blur-2xl scale-110">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90"></div>
+
+        <div class="relative z-10 flex-1 flex flex-col items-center pt-28 header-section">
+            <div class="w-32 h-32 rounded-full p-1 border border-white/10 shadow-2xl mb-6 relative">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200" class="w-full h-full rounded-full object-cover">
+                <!-- 波纹动画 -->
+                <div class="absolute inset-0 border border-white/20 rounded-full animate-[ping_2s_infinite]"></div>
+            </div>
+            <h2 class="text-3xl font-bold text-white mb-2 tracking-tight drop-shadow-md">林希</h2>
+            <p class="text-white/60 text-sm font-medium tracking-wide" id="p2p-status">正在通话中...</p>
+            <p class="text-white font-mono text-xl mt-4 opacity-90" id="p2p-timer">00:00</p>
+
+            <div class="absolute top-14 right-5 w-9 h-9 bg-white/10 backdrop-blur rounded-full flex items-center justify-center cursor-pointer hover:bg-white/20 active:scale-90 transition-all" onclick="minimizeCall(true)">
+                <i data-lucide="minimize-2" class="w-5 h-5 text-white"></i>
+            </div>
+        </div>
+
+        <!-- 控制栏 -->
+        <div class="relative z-10 pb-16 flex justify-center gap-10 controls-section">
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="toggleBtnState(this)">
+                <div class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-lg border border-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all icon-bg">
+                    <i data-lucide="mic-off" class="w-7 h-7 text-white icon-svg"></i>
+                </div>
+                <span class="text-xs text-white/50">静音</span>
+            </div>
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="endCall(true)">
+                <div class="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-500/30 group-hover:bg-red-600 transition-all group-active:scale-95">
+                    <i data-lucide="phone-off" class="w-9 h-9 text-white fill-current"></i>
+                </div>
+                <span class="text-xs text-white/50">挂断</span>
+            </div>
+            <div class="flex flex-col items-center gap-3 cursor-pointer group" onclick="toggleBtnState(this)">
+                <div class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-lg border border-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all icon-bg">
+                    <i data-lucide="volume-2" class="w-7 h-7 text-white icon-svg"></i>
+                </div>
+                <span class="text-xs text-white/50">免提</span>
+            </div>
+        </div>
+
+        <div class="minimized-content hidden w-full h-full flex flex-col items-center justify-center bg-[#2c2c2e]" onclick="restoreCall(true)">
+            <i data-lucide="phone" class="w-8 h-8 text-green-500 mb-2"></i>
+            <span class="text-white/90 text-xs font-mono" id="p2p-mini-timer">00:00</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- 模拟数据 ---
+    const members = [
+        { id: 1, name: '林希', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
+        { id: 2, name: '韦雁', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100' },
+        { id: 3, name: '陈晨', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
+        { id: 4, name: '王经理', avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100' },
+        { id: 5, name: '小赵', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100' },
+        { id: 6, name: 'Allen', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100' },
+        { id: 7, name: 'Sarah', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
+        { id: 8, name: '我', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100', isSelf: true }
+    ];
+
+    let state = {
+        callType: null, // 'group' or 'p2p'
+        timer: null,
+        seconds: 0,
+        selectedMembers: new Set(),
+        isDark: false
+    };
+
+    const els = {
+        banner: document.getElementById('call-banner'),
+        modalMask: document.getElementById('member-modal-mask'),
+        modal: document.getElementById('member-modal'),
+        memberGrid: document.getElementById('member-grid'),
+        selectedCount: document.getElementById('selected-count'),
+        incoming: document.getElementById('incoming-overlay'),
+        groupWindow: document.getElementById('group-call-window'),
+        p2pWindow: document.getElementById('p2p-call-window'),
+        videoContainer: document.getElementById('video-container'),
+        timers: ['call-timer', 'mini-timer', 'p2p-timer', 'p2p-mini-timer'].map(id => document.getElementById(id))
+    };
+
+    window.onload = () => {
+        renderMembers();
+        lucide.createIcons();
+    };
+
+    function toggleTheme() {
+        state.isDark = !state.isDark;
+        document.documentElement.classList.toggle('dark');
+        const body = document.getElementById('body-bg');
+        const phone = document.getElementById('phone-container');
+
+        if (state.isDark) {
+            body.className = "bg-warm-950 flex items-center justify-center min-h-screen font-sans overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[48px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col bg-warm-900 border-warm-800 ring-white/10 shadow-black/50 transition-colors duration-500";
+        } else {
+            body.className = "bg-gray-100 flex items-center justify-center min-h-screen font-sans overflow-hidden relative";
+            phone.className = "relative w-full max-w-[375px] h-[812px] rounded-[48px] shadow-2xl overflow-hidden border-[8px] box-content ring-1 flex flex-col bg-[#F5F7FA] border-white ring-black/5 transition-colors duration-500";
+        }
+        setTimeout(() => lucide.createIcons(), 50);
+    }
+
+    // --- 功能函数 ---
+    function toggleBtnState(el) {
+        const bg = el.querySelector('.icon-bg');
+        const svg = el.querySelector('.icon-svg');
+
+        if (bg.classList.contains('bg-white')) {
+            // Inactive state
+            bg.classList.remove('bg-white', 'text-black');
+            bg.classList.add('bg-white/10', 'text-white');
+            svg.classList.remove('text-black');
+            svg.classList.add('text-white');
+        } else {
+            // Active state
+            bg.classList.remove('bg-white/10', 'text-white');
+            bg.classList.add('bg-white', 'text-black');
+            svg.classList.remove('text-white');
+            svg.classList.add('text-black');
+        }
+    }
+
+    function toggleBanner() {
+        els.banner.classList.toggle('hidden');
+    }
+    function joinCallFromBanner() {
+        els.banner.classList.add('hidden');
+        startGroupCall(true);
+    }
+
+    // --- 选人弹窗 ---
+    function showMemberSelector() {
+        els.modalMask.classList.remove('hidden');
+        setTimeout(() => {
+            els.modalMask.classList.remove('opacity-0');
+            els.modal.classList.remove('translate-y-full');
+        }, 10);
+    }
+    function closeMemberSelector() {
+        els.modal.classList.add('translate-y-full');
+        els.modalMask.classList.add('opacity-0');
+        setTimeout(() => els.modalMask.classList.add('hidden'), 300);
+    }
+    function renderMembers() {
+        els.memberGrid.innerHTML = members.filter(m => !m.isSelf).map(m => `
+                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="toggleMember(${m.id})">
+                    <div class="relative w-14 h-14">
+                        <img src="${m.avatar}" class="w-full h-full rounded-2xl object-cover transition-all duration-200 ${state.selectedMembers.has(m.id) ? 'ring-4 ring-indigo-500 opacity-100 scale-95' : 'opacity-100 group-hover:scale-105'}" id="avatar-${m.id}">
+                        <div class="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white dark:border-warm-900 shadow-md transform scale-0 transition-transform duration-200 ${state.selectedMembers.has(m.id) ? 'scale-100' : ''}" id="check-${m.id}">
+                            <i data-lucide="check" class="w-3 h-3 text-white"></i>
+                        </div>
+                    </div>
+                    <span class="text-[11px] text-gray-600 dark:text-gray-400 truncate max-w-[64px] font-medium">${m.name}</span>
+                </div>
+            `).join('');
+        lucide.createIcons();
+    }
+    function toggleMember(id) {
+        if (state.selectedMembers.has(id)) state.selectedMembers.delete(id);
+        else state.selectedMembers.add(id);
+
+        // Re-render single item optimization would be better, but re-render all is fine for demo
+        renderMembers();
+
+        els.selectedCount.textContent = state.selectedMembers.size;
+        els.selectedCount.classList.remove('scale-100');
+        els.selectedCount.classList.add('scale-125');
+        setTimeout(() => els.selectedCount.classList.remove('scale-125'), 200);
+    }
+
+    // --- Incoming Call ---
+    function triggerIncoming(type) {
+        state.callType = type;
+        const caller = type === 'group' ? members[0] : members[1];
+        document.getElementById('incoming-avatar').src = caller.avatar;
+        document.getElementById('incoming-name').textContent = caller.name;
+        document.getElementById('incoming-desc').textContent = type === 'group' ? '邀请你加入群视频通话' : '邀请你进行视频通话';
+
+        els.incoming.classList.remove('hidden');
+        els.incoming.classList.add('flex');
+        lucide.createIcons();
+    }
+    function rejectCall() {
+        els.incoming.classList.add('hidden');
+        els.incoming.classList.remove('flex');
+    }
+    function acceptCall() {
+        rejectCall();
+        if (state.callType === 'group') startGroupCall();
+        else startP2PCall();
+    }
+
+    // --- Timer ---
+    function startTimer() {
+        state.seconds = 0;
+        if (state.timer) clearInterval(state.timer);
+        state.timer = setInterval(() => {
+            state.seconds++;
+            const mins = Math.floor(state.seconds / 60).toString().padStart(2, '0');
+            const secs = (state.seconds % 60).toString().padStart(2, '0');
+            els.timers.forEach(el => { if(el) el.textContent = `${mins}:${secs}`; });
+        }, 1000);
+    }
+
+    // --- Group Call ---
+    function startGroupCall(isJoin = false) {
+        closeMemberSelector();
+        state.callType = 'group';
+        els.groupWindow.classList.remove('hidden');
+        els.groupWindow.classList.add('flex');
+
+        // Mock active participants
+        const activeMembers = isJoin ? members.slice(0, 4) : [members[7], ...members.filter(m => state.selectedMembers.has(m.id))];
+        if (activeMembers.length === 0) activeMembers.push(members[7], members[0]); // Ensure at least self and one other
+
+        els.videoContainer.innerHTML = activeMembers.map(m => `
+                <div class="relative bg-gray-800 rounded-2xl overflow-hidden aspect-[3/4] border border-white/5 group shadow-sm">
+                    <img src="${m.avatar}" class="w-full h-full object-cover opacity-90 transition-opacity">
+                    <div class="absolute bottom-3 left-3 bg-black/40 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] text-white flex items-center gap-1.5 font-medium border border-white/10">
+                        ${m.isSelf ? '我' : m.name}
+                        ${!m.isSelf ? '<i data-lucide="mic-off" class="w-3 h-3 text-red-400"></i>' : ''}
+                    </div>
+                    <!-- 说话指示器 -->
+                    <div class="absolute inset-0 border-2 border-emerald-500 rounded-2xl opacity-0 ${!m.isSelf && m.id === 1 ? 'animate-pulse opacity-100' : ''}"></div>
+                </div>
+            `).join('');
+        lucide.createIcons();
+        startTimer();
+    }
+
+    // --- P2P Call ---
+    function startP2PCall() {
+        state.callType = 'p2p';
+        els.p2pWindow.classList.remove('hidden');
+        els.p2pWindow.classList.add('flex');
+        startTimer();
+    }
+
+    // --- Common Actions ---
+    function endCall(isP2P = false) {
+        clearInterval(state.timer);
+        const win = isP2P ? els.p2pWindow : els.groupWindow;
+        win.classList.add('hidden');
+        win.classList.remove('flex', 'minimized-window');
+        // Reset styles
+        win.querySelector('.header-section').classList.remove('hidden');
+        win.querySelector('.controls-section').classList.remove('hidden');
+        if (!isP2P) win.querySelector('#video-container').classList.remove('hidden');
+        win.querySelector('.minimized-content').classList.add('hidden');
+    }
+
+    function minimizeCall(isP2P = false) {
+        const win = isP2P ? els.p2pWindow : els.groupWindow;
+        win.classList.add('minimized-window');
+        win.classList.remove('absolute', 'inset-0');
+
+        // Hide full UI elements
+        win.querySelector('.header-section').classList.add('hidden');
+        win.querySelector('.controls-section').classList.add('hidden');
+        if (!isP2P) win.querySelector('#video-container').classList.add('hidden');
+
+        // Show minimized UI
+        win.querySelector('.minimized-content').classList.remove('hidden');
+    }
+
+    function restoreCall(isP2P = false) {
+        const win = isP2P ? els.p2pWindow : els.groupWindow;
+        win.classList.remove('minimized-window');
+        win.classList.add('absolute', 'inset-0');
+
+        win.querySelector('.header-section').classList.remove('hidden');
+        win.querySelector('.controls-section').classList.remove('hidden');
+        if (!isP2P) win.querySelector('#video-container').classList.remove('hidden');
+
+        win.querySelector('.minimized-content').classList.add('hidden');
+    }
+
+</script>
+</body>
+</html>
