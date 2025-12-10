@@ -206,7 +206,7 @@ const themeText = computed(() => {
 
 const plusMenuActions = [
   { name: '创建群聊', value: 'createGroup' },
-  { name: '添加好友', value: 'addFriend' },
+  { name: '添加好友.html', value: 'addFriend' },
   { name: '扫一扫', value: 'scan' }
 ]
 
@@ -248,7 +248,7 @@ function goChat(item: Conversation) {
 }
 function handleLongPress(item: Conversation) { selectedConv.value = item; showConvActions.value = true }
 async function onConvActionSelect(event: any) {
-  // Wot-UI select 事件通常返回 { item, index }，或者直接是 detail 对象
+  // Wot-UI设计 select 事件通常返回 { item, index }，或者直接是 detail 对象
   // 防御性获取 item
   const action = event.item || event
 

@@ -194,7 +194,7 @@ function switchTab(name: string) {
 <!--const { isDark } = useTheme()-->
 <!--const appStore = useAppStore()-->
 
-<!--// 核心修改：移除 image 路径，改用 Wot-UI 内置 Icon name-->
+<!--// 核心修改：移除 image 路径，改用 Wot-UI设计 内置 Icon name-->
 <!--// 如果需要自定义 SVG，可以使用 custom-icon 插槽-->
 <!--const list = computed(() => [-->
 <!--  {-->

@@ -177,7 +177,7 @@ const { isDark } = useTheme()
 const toast = useToast()
 const messageBox = useMessage()
 
-// --- UI 状态 (新增) ---
+// --- UI设计 状态 (新增) ---
 const navOpacity = ref(0)
 const iconColor = computed(() => {
   // 当导航栏变白时，图标变黑；否则为白色

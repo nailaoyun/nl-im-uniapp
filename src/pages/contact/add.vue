@@ -111,7 +111,7 @@ import type { User } from '@/types/api'
 const toast = useToast(); const message = useMessage(); const { isDark } = useTheme();
 const keyword = ref(''); const loading = ref(false); const searched = ref(false); const results = ref<User[]>([]);
 async function doSearch() { if (!keyword.value.trim()) { toast.show('请输入搜索内容'); return } loading.value = true; searched.value = true; try { results.value = await contactApi.searchUsers(keyword.value.trim()) } catch (error) { console.error('搜索失败:', error); toast.error('搜索失败') } finally { loading.value = false } }
-async function addFriend(user: User) { try { const { value } = await message.prompt({ title: '添加好友', inputPlaceholder: '请输入验证消息', inputValue: '你好，我是...' }); await contactApi.addFriend({ to_user_id: user.id, message: value || '' }); toast.success('申请已发送') } catch (e: any) { if (e !== 'cancel') { toast.error('发送失败') } } }
+async function addFriend(user: User) { try { const { value } = await message.prompt({ title: '添加好友.html', inputPlaceholder: '请输入验证消息', inputValue: '你好，我是...' }); await contactApi.addFriend({ to_user_id: user.id, message: value || '' }); toast.success('申请已发送') } catch (e: any) { if (e !== 'cancel') { toast.error('发送失败') } } }
 function scanQrCode() { uni.scanCode({ onlyFromCamera: false, success: (res) => { console.log('扫码结果:', res.result); toast.show('扫码功能开发中') }, fail: () => { toast.error('扫码失败') } }) }
 </script>
 

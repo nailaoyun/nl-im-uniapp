@@ -14,7 +14,7 @@ export function searchUsers(keyword: string, limit = 20) {
   return request.get<User[]>('/contacts/search', { keyword, limit })
 }
 
-// 添加好友（发送申请）
+// 添加好友.html（发送申请）
 export function addFriend(data: { to_user_id: string; message?: string }) {
   return request.post<void>('/contacts/add-friend', data)
 }
