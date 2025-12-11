@@ -1,123 +1,102 @@
 <template>
   <view class="detail-container" :class="{ 'theme-dark': isDark }">
-    <!-- 头部背景区 (视差效果) -->
-    <view class="profile-header">
-      <view class="blur-bg" :style="headerBgStyle" />
-      <view class="gradient-mask" />
+    <!-- 视差背景 (与设计稿一致: blur-xl scale-110 opacity-70) -->
+    <view class="parallax-bg">
+      <image 
+        v-if="contact?.user?.avatar" 
+        :src="contact.user.avatar" 
+        class="blur-image"
+        mode="aspectFill"
+      />
+      <view class="gradient-overlay" />
+    </view>
 
-      <!-- 返回按钮 -->
+    <!-- 导航栏 (与设计稿一致) -->
+    <view class="nav-header">
       <view class="nav-back" @click="goBack">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18l-6-6 6-6"/>
         </svg>
       </view>
+      <view class="nav-more">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1"/>
+          <circle cx="19" cy="12" r="1"/>
+          <circle cx="5" cy="12" r="1"/>
+        </svg>
+      </view>
     </view>
 
-    <!-- 主体内容 (浮动卡片) -->
-    <scroll-view scroll-y class="main-content custom-scrollbar" v-if="!loading && contact">
-      <view class="content-wrapper">
-
-        <!-- 用户身份卡片 -->
-        <view class="identity-card animate-fade-in-up">
-          <view class="avatar-wrapper">
-            <app-avatar
-                :src="contact.user?.avatar"
-                :name="contact.remark_name || contact.user?.name"
-                :size="256"
-                round
-                custom-style="border: 12rpx solid var(--bg-card);"
-            />
-          </view>
-          <view class="info-block">
-            <text class="user-name">{{ contact.remark_name || contact.user?.name || '未知' }}</text>
-            <view class="meta-row">
-              <view class="meta-tag">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <text>ID: {{ contact.user?.id || '-' }}</text>
-              </view>
-              <view class="meta-tag">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-                <text>{{ contact.user?.region || '未知地区' }}</text>
-              </view>
-            </view>
-            <text class="bio-text">{{ contact.user?.desc || '这个人很懒，什么都没写' }}</text>
-          </view>
+    <!-- 主体内容 -->
+    <scroll-view scroll-y class="main-scroll custom-scrollbar" v-if="!loading && contact">
+      <!-- 身份卡片区 (与设计稿一致) -->
+      <view class="identity-section">
+        <!-- 头像: w-32 h-32 rounded-full border-[6px] border-white shadow-xl -->
+        <view class="avatar-wrapper">
+          <app-avatar
+            :src="contact.user?.avatar"
+            :name="contact.remark_name || contact.user?.name"
+            :size="256"
+            round
+          />
         </view>
-
-        <!-- 设置组：资料 -->
-        <view class="settings-group animate-fade-in-up" style="animation-delay: 100ms;">
-          <view class="settings-card">
-            <view class="setting-item" @click="editRemark">
-              <view class="icon-wrap color-blue">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </view>
-              <view class="item-body">
-                <text class="item-title">设置备注</text>
-                <text class="item-value">{{ contact.remark_name || '未设置' }}</text>
-              </view>
-              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </view>
-          </view>
+        
+        <!-- 名字: text-2xl font-bold -->
+        <text class="user-name">{{ contact.remark_name || contact.user?.name || '未知' }}</text>
+        
+        <!-- 标签: text-xs bg-gray-100 px-2 py-0.5 rounded -->
+        <view class="tag-row">
+          <view class="info-tag">ID: {{ contact.user?.id || '-' }}</view>
+          <view class="info-tag">{{ contact.user?.region || '未知' }}</view>
         </view>
-
-        <!-- 设置组：交互 -->
-        <view class="settings-group animate-fade-in-up" style="animation-delay: 150ms;">
-          <view class="group-label">隐私与通知</view>
-          <view class="settings-card">
-            <view class="setting-item">
-              <view class="icon-wrap color-orange">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-              </view>
-              <view class="item-body">
-                <text class="item-title">置顶聊天</text>
-              </view>
-              <wd-switch v-model="contact.is_top" size="24px" :active-color="isDark ? '#f97316' : '#4F46E5'" @change="toggleTop" />
-            </view>
-
-            <view class="setting-item">
-              <view class="icon-wrap color-purple">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              </view>
-              <view class="item-body">
-                <text class="item-title">消息免打扰</text>
-              </view>
-              <wd-switch v-model="contact.is_muted" size="24px" :active-color="isDark ? '#f97316' : '#4F46E5'" @change="toggleMute" />
-            </view>
-
-            <view class="setting-item">
-              <view class="icon-wrap color-red">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                </svg>
-              </view>
-              <view class="item-body">
-                <text class="item-title">加入黑名单</text>
-              </view>
-              <wd-switch v-model="contact.is_blocked" size="24px" active-color="#ef4444" @change="toggleBlock" />
-            </view>
-          </view>
-        </view>
-
-        <view class="spacer" />
+        
+        <!-- 签名: text-sm text-gray-500 text-center max-w-[200px] -->
+        <text class="bio-text">{{ contact.user?.desc || '这个人很懒，什么都没写' }}</text>
       </view>
+
+      <!-- 好友设置卡片 (与设计稿一致) -->
+      <view class="settings-card animate-fade-in-up">
+        <!-- 设置备注 -->
+        <view class="setting-row" @click="editRemark">
+          <text class="row-label">设置备注</text>
+          <view class="row-right">
+            <text class="row-value">{{ contact.remark_name || '未设置' }}</text>
+            <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </view>
+        </view>
+        
+        <!-- 置顶聊天 -->
+        <view class="setting-row">
+          <text class="row-label">置顶聊天</text>
+          <view class="toggle-wrap">
+            <view 
+              class="custom-toggle" 
+              :class="{ active: contact.is_top }"
+              @click="toggleTopManual"
+            >
+              <view class="toggle-thumb" />
+            </view>
+          </view>
+        </view>
+        
+        <!-- 消息免打扰 -->
+        <view class="setting-row no-border">
+          <text class="row-label">消息免打扰</text>
+          <view class="toggle-wrap">
+            <view 
+              class="custom-toggle" 
+              :class="{ active: contact.is_muted }"
+              @click="toggleMuteManual"
+            >
+              <view class="toggle-thumb" />
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="bottom-spacer" />
     </scroll-view>
 
     <!-- Loading -->
@@ -125,20 +104,23 @@
       <wd-loading size="60rpx" :color="isDark ? '#f97316' : '#4F46E5'"/>
     </view>
 
-    <!-- 底部悬浮操作栏 -->
+    <!-- 底部悬浮操作栏 (与设计稿一致: rounded-t-[32px] shadow-[0_-10px_40px]) -->
     <view class="floating-dock" v-if="contact">
-      <view class="dock-content">
+      <view class="dock-buttons">
+        <!-- 电话: flex-1 -->
         <view class="dock-btn secondary" @click="startAudioCall">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
         </view>
+        <!-- 发消息: flex-[2] -->
         <view class="dock-btn primary" @click="goChat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           <text>发消息</text>
         </view>
+        <!-- 视频: flex-1 -->
         <view class="dock-btn secondary" @click="startVideoCall">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="23 7 16 12 23 17 23 7"/>
@@ -146,8 +128,9 @@
           </svg>
         </view>
       </view>
-
-      <view class="danger-btn" @click="deleteFriend">
+      
+      <!-- 删除好友: text-xs text-gray-400 underline -->
+      <view class="delete-link" @click="deleteFriend">
         <text>删除好友</text>
       </view>
     </view>
@@ -158,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import * as contactApi from '@/api/modules/contact'
 import { useToast, useMessage } from 'wot-design-uni'
@@ -169,11 +152,6 @@ import type { Contact } from '@/types/api'
 // --- 逻辑保持不变 ---
 const toast = useToast(); const messageBox = useMessage(); const { isDark } = useTheme();
 const loading = ref(true); const contact = ref<Contact | null>(null); const contactId = ref(''); const userId = ref('');
-
-const headerBgStyle = computed(() => {
-  const url = contact.value?.user?.avatar || '';
-  return url ? `background-image: url(${url});` : 'background: var(--bg-card);';
-})
 
 onLoad((options: any) => { contactId.value = options?.id || ''; userId.value = options?.userId || '' })
 onMounted(async () => { if (contactId.value) { await loadContact() } else if (userId.value) { await loadContactByUserId() } })
@@ -187,50 +165,51 @@ async function editRemark() { if (!contact.value) return; try { const { value } 
 async function toggleTop() { if (!contact.value) return; try { await contactApi.updateContact(contactId.value, { is_top: contact.value.is_top }); toast.success(contact.value.is_top ? '已置顶' : '已取消置顶') } catch { contact.value.is_top = !contact.value.is_top; toast.error('操作失败') } }
 async function toggleMute() { if (!contact.value) return; try { await contactApi.updateContact(contactId.value, { is_muted: contact.value.is_muted }); toast.success(contact.value.is_muted ? '已开启免打扰' : '已关闭免打扰') } catch { contact.value.is_muted = !contact.value.is_muted; toast.error('操作失败') } }
 async function toggleBlock() { if (!contact.value) return; try { await contactApi.updateContact(contactId.value, { is_blocked: contact.value.is_blocked }); toast.success(contact.value.is_blocked ? '已加入黑名单' : '已移出黑名单') } catch { contact.value.is_blocked = !contact.value.is_blocked; toast.error('操作失败') } }
+// 手动切换方法 (用于自定义开关)
+async function toggleTopManual() { if (!contact.value) return; contact.value.is_top = !contact.value.is_top; await toggleTop() }
+async function toggleMuteManual() { if (!contact.value) return; contact.value.is_muted = !contact.value.is_muted; await toggleMute() }
 async function deleteFriend() { try { await messageBox.confirm({ title: '提示', msg: '确定要删除该好友吗？删除后将无法恢复' }); await contactApi.deleteContact(contactId.value); toast.success('删除成功'); setTimeout(() => { uni.navigateBack() }, 1000) } catch (e: any) { if (e !== 'cancel') { toast.error('删除失败') } } }
 </script>
 
 <style lang="scss" scoped>
+// ==========================================
 // 页面容器 - 浅色模式 (与设计稿完全一致)
+// ==========================================
 .detail-container {
-  --bg-base: #ffffff;                  // 白色页面背景
+  --bg-page: #f3f4f6;                  // gray-100 (页面背景)
   --bg-card: #ffffff;                  // 卡片背景
-  --bg-secondary: #f3f4f6;             // gray-100 (次要背景/按钮)
-  --text-main: #1f2937;                // gray-900 (名称)
-  --text-sub: #6b7280;                 // gray-500 (签名/标签)
-  --text-tertiary: #9ca3af;            // gray-400 (值)
+  --bg-tag: #f3f4f6;                   // gray-100 (标签背景)
+  --bg-toggle: #e5e7eb;                // gray-200 (开关关闭)
+  --text-main: #111827;                // gray-900 (名称)
+  --text-sub: #6b7280;                 // gray-500 (签名)
+  --text-tertiary: #9ca3af;            // gray-400 (标签/值)
   --color-brand: #4F46E5;              // indigo-600
   --border-color: #f9fafb;             // gray-50
   --gradient-to: #ffffff;              // 渐变终点色
 
   min-height: 100vh;
-  background: var(--bg-base);
+  background: var(--bg-page);
   position: relative;
 
   // 深色模式 - Warm Stone (与设计稿完全一致)
   &.theme-dark {
-    --bg-base: #0c0a09;                // warm-950 (极深背景)
+    --bg-page: #0c0a09;                // warm-950
     --bg-card: #1c1917;                // warm-900
-    --bg-secondary: #292524;           // warm-800
-    --text-main: #f5f5f4;              // warm-100
+    --bg-tag: #292524;                 // warm-800
+    --bg-toggle: #44403c;              // warm-700
+    --text-main: #fafaf9;              // warm-50
     --text-sub: #a8a29e;               // warm-400
     --text-tertiary: #78716c;          // warm-500
     --color-brand: #f97316;            // orange-500
-    --border-color: rgba(41, 37, 36, 0.5); // warm-800/50
+    --border-color: rgba(41, 37, 36, 0.5);
     --gradient-to: #0c0a09;            // warm-950
   }
 }
 
 // 动画
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20rpx);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in-up {
@@ -244,304 +223,350 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
   scrollbar-width: none;
 }
 
-// 视差头部背景
-.profile-header {
+// ==========================================
+// 视差背景 (与设计稿一致: blur-xl scale-110 opacity-70)
+// ==========================================
+.parallax-bg {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 600rpx;
-  z-index: 0;
   overflow: hidden;
+  z-index: 0;
 
-  .blur-bg {
+  .blur-image {
     width: 100%;
     height: 100%;
-    background-size: cover;
-    background-position: center;
-    filter: blur(40px);
-    transform: scale(1.1);
-    opacity: 0.7;
+    // blur-xl = 24px, 需要用px单位
+    filter: blur(24px);
+    -webkit-filter: blur(24px);
+    transform: scale(1.1);         // scale-110
+    opacity: 0.7;                  // opacity-70
 
     .theme-dark & {
-      opacity: 0.4;
+      opacity: 0.5;
     }
   }
 
-  .gradient-mask {
+  .gradient-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 0%, var(--gradient-to) 85%);
-  }
-
-  .nav-back {
-    position: absolute;
-    top: calc(var(--status-bar-height) + 16rpx);
-    left: 24rpx;
-    width: 72rpx;
-    height: 72rpx;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-    z-index: 10;
-    transition: all 0.15s;
-
-    svg {
-      width: 40rpx;
-      height: 40rpx;
-      color: #fff;
-    }
-
-    &:active {
-      transform: scale(0.95);
-      background: rgba(0, 0, 0, 0.25);
-    }
+    background: linear-gradient(to bottom, transparent 0%, var(--gradient-to) 100%);
   }
 }
 
-// 主内容
-.main-content {
-  height: 100vh;
+// ==========================================
+// 导航栏 (与设计稿一致)
+// ==========================================
+.nav-header {
+  position: relative;
+  z-index: 10;
+  padding: calc(var(--status-bar-height) + 24rpx) 32rpx 16rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .nav-back, .nav-more {
+    width: 56rpx;
+    height: 56rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s;
+
+    svg {
+      width: 44rpx;
+      height: 44rpx;
+      color: var(--text-main);
+
+      .theme-dark & {
+        color: #e7e5e4;  // warm-200
+      }
+    }
+
+    &:active {
+      opacity: 0.6;
+    }
+  }
+
+  .nav-more svg {
+    width: 40rpx;
+    height: 40rpx;
+  }
+}
+
+// ==========================================
+// 主体滚动区
+// ==========================================
+.main-scroll {
+  height: calc(100vh - 120rpx);
   position: relative;
   z-index: 1;
 }
 
-.content-wrapper {
-  padding: 0 32rpx;
-  padding-top: calc(220rpx + var(--status-bar-height));
-}
-
-// 身份卡片
-.identity-card {
+// ==========================================
+// 身份卡片区 (与设计稿完全一致)
+// ==========================================
+.identity-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 60rpx;
+  padding: 64rpx 48rpx 64rpx;
 
+  // 头像: w-32 h-32 rounded-full border-[6px] border-white shadow-xl
   .avatar-wrapper {
-    box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.15);
     border-radius: 50%;
+    border: 12rpx solid var(--bg-card);  // border-[6px] = 12rpx
+    box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.2);  // shadow-xl
+    margin-bottom: 32rpx;
   }
 
-  .info-block {
-    margin-top: 30rpx;
-    text-align: center;
-
-    .user-name {
-      font-size: 48rpx;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 16rpx;
-    }
-
-    .meta-row {
-      display: flex;
-      justify-content: center;
-      gap: 16rpx;
-      margin-bottom: 24rpx;
-
-      .meta-tag {
-        display: flex;
-        align-items: center;
-        gap: 8rpx;
-        font-size: 24rpx;
-        color: var(--text-sub);
-        background: var(--bg-secondary);
-        padding: 10rpx 20rpx;
-        border-radius: 20rpx;
-
-        svg {
-          width: 24rpx;
-          height: 24rpx;
-        }
-      }
-    }
-
-    .bio-text {
-      font-size: 28rpx;
-      color: var(--text-sub);
-      max-width: 500rpx;
-      line-height: 1.6;
-    }
-  }
-}
-
-// 设置组
-.settings-group {
-  margin-bottom: 40rpx;
-
-  .group-label {
-    font-size: 26rpx;
-    color: var(--text-sub);
+  // 名字: text-2xl font-bold
+  .user-name {
+    font-size: 48rpx;                    // text-2xl = 24px = 48rpx
+    font-weight: 700;                    // font-bold
+    color: var(--text-main);
     margin-bottom: 16rpx;
-    margin-left: 12rpx;
-    font-weight: 600;
+  }
+
+  // 标签行
+  .tag-row {
+    display: flex;
+    gap: 16rpx;
+    margin-bottom: 32rpx;
+  }
+
+  // 标签: text-xs bg-gray-100 px-2 py-0.5 rounded
+  .info-tag {
+    font-size: 24rpx;                    // text-xs = 12px = 24rpx
+    color: var(--text-tertiary);
+    background: var(--bg-tag);
+    padding: 8rpx 16rpx;                 // px-2 py-0.5
+    border-radius: 8rpx;                 // rounded
+  }
+
+  // 签名: text-sm text-gray-500 text-center max-w-[200px]
+  .bio-text {
+    font-size: 28rpx;                    // text-sm = 14px = 28rpx
+    color: var(--text-sub);
+    text-align: center;
+    line-height: 1.6;                    // leading-relaxed
+    max-width: 400rpx;                   // max-w-[200px] = 400rpx
   }
 }
 
+// ==========================================
+// 设置卡片 (与设计稿一致: rounded-2xl shadow-sm border)
+// ==========================================
 .settings-card {
+  margin: 0 24rpx 48rpx;
   background: var(--bg-card);
-  border-radius: 24rpx;
+  border-radius: 32rpx;                  // rounded-2xl = 16px = 32rpx
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);  // shadow-sm
+  border: 2rpx solid var(--border-color);
   overflow: hidden;
+
+  .theme-dark & {
+    box-shadow: none;
+    border-color: rgba(41, 37, 36, 0.5);
+  }
 }
 
-.setting-item {
+// 设置行 (与设计稿一致)
+.setting-row {
   display: flex;
   align-items: center;
-  padding: 28rpx 28rpx;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+  justify-content: space-between;
+  padding: 32rpx;                        // p-4 = 16px = 32rpx
+  border-bottom: 2rpx solid var(--border-color);
   transition: background 0.15s;
 
   .theme-dark & {
-    border-bottom-color: rgba(255, 255, 255, 0.06);
+    border-bottom-color: rgba(41, 37, 36, 0.5);
   }
 
-  &:last-child {
+  &.no-border {
     border-bottom: none;
   }
 
   &:active {
     background: rgba(0, 0, 0, 0.02);
-
     .theme-dark & {
       background: rgba(255, 255, 255, 0.02);
     }
   }
 
-  .icon-wrap {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 16rpx;
+  .row-label {
+    font-size: 28rpx;                    // text-sm = 14px = 28rpx
+    font-weight: 500;                    // font-medium
+    color: var(--text-main);
+
+    .theme-dark & {
+      color: #e7e5e4;                    // warm-200
+    }
+  }
+
+  .row-right {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin-right: 24rpx;
-
-    svg {
-      width: 32rpx;
-      height: 32rpx;
-    }
-
-    &.color-blue { background: #0ea5e9; }
-    &.color-orange { background: #f97316; }
-    &.color-purple { background: #8b5cf6; }
-    &.color-red { background: #ef4444; }
+    gap: 8rpx;
   }
 
-  .item-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+  .row-value {
+    font-size: 24rpx;                    // text-xs
+    color: var(--text-tertiary);
   }
 
-  .item-title {
-    font-size: 30rpx;
-    color: var(--text-main);
-    font-weight: 500;
-  }
-
-  .item-value {
-    font-size: 26rpx;
-    color: var(--text-sub);
-    margin-top: 4rpx;
-  }
-
-  .chevron {
+  .chevron-icon {
     width: 32rpx;
     height: 32rpx;
-    color: var(--text-sub);
-    opacity: 0.5;
+    color: #d1d5db;                      // gray-300
   }
 }
 
-.spacer {
-  height: 320rpx;
+// 自定义开关 (与设计稿一致)
+.toggle-wrap {
+  display: flex;
+  align-items: center;
 }
 
-// 底部操作台
+.custom-toggle {
+  width: 80rpx;                          // w-10 = 40px = 80rpx
+  height: 48rpx;                         // h-6 = 24px = 48rpx
+  background: var(--bg-toggle);
+  border-radius: 48rpx;                  // rounded-full
+  position: relative;
+  transition: background 0.2s;
+
+  .toggle-thumb {
+    position: absolute;
+    left: 8rpx;
+    top: 8rpx;
+    width: 32rpx;                        // w-4 = 16px = 32rpx
+    height: 32rpx;                       // h-4 = 16px = 32rpx
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);  // shadow-sm
+    transition: transform 0.2s;
+  }
+
+  &.active {
+    background: var(--color-brand);
+
+    .toggle-thumb {
+      transform: translateX(32rpx);      // 移动到右边
+    }
+  }
+}
+
+// ==========================================
+// 底部悬浮操作栏 (与设计稿一致: rounded-t-[32px] shadow-[0_-10px_40px])
+// ==========================================
 .floating-dock {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 30rpx 40rpx;
-  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+  padding: 32rpx 48rpx;                  // px-6 py-4
+  padding-bottom: calc(64rpx + env(safe-area-inset-bottom));  // pb-8
   background: var(--bg-card);
-  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
-  border-radius: 64rpx 64rpx 0 0;
-  box-shadow: 0 -20rpx 80rpx rgba(0, 0, 0, 0.05);
+  border-top: 2rpx solid var(--border-color);
+  border-radius: 64rpx 64rpx 0 0;        // rounded-t-[32px] = 64rpx
+  box-shadow: 0 -20rpx 80rpx rgba(0, 0, 0, 0.05);  // shadow-[0_-10px_40px]
   z-index: 100;
 
   .theme-dark & {
-    border-top-color: rgba(255, 255, 255, 0.05);
+    border-top-color: #292524;           // warm-800
+  }
+}
+
+// 按钮行
+.dock-buttons {
+  display: flex;
+  gap: 32rpx;                            // gap-4 = 16px = 32rpx
+  margin-bottom: 32rpx;                  // mb-4
+}
+
+.dock-btn {
+  height: 96rpx;                         // h-12 = 48px = 96rpx
+  border-radius: 32rpx;                  // rounded-2xl
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  transition: all 0.15s;
+
+  svg {
+    width: 40rpx;                        // w-5 h-5 = 20px = 40rpx
+    height: 40rpx;
   }
 
-  .dock-content {
-    display: flex;
-    align-items: center;
-    gap: 24rpx;
-    margin-bottom: 24rpx;
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
 
-    .dock-btn {
-      height: 100rpx;
-      border-radius: 32rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
+  // 次要按钮: flex-1
+  &.secondary {
+    flex: 1;
+    background: var(--bg-tag);
+    color: var(--text-main);
 
-      svg {
-        width: 44rpx;
-        height: 44rpx;
-      }
+    .theme-dark & {
+      background: #292524;               // warm-800
+      color: #e7e5e4;                    // warm-200
+    }
 
-      &:active {
-        transform: scale(0.96);
-      }
-
-      &.primary {
-        flex: 2;
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        color: #fff;
-        gap: 16rpx;
-        font-weight: 600;
-        font-size: 32rpx;
-        box-shadow: 0 8rpx 24rpx rgba(79, 70, 229, 0.25);
-
-        .theme-dark & {
-          background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-          box-shadow: 0 8rpx 24rpx rgba(249, 115, 22, 0.25);
-        }
-      }
-
-      &.secondary {
-        flex: 1;
-        background: var(--bg-secondary);
-        color: var(--text-main);
+    &:hover {
+      background: #e5e7eb;               // gray-200
+      .theme-dark & {
+        background: #44403c;             // warm-700
       }
     }
   }
 
-  .danger-btn {
-    text-align: center;
+  // 主要按钮: flex-[2]
+  &.primary {
+    flex: 2;
+    background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+    color: #fff;
+    font-weight: 700;                    // font-bold
+    font-size: 28rpx;
+    box-shadow: 0 8rpx 24rpx rgba(99, 102, 241, 0.3);
 
-    text {
-      color: var(--text-sub);
-      font-size: 26rpx;
-      padding: 10rpx 20rpx;
-      opacity: 0.6;
+    svg {
+      stroke: #fff;
     }
 
-    &:active text {
-      opacity: 1;
-      color: #ef4444;
+    .theme-dark & {
+      background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+      box-shadow: 0 8rpx 24rpx rgba(234, 88, 12, 0.3);
     }
   }
 }
 
+// 删除好友链接: text-xs text-gray-400 underline
+.delete-link {
+  text-align: center;
+
+  text {
+    font-size: 24rpx;                    // text-xs
+    color: var(--text-tertiary);
+    text-decoration: underline;          // underline
+  }
+
+  &:active text {
+    color: #ef4444;                      // hover:text-red-500
+  }
+}
+
+// 底部留白
+.bottom-spacer {
+  height: 360rpx;
+}
+
+// 加载中
 .center-loading {
   position: absolute;
   top: 50%;
@@ -549,3 +574,4 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
   transform: translate(-50%, -50%);
 }
 </style>
+

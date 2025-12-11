@@ -32,22 +32,6 @@
         </view>
       </view>
 
-      <!-- 2. 搜索栏 (扁平化设计) -->
-      <view class="search-wrapper">
-        <view class="search-bar" @click="goSearch">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input
-            type="text"
-            class="search-input"
-            placeholder="搜索"
-            disabled
-          />
-        </view>
-      </view>
-
       <!-- 3. 会话列表 -->
       <scroll-view
           class="conversation-list custom-scrollbar"
@@ -56,6 +40,22 @@
           :refresher-triggered="refreshing"
           @refresherrefresh="onRefresh"
       >
+
+        <!-- 2. 搜索栏 (扁平化设计) -->
+        <view class="search-wrapper">
+          <view class="search-bar" @click="goSearch">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+                type="text"
+                class="search-input"
+                placeholder="搜索"
+                disabled
+            />
+          </view>
+        </view>
         <view v-if="loading && conversations.length === 0" class="loading-state">
           <wd-loading size="50rpx" color="var(--color-primary)" />
           <text>连接中...</text>
