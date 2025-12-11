@@ -31,13 +31,15 @@
 
       <!-- 视频区域 -->
       <view v-if="call.type === 'video'" class="video-area">
+        <!-- 远端视频 - 使用原生 video 元素以支持 srcObject -->
         <video
           v-if="remoteStream"
           ref="remoteVideoRef"
           class="remote-video"
           autoplay
           playsinline
-        />
+          :srcObject="remoteStream"
+        ></video>
         <view v-else class="video-placeholder">
           <view class="avatar-section">
             <view class="avatar-ring ring-1"></view>
@@ -47,6 +49,7 @@
           <text class="caller-name">{{ call.callerName || '对方' }}</text>
         </view>
 
+        <!-- 本地视频 - 使用原生 video 元素以支持 srcObject -->
         <video
           v-if="localStream && !call.camOff"
           ref="localVideoRef"
@@ -54,7 +57,8 @@
           autoplay
           muted
           playsinline
-        />
+          :srcObject="localStream"
+        ></video>
       </view>
 
       <!-- 语音通话 / 视频占位 -->

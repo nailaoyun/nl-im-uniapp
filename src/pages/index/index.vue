@@ -166,9 +166,6 @@
           @logout="logout"
       />
 
-      <!-- 全局群通话组件 -->
-      <global-call-provider />
-
       <wd-toast />
       <wd-message-box :z-index="11000" />
       <app-tab-bar current="messages" />
@@ -188,7 +185,6 @@ import * as conversationApi from '@/api/modules/conversation'
 import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import PlusMenu from '@/components/common/PlusMenu.vue'
-import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Conversation } from '@/types/conversation'
 
 const authStore = useAuthStore()

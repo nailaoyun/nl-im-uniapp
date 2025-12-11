@@ -270,9 +270,6 @@
         </view>
       </wd-popup>
 
-      <!-- 全局群通话组件 -->
-      <global-call-provider />
-
       <wd-toast />
       <wd-message-box />
       <app-tab-bar current="contacts" />
@@ -290,7 +287,6 @@ import * as contactApi from '@/api/modules/contact'
 import * as roomApi from '@/api/modules/room'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import AppTabBar from '@/components/common/AppTabBar.vue'
-import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Contact, ContactGroup } from '@/types/api'
 
 // --- 逻辑完全不变 ---

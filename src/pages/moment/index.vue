@@ -161,9 +161,6 @@
           cancel-text="取消"
       />
 
-      <!-- 全局群通话组件 -->
-      <global-call-provider />
-
       <wd-toast />
       <wd-message-box />
 
@@ -183,7 +180,6 @@ import { parseMediaUrls } from '@/types/moment'
 import { useToast, useMessage } from 'wot-design-uni'
 import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppAvatar from '@/components/common/AppAvatar.vue'
-import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Moment } from '@/types/moment'
 
 const authStore = useAuthStore()

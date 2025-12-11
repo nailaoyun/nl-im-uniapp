@@ -37,21 +37,6 @@
         </view>
       </view>
 
-      <!-- WebRTC 通话窗口 -->
-      <call-window
-          v-if="webrtc"
-          :call="webrtc.call"
-          :local-stream="webrtc.localStream.value"
-          :remote-stream="webrtc.remoteStream.value"
-          :format-duration="webrtc.formatDuration"
-          @accept="webrtc.acceptCall()"
-          @reject="webrtc.rejectCall()"
-          @end="webrtc.endCall()"
-          @toggle-mute="webrtc.toggleMute()"
-          @toggle-camera="webrtc.toggleCamera()"
-          @toggle-minimize="webrtc.toggleMinimize()"
-      />
-
       <!-- 消息列表 -->
       <scroll-view
           class="chat-scroll-area custom-scrollbar"
@@ -372,7 +357,6 @@ import { useToast } from 'wot-design-uni'
 import { useTheme } from '@/composables/useTheme'
 import { useWebRTC } from '@/composables/useWebRTC'
 import AppAvatar from '@/components/common/AppAvatar.vue'
-import CallWindow from '@/components/call/CallWindow.vue'
 import MentionPicker from '@/components/chat/MentionPicker.vue'
 import type { MentionUser } from '@/components/chat/MentionPicker.vue'
 import * as roomApi from '@/api/modules/room'
@@ -384,15 +368,8 @@ const conversationStore = useConversationStore()
 const toast = useToast()
 const { isDark } = useTheme()
 
-const webrtc = useWebRTC(
-    authStore.user?.id || '',
-    (senderUserId) => { console.log('来电:', senderUserId) },
-    (receiverUserId) => {
-      if (roomId.value) return roomId.value
-      const contact = chatStore.contacts.find(c => c.contact_user_id === receiverUserId)
-      return contact?.room_id || ''
-    }
-)
+// 使用全局单例 webrtc
+const webrtc = useWebRTC()
 
 const roomId = ref(''); const targetId = ref(''); const chatName = ref(''); const targetAvatar = ref('');
 const inputText = ref(''); const messages = ref<ChatMessage[]>([]); const scrollToId = ref(''); const scrollTop = ref(0); const scrollWithAnimation = ref(false); const loadingMore = ref(false); const hasMore = ref(true); const showMore = ref(false); const showEmoji = ref(false); const playingAudioId = ref<number | null>(null); const page = ref(1);
@@ -409,16 +386,15 @@ const targetUser = computed(() => { const contact = chatStore.contacts.find(c =>
 
 onLoad((options: any) => { roomId.value = options?.roomId || ''; targetId.value = options?.targetId || ''; chatName.value = decodeURIComponent(options?.name || '聊天'); targetAvatar.value = decodeURIComponent(options?.avatar || ''); isGroupChat.value = !targetId.value && !!roomId.value; loadMessages(); setupWebSocket(); if (isGroupChat.value && roomId.value) { loadGroupMembers() } const callType = options?.callType; if (callType && targetId.value) { setTimeout(() => { if (callType === 'audio') { startAudioCall() } else if (callType === 'video') { startVideoCall() } }, 500) } });
 onMounted(() => { if (targetId.value) { conversationStore.clearUnread(targetId.value) } setTimeout(() => { scrollToBottom(false) }, 300) });
-onUnmounted(() => { wsManager.offMessage(handleNewMessage); wsManager.offSignal(handleSignal); stopAudio(); if (webrtc.call.active) { webrtc.endCall() } });
+onUnmounted(() => { wsManager.offMessage(handleNewMessage); stopAudio(); });
 
 async function loadGroupMembers() { if (!roomId.value) return; try { groupMembers.value = await roomApi.getGroupMembers(roomId.value) } catch (e) { console.error('加载群成员失败:', e) } }
 async function loadMessages() { if (!roomId.value) return; try { const cached = chatStore.getRoomMessages(roomId.value); if (cached.length > 0) { messages.value = cached.map((m) => ({ ...m, isSelf: m.sender_user_id === currentUser.value?.id, extra: typeof m.extra === 'string' ? JSON.parse(m.extra || '{}') : m.extra })); scrollToBottom(false); return } const res = await messageApi.getMessages(roomId.value, 1, 50); messages.value = (res.data || []).reverse().map((m: ChatMessage) => ({ ...m, isSelf: m.sender_user_id === currentUser.value?.id, extra: typeof m.extra === 'string' ? JSON.parse(m.extra || '{}') : m.extra })); chatStore.setRoomMessages(roomId.value, messages.value); hasMore.value = res.data.length >= 50; scrollToBottom(false) } catch (error) { console.error('加载消息失败:', error) } }
 function onScrollToUpper() { if (!loadingMore.value && hasMore.value) { loadMoreMessages() } }
 async function loadMoreMessages() { if (loadingMore.value || !hasMore.value) { return } loadingMore.value = true; page.value++; const firstMsgId = messages.value.length > 0 ? messages.value[0].id : null; try { const res = await messageApi.getMessages(roomId.value, page.value, 50); const newMessages = (res.data || []).reverse().map((m: ChatMessage) => ({ ...m, isSelf: m.sender_user_id === currentUser.value?.id, extra: typeof m.extra === 'string' ? JSON.parse(m.extra || '{}') : m.extra })); messages.value = [...newMessages, ...messages.value]; hasMore.value = res.data.length >= 50; if (firstMsgId) { nextTick(() => { scrollWithAnimation.value = false; scrollToId.value = `msg-${firstMsgId}` }) } } catch { page.value-- } finally { loadingMore.value = false } }
-function setupWebSocket() { wsManager.onMessage(handleNewMessage); wsManager.onSignal(handleSignal) }
-function handleSignal(message: ChatMessage) { webrtc.handleSignaling(message) }
-function startAudioCall() { if (!targetId.value) { toast.show('无法发起通话'); return } webrtc.startCall('audio', targetId.value, roomId.value) }
-function startVideoCall() { if (!targetId.value) { toast.show('无法发起通话'); return } webrtc.startCall('video', targetId.value, roomId.value) }
+function setupWebSocket() { wsManager.onMessage(handleNewMessage) }
+function startAudioCall() { if (!targetId.value) { toast.show('无法发起通话'); return } webrtc.startCall('audio', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar) }
+function startVideoCall() { if (!targetId.value) { toast.show('无法发起通话'); return } webrtc.startCall('video', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar) }
 function onMoreAudioCall() { showMore.value = false; startAudioCall() }
 function onMoreVideoCall() { showMore.value = false; startVideoCall() }
 function handleNewMessage(msg: ChatMessage) { if (msg.message_type === 6) return; const parsedExtra = typeof msg.extra === 'string' ? JSON.parse(msg.extra || '{}') : msg.extra; const newMsg: ChatMessage = { ...msg, isSelf: msg.sender_user_id === currentUser.value?.id, extra: parsedExtra }; const isCurrentChat = msg.room_id === roomId.value; conversationStore.handleMessageUpdate(newMsg, newMsg.isSelf || false, isCurrentChat); if (!isCurrentChat) return; const exists = messages.value.some( (m) => m.id === newMsg.id || (m.isSelf && m.content === newMsg.content && Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 2000) ); if (!exists) { messages.value.push(newMsg); chatStore.addMessage(roomId.value, newMsg); scrollToBottom(true) } }

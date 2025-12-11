@@ -1,11 +1,13 @@
 /**
- * WebRTC 通话组合式函数 - UniApp 适配版
- * 主要支持 H5 平台，APP/小程序需要平台特定实现
+ * WebRTC 通话组合式函数 - 全局单例模式
+ * 支持在任意页面接听来电
  */
-import { reactive, shallowRef, ref } from 'vue'
+import { reactive, shallowRef, ref, computed } from 'vue'
 import * as messageApi from '@/api/modules/message'
 import { wsManager } from '@/api/websocket'
+import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
+import { useConversationStore } from '@/stores/conversation'
 import type { ChatMessage, Contact } from '@/types/api'
 import type { CallStatus } from '@/types/message'
 
@@ -24,46 +26,46 @@ export interface CallState {
   startTime: number | null
   callerName?: string
   callerAvatar?: string
+  callerId?: string
 }
 
-export function useWebRTC(
-  userId: string,
-  onIncomingCall?: (senderUserId: string) => void,
-  getRoomId?: (receiverUserId?: string) => string
-) {
+// --- 全局单例状态 ---
+const call = reactive<CallState>({
+  active: false,
+  minimized: false,
+  type: 'video',
+  status: 'idle',
+  statusText: '',
+  id: null,
+  muted: false,
+  remoteMuted: false,
+  camOff: false,
+  remoteCamOff: false,
+  duration: 0,
+  startTime: null,
+})
+
+const isCaller = ref(false)
+const localStream = shallowRef<MediaStream | null>(null)
+const remoteStream = shallowRef<MediaStream | null>(null)
+let durationTimer: ReturnType<typeof setInterval> | null = null
+let pc: RTCPeerConnection | null = null
+const pendingCandidates: RTCIceCandidate[] = []
+let currentReceiverUserId = ''
+let currentRoomId = ''
+let audioContext: UniApp.InnerAudioContext | null = null
+
+export function useWebRTC() {
+  const authStore = useAuthStore()
   const chatStore = useChatStore()
+  const conversationStore = useConversationStore()
 
-  const call = reactive<CallState>({
-    active: false,
-    minimized: false,
-    type: 'video',
-    status: 'idle',
-    statusText: '',
-    id: null,
-    muted: false,
-    remoteMuted: false,
-    camOff: false,
-    remoteCamOff: false,
-    duration: 0,
-    startTime: null,
-  })
-
-  const isCaller = ref(false)
-  const localStream = shallowRef<MediaStream | null>(null)
-  const remoteStream = shallowRef<MediaStream | null>(null)
-  let durationTimer: ReturnType<typeof setInterval> | null = null
-  let pc: RTCPeerConnection | null = null
-  const pendingCandidates: RTCIceCandidate[] = []
-  let currentReceiverUserId = ''
-  let currentRoomId = ''
-
-  // 音频播放（使用内置音频方法）
-  let audioContext: UniApp.InnerAudioContext | null = null
+  const userId = computed(() => authStore.user?.id || '')
+  const isActive = computed(() => call.active)
 
   function playRingtone() {
     stopRingtone()
     // #ifdef H5
-    // H5 使用简单的提示音
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext
       const ctx = new AudioContext()
@@ -87,14 +89,30 @@ export function useWebRTC(
 
   function getSafeRoomId(targetUserId?: string): string | null {
     if (currentRoomId) return currentRoomId
-    if (targetUserId && getRoomId) {
-      const rid = getRoomId(targetUserId)
-      if (rid) return rid
+    
+    // 尝试从联系人获取房间ID
+    if (targetUserId) {
+      const contact = chatStore.contacts.find(c => c.contact_user_id === targetUserId)
+      if (contact?.room_id) return contact.room_id
     }
-    if (targetUserId && userId) {
-      return [userId, targetUserId].sort().join('_')
+    
+    // 尝试从会话获取房间ID
+    if (targetUserId) {
+      const conv = conversationStore.conversations.find(c => c.target_id === targetUserId)
+      if (conv?.room_id) return conv.room_id
+    }
+    
+    // 生成临时房间ID
+    if (targetUserId && userId.value) {
+      return [userId.value, targetUserId].sort().join('_')
     }
     return null
+  }
+
+  // 初始化信令监听器
+  function initListener() {
+    wsManager.offSignal(handleSignaling)
+    wsManager.onSignal(handleSignaling)
   }
 
   // 信令处理
@@ -102,7 +120,7 @@ export function useWebRTC(
     try {
       const content = message.content ? JSON.parse(message.content) : {}
 
-      // 忽略群聊信令
+      // 忽略群聊信令（由 useGroupWebRTC 处理）
       if (content.callRoomId || content.participantIds) {
         return
       }
@@ -128,16 +146,28 @@ export function useWebRTC(
         call.minimized = false
         call.status = 'incoming'
         call.statusText = `邀请你${call.type === 'video' ? '视频' : '语音'}通话`
+        call.callerId = message.sender_user_id
         
-        // 获取来电者信息
+        // 获取来电者信息 - 从联系人列表
         const contact = chatStore.contacts.find(c => c.contact_user_id === message.sender_user_id)
         if (contact?.user) {
           call.callerName = contact.remark_name || contact.user.name
           call.callerAvatar = contact.user.avatar
+        } else {
+          // 尝试从会话列表获取
+          const conv = conversationStore.conversations.find(c => c.target_id === message.sender_user_id)
+          if (conv) {
+            call.callerName = conv.name
+            call.callerAvatar = conv.avatar
+          } else {
+            // 最后尝试从消息中的额外信息获取
+            if (extra.senderName) call.callerName = extra.senderName
+            if (extra.senderAvatar) call.callerAvatar = extra.senderAvatar
+          }
         }
         
         playRingtone()
-        if (onIncomingCall) onIncomingCall(message.sender_user_id)
+        console.log('📞 来电:', call.callerName, call.callerAvatar)
 
       } else if (signal === 'accepted') {
         stopRingtone()
@@ -180,6 +210,8 @@ export function useWebRTC(
           uni.showToast({ title: '已在其他设备接听', icon: 'none' })
         } else if (signal === 'reject') {
           uni.showToast({ title: '对方已拒绝', icon: 'none' })
+        } else if (signal === 'hangup' || signal === 'ended') {
+          uni.showToast({ title: '通话已结束', icon: 'none' })
         }
       }
     } catch (error) {
@@ -249,6 +281,9 @@ export function useWebRTC(
     const targetUserId = receiverUserId || currentReceiverUserId
     const roomId = getSafeRoomId(targetUserId)
     if (!roomId) return
+    
+    // 获取当前用户信息用于传递给对方
+    const currentUser = authStore.user
     const payload = {
       sender_client_id: wsManager.getClientId() || '',
       receiver_user_id: targetUserId,
@@ -257,7 +292,11 @@ export function useWebRTC(
       content: JSON.stringify(data || {}),
       call_id: call.id,
       call_status: status,
-      extra: JSON.stringify({ type: call.type }),
+      extra: JSON.stringify({ 
+        type: call.type,
+        senderName: currentUser?.name,
+        senderAvatar: currentUser?.avatar
+      }),
     }
     messageApi.sendMessage(payload).catch(console.error)
   }
@@ -281,12 +320,11 @@ export function useWebRTC(
   }
 
   // 发起通话
-  async function startCall(type: 'audio' | 'video', receiverUserId: string, roomId?: string, contact?: Contact) {
+  async function startCall(type: 'audio' | 'video', receiverUserId: string, roomId?: string, targetName?: string, targetAvatar?: string) {
     if (roomId) currentRoomId = roomId
-    else if (contact?.room_id) currentRoomId = contact.room_id
-    else if (getRoomId) {
-      const found = getRoomId(receiverUserId)
-      if (found) currentRoomId = found
+    else {
+      const foundRoomId = getSafeRoomId(receiverUserId)
+      if (foundRoomId) currentRoomId = foundRoomId
     }
 
     if (!currentRoomId) {
@@ -306,6 +344,27 @@ export function useWebRTC(
     call.camOff = false
     call.remoteCamOff = false
     call.remoteMuted = false
+    call.callerId = receiverUserId
+    
+    // 设置对方信息
+    if (targetName) call.callerName = targetName
+    if (targetAvatar) call.callerAvatar = targetAvatar
+    
+    // 尝试从联系人/会话获取对方信息
+    if (!call.callerName || !call.callerAvatar) {
+      const contact = chatStore.contacts.find(c => c.contact_user_id === receiverUserId)
+      if (contact?.user) {
+        call.callerName = call.callerName || contact.remark_name || contact.user.name
+        call.callerAvatar = call.callerAvatar || contact.user.avatar
+      } else {
+        const conv = conversationStore.conversations.find(c => c.target_id === receiverUserId)
+        if (conv) {
+          call.callerName = call.callerName || conv.name
+          call.callerAvatar = call.callerAvatar || conv.avatar
+        }
+      }
+    }
+    
     remoteStream.value = null
 
     try {
@@ -359,12 +418,18 @@ export function useWebRTC(
   function closeCall() {
     stopRingtone()
     currentRoomId = ''
+    currentReceiverUserId = ''
     call.active = false
     call.status = 'idle'
     call.statusText = ''
     call.id = null
     call.callerName = undefined
     call.callerAvatar = undefined
+    call.callerId = undefined
+    call.muted = false
+    call.camOff = false
+    call.remoteMuted = false
+    call.remoteCamOff = false
     stopCallTimer()
     
     // #ifdef H5
@@ -437,6 +502,8 @@ export function useWebRTC(
     call,
     localStream,
     remoteStream,
+    isActive,
+    initListener,
     startCall,
     acceptCall,
     rejectCall,
@@ -450,4 +517,3 @@ export function useWebRTC(
 }
 
 export default useWebRTC
-
