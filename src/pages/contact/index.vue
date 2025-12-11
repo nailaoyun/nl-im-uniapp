@@ -5,7 +5,20 @@
       <!-- 头部固定区域 -->
       <view class="fixed-header">
         <view class="nav-bar">
-          <text class="nav-title">联系人</text>
+          <!-- 左侧: 头像 + 标题 (与消息页一致) -->
+          <view class="nav-left" @click="openDrawer">
+            <view class="avatar-container">
+              <app-avatar
+                :src="user?.avatar"
+                :name="user?.name"
+                :size="72"
+                radius="16rpx"
+              />
+              <view class="online-dot"></view>
+            </view>
+            <text class="nav-title">联系人</text>
+          </view>
+          <!-- 右侧: 添加好友按钮 -->
           <view class="icon-btn" @click="goAddFriend">
             <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -272,6 +285,12 @@
         </view>
       </wd-popup>
 
+      <!-- 侧边抽屉 -->
+      <app-drawer
+        v-model="showDrawer"
+        @logout="logout"
+      />
+
       <wd-toast />
       <wd-message-box />
       <app-tab-bar current="contacts" />
@@ -282,18 +301,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useContactStore, useChatStore } from '@/stores'
+import { useContactStore, useChatStore, useAuthStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import { useToast, useMessage } from 'wot-design-uni'
 import * as contactApi from '@/api/modules/contact'
 import * as roomApi from '@/api/modules/room'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import AppTabBar from '@/components/common/AppTabBar.vue'
+import AppDrawer from '@/components/common/AppDrawer.vue'
 import type { Contact, ContactGroup } from '@/types/api'
 
 // --- 逻辑完全不变 ---
 interface GroupChat { room_id: string; room_type: string; room_name: string; room_avatar: string; category: 'joined' | 'created' | 'managed'; }
-const contactStore = useContactStore(); const chatStore = useChatStore(); const { isDark } = useTheme(); const toast = useToast(); const messageBox = useMessage();
+const authStore = useAuthStore(); const contactStore = useContactStore(); const chatStore = useChatStore(); const { isDark } = useTheme(); const toast = useToast(); const messageBox = useMessage();
+const showDrawer = ref(false); const user = computed(() => authStore.user);
 const tabs = [{ key: 'groups', label: '分组' }, { key: 'friends', label: '好友' }, { key: 'chats', label: '群聊' }]; const activeTab = ref('groups'); const searchKeyword = ref(''); const refreshing = ref(false); const loading = ref(false); const collapsedIds = ref<(number | string)[]>([]); const contactGroups = ref<ContactGroup[]>([]); const groupChats = ref<GroupChat[]>([]); const showContactActions = ref(false); const selectedContact = ref<Contact | null>(null); const showMoveGroupModal = ref(false); const showRemarkModal = ref(false); const remarkName = ref(''); const savingRemark = ref(false); const showGroupActions = ref(false); const selectedGroup = ref<ContactGroup | null>(null); const showCreateGroupModal = ref(false); const showRenameGroupModal = ref(false); const newGroupName = ref(''); const renameGroupName = ref(''); const creating = ref(false); const renaming = ref(false); const scrollIntoViewId = ref('');
 const contacts = computed(() => chatStore.contacts); const friendRequestCount = computed(() => contactStore.friendRequests.filter(r => r.status === 'pending').length); const ungroupedContacts = computed(() => contacts.value.filter(c => !c.group_id || c.group_id === 0)); function getGroupContacts(groupId: number): Contact[] { return contacts.value.filter(c => c.group_id === groupId) }
 const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#']; const alphabetGroupedContacts = computed(() => { const groups: Record<string, Contact[]> = {}; contacts.value.forEach(contact => { const name = contact.remark_name || contact.user?.name || ''; const firstChar = name.charAt(0).toUpperCase(); const letter = /[A-Z]/.test(firstChar) ? firstChar : '#'; if (!groups[letter]) groups[letter] = []; groups[letter].push(contact) }); return Object.keys(groups).sort((a, b) => (a === '#' ? 1 : b === '#' ? -1 : a.localeCompare(b))).map(letter => ({ letter, contacts: groups[letter] })) });
@@ -335,6 +356,8 @@ function onGroupActionSelect(a: { value: string }) { showGroupActions.value=fals
 async function handleCreateGroup() { if(!newGroupName.value.trim()) return; creating.value=true; try { const ng = await contactApi.createGroup({group_name: newGroupName.value.trim()}); contactGroups.value.push(ng); showCreateGroupModal.value=false; newGroupName.value=''; toast.success('成功') } catch { toast.error('失败') } finally { creating.value=false } }
 async function handleRenameGroup() { if(!selectedGroup.value) return; renaming.value=true; try { await contactApi.updateGroup(selectedGroup.value.id, {group_name: renameGroupName.value.trim()}); const idx = contactGroups.value.findIndex(g=>g.id===selectedGroup.value!.id); if(idx>-1) contactGroups.value[idx].group_name=renameGroupName.value.trim(); showRenameGroupModal.value=false; toast.success('成功') } catch { toast.error('失败') } finally { renaming.value=false } }
 async function handleDeleteGroup() { try { await messageBox.confirm({title:'提示', msg:'确定删除分组?'}); await contactApi.deleteGroup(selectedGroup.value!.id); const idx = contactGroups.value.findIndex(g=>g.id===selectedGroup.value!.id); if(idx>-1) contactGroups.value.splice(idx,1); chatStore.contacts.forEach(c=>{if(c.group_id===selectedGroup.value?.id) c.group_id=0}); toast.success('已删除') } catch {} }
+function openDrawer() { showDrawer.value = true }
+async function logout() { try { await messageBox.confirm({ title: '提示', msg: '确定退出?' }); showDrawer.value = false; authStore.logout() } catch {} }
 </script>
 
 <style lang="scss" scoped>
@@ -416,7 +439,8 @@ async function handleDeleteGroup() { try { await messageBox.confirm({title:'提�
   z-index: 100;
   background: var(--bg-page);
   padding-top: var(--status-bar-height);
-  border-bottom: 1rpx solid var(--border-color);
+  // 与消息页一致，不要下边框
+  border-bottom: none;
   transition: background 0.3s;
 }
 
@@ -454,6 +478,36 @@ async function handleDeleteGroup() { try { await messageBox.confirm({title:'提�
       color: var(--text-secondary);
     }
   }
+}
+
+// 左侧: 头像 + 标题 (与消息页一致)
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+.avatar-container {
+  position: relative;
+  width: 72rpx;
+  height: 72rpx;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: -4rpx;
+  right: -4rpx;
+  width: 24rpx;
+  height: 24rpx;
+  background: #10b981;
+  border: 4rpx solid var(--bg-surface);
+  border-radius: 50%;
 }
 
 // 搜索栏

@@ -91,7 +91,6 @@ const tabs = [
   { name: 'messages', label: '消息', path: '/pages/index/index' },
   { name: 'contacts', label: '联系人', path: '/pages/contact/index' },
   { name: 'moments', label: '发现', path: '/pages/moment/index' },
-  { name: 'profile', label: '我的', path: '/pages/profile/index' }
 ]
 
 function switchTab(name: string) {
@@ -110,7 +109,7 @@ function switchTab(name: string) {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: 10;
   height: 168rpx;
   background: #ffffff;
   border-top: 1rpx solid rgba(0, 0, 0, 0.05);

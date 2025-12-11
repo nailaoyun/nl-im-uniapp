@@ -373,6 +373,8 @@ async function logout() {
   top: 0;
   z-index: 100;
   padding-top: var(--status-bar-height, 0);
+  // 确保没有任何边框
+  border: none;
 
   .navbar-bg {
     position: absolute;
@@ -380,11 +382,7 @@ async function logout() {
     background: var(--nav-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1rpx solid transparent;
-
-    .dark & {
-      border-bottom-color: rgba(68, 64, 60, 0.5);
-    }
+    border: none;
   }
 
   .navbar-content {
@@ -657,7 +655,6 @@ async function logout() {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-bottom: 1rpx solid var(--border-color);
   padding-bottom: 28rpx;
   margin-bottom: -28rpx;
   margin-left: 8rpx;
