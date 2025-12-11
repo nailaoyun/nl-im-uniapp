@@ -197,6 +197,13 @@
             @close="showMentionPicker = false"
         />
 
+        <!-- 表情选择器 -->
+        <emoji-picker
+            :show="showEmoji"
+            @select="handleEmojiSelect"
+            @close="showEmoji = false"
+        />
+
         <view class="input-bar-capsule">
           <!-- 左侧: 语音按钮 -->
           <view
@@ -261,7 +268,7 @@
       </view>
 
       <!-- 更多功能面板 -->
-      <wd-popup v-model="showMore" position="bottom" safe-area-inset-bottom custom-style="background: var(--bg-card); border-radius: 32rpx 32rpx 0 0;">
+      <wd-popup v-model="showMore" position="bottom" safe-area-inset-bottom :z-index="10000" custom-style="background: var(--bg-card); border-radius: 32rpx 32rpx 0 0;">
         <view class="tools-grid">
           <view class="tool-item" @click="chooseImage">
             <view class="tool-icon album">
@@ -358,6 +365,7 @@ import { useTheme } from '@/composables/useTheme'
 import { useWebRTC } from '@/composables/useWebRTC'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import MentionPicker from '@/components/chat/MentionPicker.vue'
+import EmojiPicker from '@/components/chat/EmojiPicker.vue'
 import type { MentionUser } from '@/components/chat/MentionPicker.vue'
 import * as roomApi from '@/api/modules/room'
 import type { ChatMessage, Attachment, GroupMember } from '@/types/api'
@@ -420,8 +428,24 @@ function getMediaTypeClass(type: number) { if (type === 1) return 'media-bubble 
 function getMediaUrl(msg: ChatMessage): string { let url = ''; if (typeof msg.extra === 'string') { try { const extra = JSON.parse(msg.extra); url = extra.url || msg.content } catch { url = msg.content } } else { url = msg.extra?.url || msg.content } return resolveImageUrl(url) }
 function getFileName(msg: ChatMessage): string { if (typeof msg.extra === 'string') { try { const extra = JSON.parse(msg.extra); return extra.name || '未知文件' } catch { return '未知文件' } } return msg.extra?.name || '未知文件' }
 function getFileSize(msg: ChatMessage): number { if (typeof msg.extra === 'string') { try { const extra = JSON.parse(msg.extra); return extra.size || 0 } catch { return 0 } } return msg.extra?.size || 0 }
-function getMessageSenderAvatar(msg: ChatMessage): string { return targetUser.value?.avatar || '' }
-function getMessageSenderName(msg: ChatMessage): string { return targetUser.value?.name || chatName.value || '未知' }
+function getMessageSenderAvatar(msg: ChatMessage): string {
+  // 群聊时从群成员列表获取头像
+  if (isGroupChat.value && msg.sender_user_id) {
+    const member = groupMembers.value.find(m => m.user_id === msg.sender_user_id)
+    if (member?.user?.avatar) return member.user.avatar
+  }
+  // 单聊时使用对方头像
+  return targetUser.value?.avatar || ''
+}
+function getMessageSenderName(msg: ChatMessage): string {
+  // 群聊时从群成员列表获取名称
+  if (isGroupChat.value && msg.sender_user_id) {
+    const member = groupMembers.value.find(m => m.user_id === msg.sender_user_id)
+    if (member) return member.nickname || member.user?.name || '群成员'
+  }
+  // 单聊时使用对方名称
+  return targetUser.value?.name || chatName.value || '未知'
+}
 function onAvatarClick(msg: ChatMessage) { const userId = msg.sender_user_id; if (!userId) return; uni.navigateTo({ url: `/pages/contact/detail?userId=${userId}` }) }
 function handleMessageLongPress(msg: ChatMessage) { selectedMessage.value = msg; showMsgActions.value = true }
 async function onMsgActionSelect(action: { value: string }) { if (!selectedMessage.value) return; const msg = selectedMessage.value; showMsgActions.value = false; switch (action.value) { case 'copy': copyMessage(msg); break; case 'recall': await recallMessage(msg); break; case 'delete': deleteMessage(msg); break } }
@@ -431,6 +455,7 @@ function deleteMessage(msg: ChatMessage) { const index = messages.value.findInde
 function onInputChange(e: any) { const value = e.detail?.value || inputText.value; if (value.endsWith('@') && isGroupChat.value) { showMentionPicker.value = true } }
 function triggerMention() { inputText.value += '@'; showMentionPicker.value = true }
 function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('@')) { inputText.value = inputText.value.slice(0, -1) + `@${user.name} ` } else { inputText.value += `@${user.name} ` } showMentionPicker.value = false }
+function handleEmojiSelect(emoji: string) { inputText.value += emoji }
 function previewImage(msg: ChatMessage) { const url = getMediaUrl(msg); if (url) { uni.previewImage({ urls: [url], current: url }) } }
 
 // ========== 语音录制处理 ==========
@@ -624,20 +649,20 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
   .end-text { color: var(--text-tertiary); font-size: 24rpx; }
 }
 
-// 消息项容器
+// 消息项容器 - 与设计稿一致
 .message-item {
-  margin-bottom: 40rpx;
+  margin-bottom: 48rpx;
 
   .timestamp {
     display: flex;
     justify-content: center;
-    margin-bottom: 30rpx;
+    margin-bottom: 32rpx;
 
     text {
       background: rgba(0, 0, 0, 0.04);
-      padding: 6rpx 18rpx;
+      padding: 8rpx 20rpx;
       border-radius: 20rpx;
-      font-size: 22rpx;
+      font-size: 24rpx;
       color: var(--text-tertiary);
 
       .theme-dark & { background: rgba(255, 255, 255, 0.08); }
@@ -646,44 +671,44 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
 
   .system-notice {
     text-align: center;
-    margin: 20rpx 0;
+    margin: 24rpx 0;
     text { font-size: 24rpx; color: var(--text-tertiary); }
   }
 }
 
-// 核心布局
+// 核心布局 - 与设计稿一致
 .bubble-group {
   display: flex;
   align-items: flex-start;
-  gap: 16rpx;
+  gap: 24rpx;
 
   &.is-me {
-    justify-content: flex-end;
+    flex-direction: row-reverse;
   }
 }
 
-// 头像容器
+// 头像容器 - 与设计稿一致（40px=80rpx）
 .avatar-box {
   width: 80rpx;
   height: 80rpx;
   flex-shrink: 0;
 
-  &.left { order: 1; }
-  &.right { order: 3; }
+  :deep(.app-avatar) {
+    border-radius: 24rpx;
+  }
 }
 
-// 内容容器
+// 内容容器 - 与设计稿一致
 .content-box {
-  order: 2;
   max-width: 75%;
   display: flex;
   flex-direction: column;
 
   .sender-label {
-    font-size: 22rpx;
+    font-size: 20rpx;
     color: var(--text-tertiary);
     margin-bottom: 8rpx;
-    margin-left: 12rpx;
+    margin-left: 4rpx;
   }
 
   .is-me & {
@@ -698,16 +723,17 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
   padding: 24rpx 28rpx;
   border-radius: 32rpx;
   font-size: 30rpx;
-  line-height: 1.6;
+  line-height: 1.5;
   position: relative;
   word-break: break-all;
+  max-width: 100%;
 
   // 对方气泡 - 白色背景
   &.bubble-other {
     background: var(--bubble-other-bg);
     color: var(--text-msg-other);
     border-bottom-left-radius: 8rpx;
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
 
     .theme-dark & {
       border: 1rpx solid var(--bubble-other-border);
@@ -732,7 +758,7 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
       padding: 24rpx 28rpx;
       background: var(--bubble-other-bg) !important;
       border-radius: 32rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05) !important;
+      box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05) !important;
 
       .theme-dark & {
         border: 1rpx solid var(--bubble-other-border) !important;
@@ -992,7 +1018,7 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 99;
+  z-index: 200;
   background: var(--bg-card);
   border-top: 1rpx solid var(--border-subtle);
   padding: 24rpx 32rpx;
@@ -1039,7 +1065,7 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
     flex: 1;
     min-height: 88rpx;
     background: var(--input-bg);
-    border-radius: 40rpx;
+    border-radius: 32rpx;
     display: flex;
     align-items: center;
     padding: 20rpx 28rpx;
@@ -1052,9 +1078,9 @@ async function sendVoiceMessage(filePath: string, duration: number) { toast.load
 
     .text-input {
       width: 100%;
-      min-height: 48rpx;
+      min-height: 40rpx;
       max-height: 200rpx;
-      font-size: 30rpx;
+      font-size: 28rpx;
       line-height: 1.5;
       color: var(--text-main);
       background: transparent;

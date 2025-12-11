@@ -16,6 +16,7 @@ declare module 'vue' {
     AppNavBar: typeof import('./src/components/common/AppNavBar.vue')['default']
     AppTabBar: typeof import('./src/components/common/AppTabBar.vue')['default']
     CallWindow: typeof import('./src/components/call/CallWindow.vue')['default']
+    EmojiPicker: typeof import('./src/components/chat/EmojiPicker.vue')['default']
     GlobalCallProvider: typeof import('./src/components/call/GlobalCallProvider.vue')['default']
     GroupCallBanner: typeof import('./src/components/call/GroupCallBanner.vue')['default']
     GroupCallIncoming: typeof import('./src/components/call/GroupCallIncoming.vue')['default']

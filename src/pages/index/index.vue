@@ -87,15 +87,12 @@
             >
               <!-- 头像 -->
               <view class="avatar-wrap">
-                <image
-                  v-if="item.avatar"
-                  class="conv-avatar"
-                  :src="resolveImageUrl(item.avatar)"
-                  mode="aspectFill"
+                <app-avatar
+                  :src="item.avatar"
+                  :name="item.name"
+                  :size="100"
+                  radius="20rpx"
                 />
-                <view v-else class="conv-avatar avatar-placeholder">
-                  {{ (item.name || '?').charAt(0) }}
-                </view>
                 <!-- 在线状态点 (单聊时显示) -->
                 <view v-if="item.is_online && !item.is_group" class="online-indicator"></view>
                 <!-- 未读红点/数字 -->
@@ -185,6 +182,7 @@ import * as conversationApi from '@/api/modules/conversation'
 import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import PlusMenu from '@/components/common/PlusMenu.vue'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { Conversation } from '@/types/conversation'
 
 const authStore = useAuthStore()
