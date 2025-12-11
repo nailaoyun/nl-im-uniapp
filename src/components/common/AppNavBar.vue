@@ -83,7 +83,9 @@ function handleClickRight() {
 :deep(.app-nav-bar) {
   // 适配暗黑模式的背景色和文字颜色
   // 假设 src/uni.scss 或 variables.scss 中定义了这些 CSS 变量
-  background-color: var(--bg-content) !important;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 
   .wd-navbar__title {
     color: var(--text-primary) !important;
@@ -102,10 +104,16 @@ function handleClickRight() {
 // 暗黑模式下的特殊覆盖（如果 CSS 变量不够用）
 .dark {
   :deep(.app-nav-bar) {
-    background-color: #1c1c1e !important; // 兜底暗色
+    background-color: rgba(28, 25, 23, 0.85) !important; // Warm Stone 900 with transparency
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 
     .wd-navbar__title {
-      color: #ffffff !important;
+      color: #f5f5f4 !important;
+    }
+    
+    .wd-icon {
+      color: #e7e5e4 !important;
     }
   }
 }

@@ -307,39 +307,45 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+// ==========================================
+// 与设计稿 聊天页面.html 第116-123行 完全一致
+// ==========================================
 .message-input {
-  --input-bg: #f1f1f1;
-  --input-text: #1f2937;
-  --placeholder-color: #9ca3af;
-  --icon-color: #6b7280;
-  --icon-hover: #4F46E5;
+  // 亮色模式颜色 (与设计稿一致)
+  --input-bg: #f3f4f6;            // 设计稿: bg-gray-100
+  --input-text: #1f2937;          // 设计稿: text-gray-800
+  --placeholder-color: #9ca3af;   // 设计稿: placeholder-gray-400
+  --icon-color: #6b7280;          // 设计稿: text-gray-500
+  --icon-hover: #4F46E5;          // 设计稿: hover:text-indigo-600
   --send-bg: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-  --border-color: rgba(0, 0, 0, 0.05);
-  --bg-content: #ffffff;
+  --border-color: #f3f4f6;        // 设计稿: border-gray-100
+  --bg-content: #ffffff;          // 设计稿: bg-white
   
   position: relative;
   background: var(--bg-content);
-  border-top: 1rpx solid var(--border-color);
+  border-top: 2rpx solid var(--border-color);
+  transition: all 0.3s;
   
+  // 暗色模式 - Warm Stone (与设计稿一致)
   &.theme-dark {
-    --input-bg: #292524;
-    --input-text: #f5f5f4;
-    --placeholder-color: #78716c;
-    --icon-color: #a8a29e;
-    --icon-hover: #f97316;
+    --input-bg: #292524;            // 设计稿: dark:bg-warm-800
+    --input-text: #f5f5f4;          // 设计稿: dark:text-warm-100
+    --placeholder-color: #78716c;   // 设计稿: dark:placeholder-warm-500
+    --icon-color: #a8a29e;          // 设计稿: dark:text-warm-400
+    --icon-hover: #f97316;          // 设计稿: dark:hover:text-orange-400
     --send-bg: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-    --border-color: #44403c;
-    --bg-content: #1c1917;
+    --border-color: #292524;        // 设计稿: dark:border-warm-800
+    --bg-content: #1c1917;          // 设计稿: dark:bg-warm-900
   }
 }
 
-// 底部输入栏
+// 底部输入栏 - 设计稿: px-4 py-3 pb-8 flex items-end gap-3
 .input-bar {
   display: flex;
-  align-items: flex-end;
-  gap: 24rpx;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  align-items: flex-end;         // 设计稿: items-end
+  gap: 24rpx;                    // 设计稿: gap-3 = 12px = 24rpx
+  padding: 24rpx 32rpx;          // 设计稿: px-4 py-3 = 16px 12px = 32rpx 24rpx
+  padding-bottom: calc(64rpx + env(safe-area-inset-bottom)); // 设计稿: pb-8 = 32px = 64rpx
 }
 
 // 语音按钮
@@ -365,27 +371,32 @@ defineExpose({
   }
 }
 
-// 输入框容器
+// 输入框容器 - 与设计稿完全一致
+// 设计稿: flex-1 bg-gray-100 dark:bg-warm-800 rounded-2xl px-4 py-2.5 min-h-[44px] 
+//         border border-transparent dark:border-warm-700
 .input-wrap {
   flex: 1;
-  min-height: 88rpx;
+  min-height: 88rpx;              // 设计稿: min-h-[44px] = 44px = 88rpx
   background: var(--input-bg);
-  border-radius: 40rpx;
-  padding: 20rpx 28rpx;
+  border-radius: 32rpx;           // 设计稿: rounded-2xl = 16px = 32rpx
+  padding: 20rpx 32rpx;           // 设计稿: px-4 py-2.5 = 16px 10px = 32rpx 20rpx
   display: flex;
   align-items: center;
+  border: 2rpx solid transparent;  // 设计稿: border border-transparent
   transition: all 0.2s;
   
+  // 设计稿: dark:border-warm-700
   .theme-dark & {
-    border: 1rpx solid var(--border-color);
+    border-color: #44403c;        // warm-700
   }
 }
 
+// 设计稿: text-sm text-gray-800 dark:text-warm-100 resize-none h-5
 .text-input {
   width: 100%;
-  min-height: 48rpx;
+  min-height: 40rpx;             // 设计稿: h-5 = 20px = 40rpx
   max-height: 200rpx;
-  font-size: 30rpx;
+  font-size: 28rpx;              // 设计稿: text-sm = 14px = 28rpx
   line-height: 1.5;
   color: var(--input-text);
   background: transparent;

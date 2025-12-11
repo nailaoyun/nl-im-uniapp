@@ -620,11 +620,7 @@ function getImageSize(moment: Moment): string {
     height: 0;
     border-left: 12rpx solid transparent;
     border-right: 12rpx solid transparent;
-    border-bottom: 12rpx solid #f3f4f6; // gray-100
-    
-    .dark & {
-      border-bottom-color: #292524; // 设计稿: warm-800
-    }
+    border-bottom: 12rpx solid var(--bg-detail);
   }
 
   .likes-list {
@@ -671,6 +667,12 @@ function getImageSize(moment: Moment): string {
   }
 }
 
+// FAB 脉冲动画
+@keyframes fab-pulse {
+  0%, 100% { box-shadow: 0 10rpx 30rpx rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 10rpx 40rpx rgba(16, 185, 129, 0.5); }
+}
+
 // 悬浮发布按钮
 .fab-btn {
   position: fixed;
@@ -686,6 +688,7 @@ function getImageSize(moment: Moment): string {
   justify-content: center;
   z-index: 99;
   transition: transform 0.2s;
+  animation: fab-pulse 2s ease-in-out infinite;
 
   svg {
     width: 52rpx;
@@ -694,6 +697,7 @@ function getImageSize(moment: Moment): string {
 
   &:active {
     transform: scale(0.95);
+    animation: none;
   }
 }
 </style>

@@ -193,6 +193,20 @@ function onAction() {
   background: var(--bg-hover);
   border-radius: 8rpx;
   padding: 16rpx;
+  position: relative;
+  
+  // 三角指示器
+  &::before {
+    content: '';
+    position: absolute;
+    top: -12rpx;
+    left: 24rpx;
+    width: 0;
+    height: 0;
+    border-left: 12rpx solid transparent;
+    border-right: 12rpx solid transparent;
+    border-bottom: 12rpx solid var(--bg-hover);
+  }
 
   .likes-row {
     display: flex;

@@ -618,6 +618,7 @@ function goUserDetail(user: User) {
   border-radius: 40rpx;
   transition: all 0.15s;
   box-shadow: 0 4rpx 30rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
   
   .dark & {
     box-shadow: none;
@@ -633,6 +634,7 @@ function goUserDetail(user: User) {
   
   .user-info {
     flex: 1;
+    min-width: 0;
     margin-left: 24rpx;
     
     .user-name {
@@ -640,6 +642,9 @@ function goUserDetail(user: User) {
       font-weight: 700;
       color: var(--text-main);
       display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .user-id {
@@ -647,11 +652,15 @@ function goUserDetail(user: User) {
       color: var(--text-sub);
       margin-top: 4rpx;
       display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
   
   .add-btn {
-    padding: 16rpx 40rpx;
+    flex-shrink: 0;
+    padding: 16rpx 32rpx;
     border-radius: 40rpx;
     font-size: 28rpx;
     font-weight: 700;

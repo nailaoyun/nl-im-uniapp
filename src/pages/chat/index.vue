@@ -127,9 +127,9 @@
 
                   <!-- 视频 -->
                   <view v-else-if="msg.message_type === 3" class="video-preview" @click="playVideo(msg)">
-                    <image 
-                      :src="getVideoThumb(msg)" 
-                      mode="aspectFill" 
+                    <image
+                      :src="getVideoThumb(msg)"
+                      mode="aspectFill"
                       class="video-thumb"
                     />
                     <view class="play-overlay">
@@ -401,12 +401,12 @@ onLoad((options: any) => { roomId.value = options?.roomId || ''; targetId.value 
 onMounted(() => { if (targetId.value) { conversationStore.clearUnread(targetId.value) } setTimeout(() => { scrollToBottom(false) }, 300) });
 onUnmounted(() => { wsManager.offMessage(handleNewMessage); stopAudio(); });
 
-async function loadGroupMembers() { 
+async function loadGroupMembers() {
   if (!roomId.value) return
-  try { 
+  try {
     const members = await roomApi.getGroupMembers(roomId.value)
     groupMembers.value = members
-    
+
     // 构建用户缓存
     members.forEach(member => {
       if (member.user_id) {
@@ -420,11 +420,11 @@ async function loadGroupMembers() {
         }
       }
     })
-    
+
     console.log('📋 群成员数据:', members.length, '人，用户缓存:', userCache.value.size, '人')
-  } catch (e) { 
-    console.error('加载群成员失败:', e) 
-  } 
+  } catch (e) {
+    console.error('加载群成员失败:', e)
+  }
 }
 async function loadMessages() { if (!roomId.value) return; try { const cached = chatStore.getRoomMessages(roomId.value); if (cached.length > 0) { messages.value = cached.map((m) => ({ ...m, isSelf: m.sender_user_id === currentUser.value?.id, extra: typeof m.extra === 'string' ? JSON.parse(m.extra || '{}') : m.extra })); scrollToBottom(false); return } const res = await messageApi.getMessages(roomId.value, 1, 50); messages.value = (res.data || []).reverse().map((m: ChatMessage) => ({ ...m, isSelf: m.sender_user_id === currentUser.value?.id, extra: typeof m.extra === 'string' ? JSON.parse(m.extra || '{}') : m.extra })); chatStore.setRoomMessages(roomId.value, messages.value); hasMore.value = res.data.length >= 50; scrollToBottom(false) } catch (error) { console.error('加载消息失败:', error) } }
 function onScrollToUpper() { if (!loadingMore.value && hasMore.value) { loadMoreMessages() } }
@@ -434,12 +434,12 @@ function startAudioCall() { if (!targetId.value) { toast.show('无法发起通�
 function startVideoCall() { if (!targetId.value) { toast.show('无法发起通话'); return } webrtc.startCall('video', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar) }
 function onMoreAudioCall() { showMore.value = false; startAudioCall() }
 function onMoreVideoCall() { showMore.value = false; startVideoCall() }
-function handleNewMessage(msg: ChatMessage) { 
+function handleNewMessage(msg: ChatMessage) {
   if (msg.message_type === 6) return
   const parsedExtra = typeof msg.extra === 'string' ? JSON.parse(msg.extra || '{}') : msg.extra
   const newMsg: ChatMessage = { ...msg, isSelf: msg.sender_user_id === currentUser.value?.id, extra: parsedExtra }
   const isCurrentChat = msg.room_id === roomId.value
-  
+
   // 尝试从消息中提取发送者信息并缓存
   const msgAny = msg as any
   if (msg.sender_user_id && !userCache.value.has(msg.sender_user_id)) {
@@ -449,18 +449,18 @@ function handleNewMessage(msg: ChatMessage) {
       userCache.value.set(msg.sender_user_id, { name: senderName, avatar: senderAvatar })
     }
   }
-  
+
   conversationStore.handleMessageUpdate(newMsg, newMsg.isSelf || false, isCurrentChat)
   if (!isCurrentChat) return
-  
-  const exists = messages.value.some( 
-    (m) => m.id === newMsg.id || (m.isSelf && m.content === newMsg.content && Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 2000) 
+
+  const exists = messages.value.some(
+    (m) => m.id === newMsg.id || (m.isSelf && m.content === newMsg.content && Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 2000)
   )
-  if (!exists) { 
+  if (!exists) {
     messages.value.push(newMsg)
     chatStore.addMessage(roomId.value, newMsg)
-    scrollToBottom(true) 
-  } 
+    scrollToBottom(true)
+  }
 }
 function scrollToBottom(smooth = true) { nextTick(() => { if (messages.value.length > 0) { scrollWithAnimation.value = smooth; scrollToId.value = `msg-${messages.value[messages.value.length - 1].id}` } }) }
 async function sendTextMessage() { if (!inputText.value.trim() || !roomId.value) return; const content = inputText.value.trim(); inputText.value = ''; const message: ChatMessage = { id: Date.now(), room_id: roomId.value, sender_user_id: currentUser.value!.id, receiver_user_id: targetId.value || '', message_type: 0, content, duration: 0, extra: {}, created_at: new Date().toISOString(), isSelf: true }; messages.value.push(message); chatStore.addMessage(roomId.value, message); conversationStore.handleMessageUpdate(message, true, true); scrollToBottom(); try { await messageApi.sendMessage({ sender_client_id: wsManager.getClientId() || '', receiver_user_id: targetId.value || '', room_id: roomId.value, message_type: 0, content, extra: JSON.stringify({}) }) } catch { const index = messages.value.findIndex((m) => m.id === message.id); if (index > -1) { messages.value.splice(index, 1) } toast.error('发送失败'); inputText.value = content } }
@@ -487,33 +487,33 @@ function getFileSize(msg: ChatMessage): number { if (typeof msg.extra === 'strin
 function getMessageSenderAvatar(msg: ChatMessage): string {
   const msgAny = msg as any
   const senderId = msg.sender_user_id
-  
+
   // 1. 尝试从消息本身获取发送者头像
   if (msgAny.sender?.avatar) return resolveImageUrl(msgAny.sender.avatar)
   if (msgAny.sender_avatar) return resolveImageUrl(msgAny.sender_avatar)
   if (msgAny.from_user?.avatar) return resolveImageUrl(msgAny.from_user.avatar)
-  
+
   // 2. 群聊时获取头像
   if (isGroupChat.value && senderId) {
     // 优先从用户缓存获取
     const cachedUser = userCache.value.get(senderId)
     if (cachedUser?.avatar) return resolveImageUrl(cachedUser.avatar)
-    
+
     // 从群成员列表获取
     const member = groupMembers.value.find(m => m.user_id === senderId)
     if (member) {
       const avatar = member.user?.avatar || (member as any).avatar || (member as any).user_avatar
       if (avatar) return resolveImageUrl(avatar)
     }
-    
+
     // 从联系人列表中查找
     const contact = chatStore.contacts.find(c => c.contact_user_id === senderId)
     if (contact?.user?.avatar) return resolveImageUrl(contact.user.avatar)
-    
+
     // 返回空字符串，让 AppAvatar 组件显示首字母头像
     return ''
   }
-  
+
   // 3. 单聊时使用对方头像
   return resolveImageUrl(targetUser.value?.avatar || '')
 }
@@ -521,33 +521,33 @@ function getMessageSenderAvatar(msg: ChatMessage): string {
 function getMessageSenderName(msg: ChatMessage): string {
   const msgAny = msg as any
   const senderId = msg.sender_user_id
-  
+
   // 1. 尝试从消息本身获取发送者名称
   if (msgAny.sender?.name) return msgAny.sender.name
   if (msgAny.sender_name) return msgAny.sender_name
   if (msgAny.from_user?.name) return msgAny.from_user.name
-  
+
   // 2. 群聊时获取名称
   if (isGroupChat.value && senderId) {
     // 优先从用户缓存获取
     const cachedUser = userCache.value.get(senderId)
     if (cachedUser?.name) return cachedUser.name
-    
+
     // 从群成员列表获取
     const member = groupMembers.value.find(m => m.user_id === senderId)
     if (member) {
       const name = member.nickname || member.user?.name || (member as any).name || (member as any).user_name
       if (name) return name
     }
-    
+
     // 从联系人列表中查找
     const contact = chatStore.contacts.find(c => c.contact_user_id === senderId)
     if (contact?.user?.name) return contact.remark_name || contact.user.name
-    
+
     // 返回用户 ID 的后 4 位作为备用名称
     return `用户${senderId.slice(-4)}`
   }
-  
+
   // 3. 单聊时使用对方名称
   return targetUser.value?.name || chatName.value || '未知'
 }
@@ -652,54 +652,54 @@ async function checkRecordPermission(): Promise<boolean> {
   })
 }
 
-function initRecorderManager() { 
+function initRecorderManager() {
   if (recorderManager) return recorderManager
-  
+
   // H5 平台不支持 uni.getRecorderManager
   /* #ifdef H5 */
   toast.error('当前平台不支持录音')
   return null
   /* #endif */
-  
+
   /* #ifndef H5 */
   const manager = uni.getRecorderManager()
-  
+
   if (!manager) {
     toast.error('录音功能不可用')
     return null
   }
-  
-  manager.onStart(() => { 
+
+  manager.onStart(() => {
     console.log('录音开始')
     isRecording.value = true
     recordDuration.value = 0
-    recordTimer = setInterval(() => { 
+    recordTimer = setInterval(() => {
       recordDuration.value++
-      if (recordDuration.value >= 60) { 
-        stopRecording() 
-      } 
-    }, 1000) 
+      if (recordDuration.value >= 60) {
+        stopRecording()
+      }
+    }, 1000)
   })
-  
-  manager.onStop((res) => { 
+
+  manager.onStop((res) => {
     console.log('录音结束', res)
     clearRecordTimer()
     isRecording.value = false
-    if (!isCancelRecording.value && res.tempFilePath && recordDuration.value >= 1) { 
-      sendVoiceMessage(res.tempFilePath, recordDuration.value) 
-    } 
+    if (!isCancelRecording.value && res.tempFilePath && recordDuration.value >= 1) {
+      sendVoiceMessage(res.tempFilePath, recordDuration.value)
+    }
     isCancelRecording.value = false
-    recordDuration.value = 0 
+    recordDuration.value = 0
   })
-  
-  manager.onError((err) => { 
+
+  manager.onError((err) => {
     console.error('录音错误', err)
     clearRecordTimer()
     isRecording.value = false
     isCancelRecording.value = false
     toast.error('录音失败：' + (err.errMsg || '未知错误'))
   })
-  
+
   recorderManager = manager
   return recorderManager
   /* #endif */
@@ -707,80 +707,80 @@ function initRecorderManager() {
 
 function clearRecordTimer() { if (recordTimer) { clearInterval(recordTimer); recordTimer = null } }
 
-async function startRecording(e: TouchEvent) { 
+async function startRecording(e: TouchEvent) {
   recordStartY = e.touches[0].clientY
   isCancelRecording.value = false
-  
+
   // 先检查权限
   const hasPermission = await checkRecordPermission()
   if (!hasPermission) {
     toast.error('无录音权限')
     return
   }
-  
+
   const recorder = initRecorderManager()
   if (!recorder) {
     return
   }
-  
-  recorder.start({ 
-    duration: 60000, 
-    sampleRate: 16000, 
-    numberOfChannels: 1, 
-    encodeBitRate: 48000, 
+
+  recorder.start({
+    duration: 60000,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    encodeBitRate: 48000,
     format: 'aac' // 使用 aac 格式，跨平台兼容性更好
-  }) 
+  })
 }
 function onRecordingMove(e: TouchEvent) { if (!isRecording.value) return; const currentY = e.touches[0].clientY; const diff = recordStartY - currentY; isCancelRecording.value = diff > 80 }
 function stopRecording() { if (!isRecording.value) return; if (recorderManager) { recorderManager.stop() } }
 function cancelRecording() { isCancelRecording.value = true; stopRecording() }
-async function sendVoiceMessage(filePath: string, duration: number) { 
+async function sendVoiceMessage(filePath: string, duration: number) {
   toast.loading('发送中...')
-  try { 
+  try {
     const attachment = await attachmentApi.uploadAttachment(filePath, 'audio')
     toast.close()
-    
-    const extra: Record<string, any> = { 
-      url: attachment.file_url, 
+
+    const extra: Record<string, any> = {
+      url: attachment.file_url,
       name: attachment.file_name || 'voice.m4a', // 使用 m4a 扩展名（aac 格式）
-      size: attachment.file_size || 0, 
-      duration: duration, 
-      attachment_id: attachment.id 
+      size: attachment.file_size || 0,
+      duration: duration,
+      attachment_id: attachment.id
     }
-    
-    const message: ChatMessage = { 
-      id: Date.now(), 
-      room_id: roomId.value, 
-      sender_user_id: currentUser.value!.id, 
-      receiver_user_id: targetId.value || '', 
-      message_type: 2, 
-      content: attachment.file_url, 
-      duration: duration, 
-      extra, 
-      created_at: new Date().toISOString(), 
-      isSelf: true 
+
+    const message: ChatMessage = {
+      id: Date.now(),
+      room_id: roomId.value,
+      sender_user_id: currentUser.value!.id,
+      receiver_user_id: targetId.value || '',
+      message_type: 2,
+      content: attachment.file_url,
+      duration: duration,
+      extra,
+      created_at: new Date().toISOString(),
+      isSelf: true
     }
-    
+
     messages.value.push(message)
     chatStore.addMessage(roomId.value, message)
     conversationStore.handleMessageUpdate(message, true, true)
     scrollToBottom(true)
-    
-    await messageApi.sendMessage({ 
-      sender_client_id: wsManager.getClientId() || '', 
-      receiver_user_id: targetId.value || '', 
-      room_id: roomId.value, 
-      message_type: 2, 
-      content: attachment.file_url, 
-      duration: duration, 
-      extra: JSON.stringify(extra) 
+
+    await messageApi.sendMessage({
+      sender_client_id: wsManager.getClientId() || '',
+      receiver_user_id: targetId.value || '',
+      room_id: roomId.value,
+      message_type: 2,
+      content: attachment.file_url,
+      duration: duration,
+      extra: JSON.stringify(extra)
     })
-    toast.success('发送成功') 
-  } catch (error: any) { 
+    toast.success('发送成功')
+  } catch (error: any) {
     toast.close()
     console.error('语音发送失败:', error)
-    toast.error(error.message || '发送失败') 
-  } 
+    toast.error(error.message || '发送失败')
+  }
 }
 </script>
 
@@ -840,12 +840,12 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     background: rgba(255, 255, 255, 0.9); // 设计稿 bg-white/90
     backdrop-filter: blur(12px); // 设计稿 backdrop-blur-md
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 2rpx solid #f3f4f6; // 设计稿 border-gray-100
+    border-bottom: 2rpx solid transparent; // 设计稿 border-transparent
     transition: all 0.3s;
-    
+
     .theme-dark & {
       background: rgba(28, 25, 23, 0.9); // 设计稿 dark:bg-warm-900/90
-      border-color: #292524; // 设计稿 dark:border-warm-800
+      border-color: rgba(68, 64, 60, 0.5); // 设计稿 dark:border-warm-800/50
     }
   }
 
@@ -872,7 +872,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     width: 56rpx; // 设计稿 w-7 = 28px = 56rpx
     height: 56rpx;
     color: #1f2937; // 设计稿 text-gray-800
-    
+
     .theme-dark & {
       color: #f5f5f4; // 设计稿 dark:text-warm-100
     }
@@ -888,7 +888,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     font-weight: 700; // 设计稿 font-bold
     color: #111827; // 设计稿 text-gray-900
     line-height: 1.2; // 设计稿 leading-tight
-    
+
     .theme-dark & {
       color: #f5f5f4; // 设计稿 dark:text-warm-100
     }
@@ -902,7 +902,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     color: #9ca3af; // 设计稿 text-gray-400
     font-weight: 500; // 设计稿 font-medium
     margin-top: 2rpx;
-    
+
     .theme-dark & {
       color: #a8a29e; // 设计稿 dark:text-warm-400
     }
@@ -937,7 +937,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       height: 48rpx;
       color: #4b5563; // 设计稿 text-gray-600
       transition: color 0.2s ease;
-      
+
       .theme-dark & {
         color: #a8a29e; // 设计稿 dark:text-warm-400
       }
@@ -946,7 +946,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     &:hover svg {
       color: #4f46e5; // 设计稿 hover:text-indigo-600
     }
-    
+
     .theme-dark &:hover svg {
       color: #fb923c; // 设计稿 dark:hover:text-orange-400
     }
@@ -960,7 +960,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   overflow: hidden;
   box-sizing: border-box;
   background: #F5F7FA; // 设计稿 bg-[#F5F7FA]
-  
+
   .theme-dark & {
     background: #121212; // 设计稿 dark:bg-[#121212]
   }
@@ -997,7 +997,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       color: #9ca3af; // 设计稿 text-gray-400
       transition: background 0.3s, color 0.3s;
 
-      .theme-dark & { 
+      .theme-dark & {
         background: rgba(41, 37, 36, 0.5); // 设计稿 bg-warm-800/50
         color: #78716c; // 设计稿 text-warm-600
       }
@@ -1034,17 +1034,17 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   border-radius: 24rpx; // 设计稿 rounded-xl = 12px = 24rpx
   overflow: hidden;
   background: #e5e7eb; // 设计稿 bg-gray-200
-  
+
   .theme-dark & {
     background: #292524; // 设计稿 dark:bg-warm-800
   }
-  
+
   .avatar-img {
     width: 100%;
     height: 100%;
     border-radius: 24rpx;
   }
-  
+
   .avatar-placeholder {
     width: 100%;
     height: 100%;
@@ -1076,7 +1076,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   color: #9ca3af; // 设计稿 text-gray-400
   margin-bottom: 8rpx; // 设计稿 mb-1 = 4px = 8rpx
   margin-left: 8rpx; // 设计稿 ml-1 = 4px = 8rpx
-  
+
   .theme-dark & {
     color: #78716c; // 设计稿 dark:text-warm-500
   }
@@ -1145,7 +1145,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
         border: 2rpx solid #44403c !important;
       }
     }
-    
+
     // 自己发送的语音
     .is-self &.audio {
       background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%) !important;
@@ -1169,7 +1169,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     display: block;
     background: #e5e7eb; // 设计稿 bg-gray-200
     border: 2rpx solid #f3f4f6; // 设计稿 border-gray-100
-    
+
     .theme-dark & {
       background: #292524; // 设计稿 dark:bg-warm-800
       border-color: #44403c; // 设计稿 dark:border-warm-700
@@ -1185,7 +1185,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   gap: 24rpx; // 设计稿 gap-3 = 12px = 24rpx
   min-width: 200rpx; // 设计稿 min-w-[100px] = 200rpx
   color: #6b7280; // 设计稿 text-gray-500
-  
+
   .theme-dark & {
     color: #a8a29e; // 设计稿 dark:text-warm-400
   }
@@ -1289,27 +1289,27 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       width: 40rpx; // 设计稿 w-5 = 20px = 40rpx
       height: 40rpx;
     }
-    
+
     .theme-dark & {
       background: rgba(154, 52, 18, 0.3); // 设计稿 dark:bg-orange-900/30
     }
   }
-  
+
   // 自己发送的文件 - 设计稿: bg-white/20 text-white
   &.file-self {
     background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
     box-shadow: 0 4rpx 16rpx rgba(79, 70, 229, 0.2);
     border: none;
-    
+
     .theme-dark & {
       border: none;
     }
-    
+
     .file-icon-box.icon-self {
       background: rgba(255, 255, 255, 0.2); // 设计稿 bg-white/20
       color: #fff; // 设计稿 text-white
     }
-    
+
     .file-meta {
       .fname {
         color: #fff; // 设计稿 text-white
@@ -1335,7 +1335,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      
+
       .theme-dark & {
         color: #f5f5f4; // 设计稿 dark:text-warm-100
       }
@@ -1345,7 +1345,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     .fsize {
       font-size: 20rpx; // 设计稿 text-[10px]
       color: #9ca3af; // 设计稿 text-gray-400
-      
+
       .theme-dark & {
         color: #78716c; // 设计稿 dark:text-warm-500
       }
@@ -1362,7 +1362,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   overflow: hidden;
   background: #000;
   cursor: pointer;
-  
+
   .video-thumb {
     width: 100%;
     height: auto;
@@ -1371,12 +1371,12 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     opacity: 0.9;
     transition: opacity 0.2s;
   }
-  
+
   &:hover .video-thumb,
   &:active .video-thumb {
     opacity: 1;
   }
-  
+
   .play-overlay {
     position: absolute;
     inset: 0;
@@ -1384,7 +1384,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     align-items: center;
     justify-content: center;
   }
-  
+
   .play-btn-circle {
     width: 80rpx; // 设计稿 w-10 = 40px = 80rpx
     height: 80rpx;
@@ -1396,7 +1396,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     align-items: center;
     justify-content: center;
     border: 2rpx solid rgba(255, 255, 255, 0.3);
-    
+
     svg {
       width: 32rpx; // 设计稿 w-4 = 16px = 32rpx
       height: 32rpx;
@@ -1404,7 +1404,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       margin-left: 4rpx; // 视觉居中调整
     }
   }
-  
+
   .video-duration {
     position: absolute;
     bottom: 16rpx;
@@ -1418,7 +1418,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
-  
+
   // 兼容旧的 video 标签
   .video-player {
     width: 100%;
@@ -1463,16 +1463,16 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 32rpx;
   min-width: 300rpx;
-  
+
   .theme-dark & {
     background: rgba(41, 37, 36, 0.95);
   }
-  
+
   &.cancel-mode {
     .recording-icon {
       background: #ef4444;
     }
-    
+
     .wave-bars .wave-bar {
       background: #ef4444;
       animation: none;
@@ -1491,7 +1491,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   justify-content: center;
   margin-bottom: 32rpx;
   transition: background 0.2s;
-  
+
   svg {
     width: 60rpx;
     height: 60rpx;
@@ -1514,7 +1514,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   background: #10b981;
   border-radius: 8rpx;
   animation: wave 0.8s infinite ease-in-out;
-  
+
   @for $i from 1 through 5 {
     &:nth-child(#{$i}) {
       animation-delay: #{($i - 1) * 0.1}s;
@@ -1553,7 +1553,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
   padding: 24rpx 32rpx 64rpx; // 设计稿 px-4 py-3 pb-8
   padding-bottom: calc(64rpx + env(safe-area-inset-bottom));
   transition: all 0.3s;
-  
+
   .theme-dark & {
     background: #1c1917; // 设计稿 dark:bg-warm-900
     border-color: #292524; // 设计稿 dark:border-warm-800
@@ -1584,7 +1584,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       width: 56rpx;
       height: 56rpx;
     }
-    
+
     .theme-dark & {
       color: #a8a29e; // 设计稿 dark:text-warm-400
     }
@@ -1592,7 +1592,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
     &:hover {
       color: #4f46e5; // 设计稿 hover:text-indigo-600
     }
-    
+
     .theme-dark &:hover {
       color: #fb923c; // 设计稿 dark:hover:text-orange-400
     }
@@ -1632,7 +1632,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
       line-height: 1.5;
       color: #1f2937; // 设计稿 text-gray-800
       background: transparent;
-      
+
       .theme-dark & {
         color: #f5f5f4; // 设计稿 dark:text-warm-100
       }
@@ -1640,7 +1640,7 @@ async function sendVoiceMessage(filePath: string, duration: number) {
 
     .input-placeholder {
       color: #9ca3af; // 设计稿 placeholder-gray-400
-      
+
       .theme-dark & {
         color: #78716c; // 设计稿 dark:placeholder-warm-500
       }

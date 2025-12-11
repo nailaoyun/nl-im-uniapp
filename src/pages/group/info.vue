@@ -446,7 +446,10 @@ async function loadGroupInfo() {
 
     // 过滤可邀请的好友
     const memberIds = new Set(memberList.map(m => m.user_id))
-    availableContacts.value = contacts.filter(c => !memberIds.has(c.user_id || c.id))
+    availableContacts.value = (contacts || []).filter(c => {
+      const contactUserId = c.user_id || c.contact_user_id || c.id
+      return contactUserId && !memberIds.has(contactUserId)
+    })
   } catch (error) {
     console.error('加载群信息失败:', error)
     toast.error('加载失败')
