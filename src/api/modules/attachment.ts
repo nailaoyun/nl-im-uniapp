@@ -5,7 +5,7 @@ import request from '../request'
 import type { Attachment, PaginatedResponse } from '@/types/api'
 
 // 上传附件
-export function uploadAttachment(filePath: string, type?: 'image' | 'video' | 'file') {
+export function uploadAttachment(filePath: string, type?: 'image' | 'video' | 'file' | 'audio') {
   return request.upload<Attachment>('/attachments/upload', filePath, 'file', type ? { type } : undefined)
 }
 
