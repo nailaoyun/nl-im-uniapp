@@ -5,12 +5,7 @@
       <!-- 头部大卡片 -->
       <view class="profile-header">
         <view class="header-top">
-          <view class="back-btn" @click="goBack">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </view>
-          <text class="page-title">个人资料</text>
+          <text class="page-title">我的</text>
           <view class="icon-btn" @click="uni.navigateTo({ url: '/pages/settings/index' })">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -93,6 +88,7 @@
         </view>
       </view>
 
+      <app-tab-bar current="profile" />
     </view>
   </wd-config-provider>
 </template>
@@ -102,11 +98,11 @@ import { computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores'
 import AppAvatar from '@/components/common/AppAvatar.vue'
+import AppTabBar from '@/components/common/AppTabBar.vue'
 
 const { isDark } = useTheme()
 const authStore = useAuthStore()
 const userInfo = computed(() => authStore.userInfo || {})
-function goBack() { uni.navigateBack() }
 function goProfileEdit() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 </script>
 
@@ -123,7 +119,7 @@ function goProfileEdit() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 
   min-height: 100vh;
   background: var(--bg-page);
-  padding-bottom: 80rpx;
+  padding-bottom: 200rpx;
 }
 
 // 深色模式 - Warm Stone
@@ -169,30 +165,11 @@ function goProfileEdit() { uni.navigateTo({ url: '/pages/profile/edit' }) }
   align-items: center;
   margin-bottom: 48rpx;
 
-  .back-btn {
-    width: 72rpx;
-    height: 72rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.15s;
-
-    svg {
-      width: 40rpx;
-      height: 40rpx;
-      color: var(--text-primary);
-    }
-
-    &:active {
-      background: var(--border-color);
-    }
-  }
-
   .page-title {
-    font-size: 36rpx;
+    font-size: 42rpx;
     font-weight: 700;
     color: var(--text-primary);
+    letter-spacing: -0.5rpx;
   }
 
   .icon-btn {

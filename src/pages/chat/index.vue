@@ -75,15 +75,12 @@
             <view v-else class="msg-row" :class="{ 'is-self': msg.isSelf }">
               <!-- 头像 - 设计稿: w-10 h-10 rounded-xl shrink-0 -->
               <view class="avatar-wrap" @click="onAvatarClick(msg)">
-                <image 
-                  v-if="msg.isSelf ? currentUser?.avatar : getMessageSenderAvatar(msg)"
-                  :src="msg.isSelf ? resolveImageUrl(currentUser?.avatar || '') : getMessageSenderAvatar(msg)"
-                  class="avatar-img"
-                  mode="aspectFill"
+                <app-avatar
+                  :src="msg.isSelf ? currentUser?.avatar : getMessageSenderAvatar(msg)"
+                  :name="msg.isSelf ? currentUser?.name : getMessageSenderName(msg)"
+                  :size="80"
+                  radius="24rpx"
                 />
-                <view v-else class="avatar-placeholder">
-                  {{ msg.isSelf ? (currentUser?.name?.charAt(0) || '?') : (getMessageSenderName(msg)?.charAt(0) || '?') }}
-                </view>
               </view>
 
               <!-- 内容区 - 设计稿: flex flex-col max-w-[75%] -->

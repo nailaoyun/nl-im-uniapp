@@ -20,16 +20,12 @@
               @click="goChat(group)"
           >
             <view class="card-left">
-              <wd-img
-                  v-if="group.room_avatar"
-                  :src="group.room_avatar"
-                  width="100rpx"
-                  height="100rpx"
-                  radius="20rpx"
+              <app-avatar
+                :src="group.room_avatar"
+                :name="group.room_name"
+                :size="100"
+                radius="20rpx"
               />
-              <view v-else class="avatar-placeholder" :style="{ background: generateColor(group.room_name || '') }">
-                {{ group.room_name?.charAt(0) || '群' }}
-              </view>
             </view>
 
             <view class="card-right">
@@ -59,6 +55,7 @@ import { ref, onMounted } from 'vue'
 import * as roomApi from '@/api/modules/room'
 import { generateColor } from '@/utils/format'
 import { useTheme } from '@/composables/useTheme'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 
 // --- 逻辑保持不变 ---
 interface GroupItem { room_id: string; room_name: string; room_avatar: string; category: 'joined' | 'created' | 'managed' }

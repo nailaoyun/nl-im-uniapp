@@ -23,16 +23,12 @@
         :class="{ unread: !item.is_read }"
         @click="goMomentDetail(item)"
       >
-        <wd-img
-          v-if="item.from_user?.avatar"
-          :src="resolveImageUrl(item.from_user.avatar)"
-          width="80rpx"
-          height="80rpx"
+        <app-avatar
+          :src="item.from_user?.avatar"
+          :name="item.from_user?.name"
+          :size="80"
           radius="8rpx"
         />
-        <view v-else class="avatar-placeholder" :style="{ background: generateColor(item.from_user?.name || '') }">
-          {{ item.from_user?.name?.charAt(0) || '?' }}
-        </view>
 
         <view class="notify-content">
           <view class="notify-header">

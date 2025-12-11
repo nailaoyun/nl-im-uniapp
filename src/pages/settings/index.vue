@@ -185,27 +185,27 @@ function handleClearCache() {
 </script>
 
 <style lang="scss" scoped>
-// 页面容器 - 浅色模式
+// 页面容器 - 浅色模式 (与设计稿完全一致)
 .settings-page {
-  --bg-page: #f7f8fa;
-  --bg-surface: #ffffff;
-  --text-primary: #1d1d1f;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  --border-color: rgba(0, 0, 0, 0.05);
+  --bg-page: #F5F7FA;                   // 设计稿: bg-[#F5F7FA]
+  --bg-surface: #ffffff;                 // 卡片背景
+  --text-primary: #1f2937;               // gray-800 (列表项文字)
+  --text-secondary: #9ca3af;             // gray-400 (分组标题)
+  --text-tertiary: #9ca3af;              // gray-400 (值/箭头)
+  --border-color: #f9fafb;               // gray-50
 
   min-height: 100vh;
   background: var(--bg-page);
 }
 
-// 深色模式 - Warm Stone
+// 深色模式 - Warm Stone (与设计稿完全一致)
 .settings-page.dark {
-  --bg-page: #1c1917;
-  --bg-surface: #292524;
-  --text-primary: #f5f5f4;
-  --text-secondary: #e7e5e4;
-  --text-tertiary: #78716c;
-  --border-color: rgba(255, 255, 255, 0.1);
+  --bg-page: #121212;                    // 设计稿: bg-[#121212]
+  --bg-surface: #1c1917;                 // warm-900 (卡片背景)
+  --text-primary: #e7e5e4;               // warm-200 (列表项文字)
+  --text-secondary: #78716c;             // warm-500 (分组标题)
+  --text-tertiary: #9ca3af;              // gray-400 (值/箭头)
+  --border-color: rgba(41, 37, 36, 0.5); // warm-800/50
 }
 
 // 动画
@@ -300,7 +300,11 @@ function handleClearCache() {
   }
 
   &:active {
-    background: var(--border-color);
+    background: #f9fafb; // gray-50
+    
+    .dark & {
+      background: #292524; // warm-800
+    }
   }
 
   .icon-box {

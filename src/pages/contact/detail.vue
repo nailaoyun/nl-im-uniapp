@@ -191,25 +191,33 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
 </script>
 
 <style lang="scss" scoped>
-// 页面容器 - 浅色模式
+// 页面容器 - 浅色模式 (与设计稿完全一致)
 .detail-container {
-  --bg-base: #f7f8fa;
-  --bg-card: #ffffff;
-  --text-main: #1d1d1f;
-  --text-sub: #6b7280;
-  --color-brand: #4F46E5;
+  --bg-base: #ffffff;                  // 白色页面背景
+  --bg-card: #ffffff;                  // 卡片背景
+  --bg-secondary: #f3f4f6;             // gray-100 (次要背景/按钮)
+  --text-main: #1f2937;                // gray-900 (名称)
+  --text-sub: #6b7280;                 // gray-500 (签名/标签)
+  --text-tertiary: #9ca3af;            // gray-400 (值)
+  --color-brand: #4F46E5;              // indigo-600
+  --border-color: #f9fafb;             // gray-50
+  --gradient-to: #ffffff;              // 渐变终点色
 
   min-height: 100vh;
   background: var(--bg-base);
   position: relative;
 
-  // 深色模式 - Warm Stone
+  // 深色模式 - Warm Stone (与设计稿完全一致)
   &.theme-dark {
-    --bg-base: #1c1917;
-    --bg-card: #292524;
-    --text-main: #f5f5f4;
-    --text-sub: #78716c;
-    --color-brand: #f97316;
+    --bg-base: #0c0a09;                // warm-950 (极深背景)
+    --bg-card: #1c1917;                // warm-900
+    --bg-secondary: #292524;           // warm-800
+    --text-main: #f5f5f4;              // warm-100
+    --text-sub: #a8a29e;               // warm-400
+    --text-tertiary: #78716c;          // warm-500
+    --color-brand: #f97316;            // orange-500
+    --border-color: rgba(41, 37, 36, 0.5); // warm-800/50
+    --gradient-to: #0c0a09;            // warm-950
   }
 }
 
@@ -263,7 +271,7 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
   .gradient-mask {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 0%, var(--bg-base) 85%);
+    background: linear-gradient(to bottom, transparent 0%, var(--gradient-to) 85%);
   }
 
   .nav-back {
@@ -341,13 +349,9 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
         gap: 8rpx;
         font-size: 24rpx;
         color: var(--text-sub);
-        background: rgba(0, 0, 0, 0.04);
+        background: var(--bg-secondary);
         padding: 10rpx 20rpx;
         border-radius: 20rpx;
-
-        .theme-dark & {
-          background: rgba(255, 255, 255, 0.08);
-        }
 
         svg {
           width: 24rpx;
@@ -515,12 +519,8 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
 
       &.secondary {
         flex: 1;
-        background: rgba(0, 0, 0, 0.04);
+        background: var(--bg-secondary);
         color: var(--text-main);
-
-        .theme-dark & {
-          background: rgba(255, 255, 255, 0.08);
-        }
       }
     }
   }

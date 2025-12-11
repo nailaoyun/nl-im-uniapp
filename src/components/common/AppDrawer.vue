@@ -15,15 +15,12 @@
       <!-- 头部用户信息 -->
       <view class="drawer-header">
         <view class="avatar-wrap">
-          <image
-            v-if="user?.avatar"
-            class="avatar"
-            :src="resolveImageUrl(user.avatar)"
-            mode="aspectFill"
+          <app-avatar
+            :src="user?.avatar"
+            :name="user?.name"
+            :size="120"
+            round
           />
-          <view v-else class="avatar avatar-placeholder">
-            {{ (user?.name || '?').charAt(0) }}
-          </view>
         </view>
         <text class="username">{{ user?.name || '请登录' }}</text>
         <text class="bio">{{ user?.desc || '编辑个签，展示你的独特个性' }}</text>
@@ -66,6 +63,7 @@ import { computed } from 'vue'
 import { useAuthStore } from '@/stores'
 import { useTheme } from '@/composables/useTheme'
 import { resolveImageUrl } from '@/utils/image'
+import AppAvatar from '@/components/common/AppAvatar.vue'
 
 interface Props {
   modelValue: boolean

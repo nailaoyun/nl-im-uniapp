@@ -9,15 +9,12 @@
           <!-- 左侧: 头像 + 标题 -->
           <view class="nav-left" @click="openDrawer">
             <view class="avatar-container">
-              <image
-                v-if="user?.avatar"
-                class="nav-avatar"
-                :src="resolveImageUrl(user.avatar)"
-                mode="aspectFill"
+              <app-avatar
+                :src="user?.avatar"
+                :name="user?.name"
+                :size="72"
+                radius="16rpx"
               />
-              <view v-else class="nav-avatar avatar-placeholder">
-                {{ (user?.name || '?').charAt(0) }}
-              </view>
               <view class="online-dot" v-if="!loading"></view>
             </view>
             <text class="nav-title">消息</text>
@@ -307,20 +304,21 @@ async function logout() {
 
 <style lang="scss" scoped>
 // ==========================================
-// 页面容器 - 浅色模式变量
+// 页面容器 - 浅色模式变量 (与设计稿完全一致)
 // ==========================================
 .page-container {
-  --bg-page: #ffffff;
-  --bg-surface: #ffffff;
-  --bg-hover: #f5f5f5;
-  --bg-top: rgba(0, 0, 0, 0.02);
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
+  --bg-page: #ffffff;           // 页面背景
+  --bg-surface: #ffffff;        // 卡片背景
+  --bg-hover: #f9fafb;          // gray-50 (设计稿: 会话项悬浮)
+  --bg-top: rgba(249, 250, 251, 0.7); // gray-50/70 (设计稿: 会话置顶背景)
+  --text-primary: #1f2937;      // gray-900 (设计稿: 会话名称)
+  --text-secondary: #6b7280;    // gray-500 (设计稿: 会话消息)
+  --text-tertiary: #9ca3af;     // gray-400 (设计稿: 会话时间)
+  --text-placeholder: #9ca3af;  // gray-400 (设计稿: 搜索placeholder)
   --border-color: rgba(0, 0, 0, 0.05);
   --nav-bg: rgba(255, 255, 255, 0.9);
-  --color-brand: #4F46E5;
-  --search-bg: #f1f1f1;
+  --color-brand: #4F46E5;       // indigo-600
+  --search-bg: #f1f1f1;         // gray-100
   --search-focus: rgba(79, 70, 229, 0.1);
 
   min-height: 100vh;
@@ -329,20 +327,21 @@ async function logout() {
 }
 
 // ==========================================
-// 深色模式 - Warm Stone 暖色调
+// 深色模式 - Warm Stone 暖色调 (与设计稿完全一致)
 // ==========================================
 .page-container.dark {
-  --bg-page: #1c1917;
-  --bg-surface: #1c1917;
-  --bg-hover: #44403c;
-  --bg-top: rgba(255, 255, 255, 0.03);
-  --text-primary: #f5f5f4;
-  --text-secondary: #e7e5e4;
-  --text-tertiary: #78716c;
-  --border-color: #44403c;
+  --bg-page: #1c1917;           // warm-900
+  --bg-surface: #1c1917;        // warm-900
+  --bg-hover: #292524;          // warm-800 (设计稿: 会话项悬浮)
+  --bg-top: rgba(41, 37, 36, 0.3); // warm-800/30 (设计稿: 会话置顶背景)
+  --text-primary: #f5f5f4;      // warm-100 (设计稿: 会话名称)
+  --text-secondary: #a8a29e;    // warm-400 (设计稿: 会话消息)
+  --text-tertiary: #78716c;     // warm-500 (设计稿: 会话时间)
+  --text-placeholder: #57534e;  // warm-600 (设计稿: 搜索placeholder)
+  --border-color: #44403c;      // warm-700
   --nav-bg: rgba(28, 25, 23, 0.9);
-  --color-brand: #f97316;
-  --search-bg: #292524;
+  --color-brand: #f97316;       // orange-500
+  --search-bg: #292524;         // warm-800
   --search-focus: rgba(249, 115, 22, 0.1);
 }
 
@@ -527,7 +526,7 @@ async function logout() {
   margin-left: 16rpx;
 
   &::placeholder {
-    color: var(--text-tertiary);
+    color: var(--text-placeholder);
   }
 }
 

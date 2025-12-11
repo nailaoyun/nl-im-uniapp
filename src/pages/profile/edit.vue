@@ -49,8 +49,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useTheme } from '@/composables/useTheme'
+import { useAuthStore } from '@/stores'
+import * as userApi from '@/api/modules/user'
 
 const { isDark } = useTheme()
+const authStore = useAuthStore()
+const saving = ref(false)
 const field = ref('')
 const value = ref('')
 const placeholder = ref('')
@@ -89,13 +93,42 @@ onMounted(() => {
   }
 })
 
-function save() {
+async function save() {
   if (!value.value.trim()) {
     uni.showToast({ title: '内容不能为空', icon: 'none' })
     return
   }
-  uni.showToast({ title: '保存成功', icon: 'success' })
-  setTimeout(() => { uni.navigateBack() }, 1500)
+  if (saving.value) return
+  saving.value = true
+  
+  try {
+    const userId = authStore.user?.id
+    if (!userId) {
+      uni.showToast({ title: '用户信息异常', icon: 'none' })
+      return
+    }
+    
+    // 构建更新数据
+    const updates: Record<string, string> = {}
+    updates[field.value] = value.value.trim()
+    
+    // 调用 API 更新用户信息
+    const updatedUser = await userApi.updateUser({ id: userId, updates })
+    
+    // 更新本地 store
+    if (authStore.user) {
+      const newUserInfo = { ...authStore.user, ...updates }
+      authStore.updateUserInfo(newUserInfo)
+    }
+    
+    uni.showToast({ title: '保存成功', icon: 'success' })
+    setTimeout(() => { uni.navigateBack() }, 1500)
+  } catch (error: any) {
+    console.error('保存失败:', error)
+    uni.showToast({ title: error.message || '保存失败', icon: 'none' })
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 

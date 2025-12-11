@@ -165,7 +165,7 @@ function clearHistory() {
 function goBack() { uni.navigateBack() }
 
 function goDetail(item: User) {
-  uni.navigateTo({ url: `/pages/contact/detail?id=${item.id}` })
+  uni.navigateTo({ url: `/pages/contact/detail?userId=${item.id}` })
 }
 
 // 高亮匹配文字

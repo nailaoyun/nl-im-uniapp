@@ -50,6 +50,8 @@
       <scroll-view
           class="main-scroll custom-scrollbar"
           scroll-y
+          :scroll-into-view="scrollIntoViewId"
+          :scroll-with-animation="true"
           :refresher-enabled="true"
           :refresher-triggered="refreshing"
           @refresherrefresh="onRefresh"
@@ -292,7 +294,7 @@ import type { Contact, ContactGroup } from '@/types/api'
 // --- 逻辑完全不变 ---
 interface GroupChat { room_id: string; room_type: string; room_name: string; room_avatar: string; category: 'joined' | 'created' | 'managed'; }
 const contactStore = useContactStore(); const chatStore = useChatStore(); const { isDark } = useTheme(); const toast = useToast(); const messageBox = useMessage();
-const tabs = [{ key: 'groups', label: '分组' }, { key: 'friends', label: '好友' }, { key: 'chats', label: '群聊' }]; const activeTab = ref('groups'); const searchKeyword = ref(''); const refreshing = ref(false); const loading = ref(false); const collapsedIds = ref<(number | string)[]>([]); const contactGroups = ref<ContactGroup[]>([]); const groupChats = ref<GroupChat[]>([]); const showContactActions = ref(false); const selectedContact = ref<Contact | null>(null); const showMoveGroupModal = ref(false); const showRemarkModal = ref(false); const remarkName = ref(''); const savingRemark = ref(false); const showGroupActions = ref(false); const selectedGroup = ref<ContactGroup | null>(null); const showCreateGroupModal = ref(false); const showRenameGroupModal = ref(false); const newGroupName = ref(''); const renameGroupName = ref(''); const creating = ref(false); const renaming = ref(false);
+const tabs = [{ key: 'groups', label: '分组' }, { key: 'friends', label: '好友' }, { key: 'chats', label: '群聊' }]; const activeTab = ref('groups'); const searchKeyword = ref(''); const refreshing = ref(false); const loading = ref(false); const collapsedIds = ref<(number | string)[]>([]); const contactGroups = ref<ContactGroup[]>([]); const groupChats = ref<GroupChat[]>([]); const showContactActions = ref(false); const selectedContact = ref<Contact | null>(null); const showMoveGroupModal = ref(false); const showRemarkModal = ref(false); const remarkName = ref(''); const savingRemark = ref(false); const showGroupActions = ref(false); const selectedGroup = ref<ContactGroup | null>(null); const showCreateGroupModal = ref(false); const showRenameGroupModal = ref(false); const newGroupName = ref(''); const renameGroupName = ref(''); const creating = ref(false); const renaming = ref(false); const scrollIntoViewId = ref('');
 const contacts = computed(() => chatStore.contacts); const friendRequestCount = computed(() => contactStore.friendRequests.filter(r => r.status === 'pending').length); const ungroupedContacts = computed(() => contacts.value.filter(c => !c.group_id || c.group_id === 0)); function getGroupContacts(groupId: number): Contact[] { return contacts.value.filter(c => c.group_id === groupId) }
 const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#']; const alphabetGroupedContacts = computed(() => { const groups: Record<string, Contact[]> = {}; contacts.value.forEach(contact => { const name = contact.remark_name || contact.user?.name || ''; const firstChar = name.charAt(0).toUpperCase(); const letter = /[A-Z]/.test(firstChar) ? firstChar : '#'; if (!groups[letter]) groups[letter] = []; groups[letter].push(contact) }); return Object.keys(groups).sort((a, b) => (a === '#' ? 1 : b === '#' ? -1 : a.localeCompare(b))).map(letter => ({ letter, contacts: groups[letter] })) });
 const createdGroups = computed(() => groupChats.value.filter(g => g.category === 'created')); const managedGroups = computed(() => groupChats.value.filter(g => g.category === 'managed')); const joinedGroups = computed(() => groupChats.value.filter(g => g.category === 'joined'));
@@ -312,7 +314,17 @@ function goFriendRequests() { uni.navigateTo({ url: '/pages/contact/requests' })
 function goGroupNotify() { uni.navigateTo({ url: '/pages/group/notify' }) }
 function goContactDetail(contact: Contact) { uni.navigateTo({ url: `/pages/contact/detail?id=${contact.id}` }) }
 function goGroupChat(group: GroupChat) { uni.navigateTo({ url: `/pages/chat/index?roomId=${group.room_id}&name=${encodeURIComponent(group.room_name || '群聊')}` }) }
-function scrollToLetter(letter: string) { console.log(letter) }
+function scrollToLetter(letter: string) { 
+  // 检查是否有该字母的分组
+  const hasGroup = alphabetGroupedContacts.value.some(g => g.letter === letter)
+  if (hasGroup) {
+    // 清空后再设置，确保重复点击同一字母也能触发滚动
+    scrollIntoViewId.value = ''
+    setTimeout(() => {
+      scrollIntoViewId.value = `letter-${letter}`
+    }, 10)
+  }
+}
 function handleContactLongPress(c: Contact) { selectedContact.value = c; remarkName.value = c.remark_name || ''; showContactActions.value = true }
 function onContactActionSelect(a: { value: string }) { showContactActions.value = false; if(a.value === 'remark') showRemarkModal.value = true; else if(a.value === 'move') showMoveGroupModal.value = true; else if(a.value === 'delete') handleDeleteContact() }
 async function handleSaveRemark() { if(!selectedContact.value) return; savingRemark.value=true; try { await contactApi.updateContact(selectedContact.value.id.toString(), {remark_name: remarkName.value}); const idx = chatStore.contacts.findIndex(c => c.id === selectedContact.value?.id); if(idx>-1) chatStore.contacts[idx].remark_name = remarkName.value; showRemarkModal.value=false; toast.success('备注已修改') } catch(e){toast.error('失败')} finally {savingRemark.value=false} }
@@ -330,18 +342,20 @@ async function handleDeleteGroup() { try { await messageBox.confirm({title:'提�
 // 页面容器 - 浅色模式 (与设计稿一致)
 // ==========================================
 .page-container {
-  --bg-page: #ffffff;
-  --bg-surface: #ffffff;
-  --bg-highlight: #f5f5f5;
-  --bg-group: rgba(0, 0, 0, 0.02);
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  --border-color: rgba(0, 0, 0, 0.05);
-  --color-brand: #4F46E5;
-  --tab-bg: #f1f1f1;
-  --tab-active-bg: #ffffff;
-  --search-bg: #f1f1f1;
+  --bg-page: #ffffff;                     // 页面背景
+  --bg-surface: #ffffff;                  // 卡片背景
+  --bg-highlight: #f9fafb;                // gray-50 (hover)
+  --bg-group: #f9fafb;                    // gray-50 (分组容器)
+  --text-primary: #1f2937;                // gray-900
+  --text-secondary: #6b7280;              // gray-500
+  --text-tertiary: #9ca3af;               // gray-400
+  --border-color: #f3f4f6;                // gray-100
+  --color-brand: #4F46E5;                 // indigo-600
+  --tab-bg: #f3f4f6;                      // gray-100
+  --tab-active-bg: #ffffff;               // white + shadow-sm
+  --search-bg: #f3f4f6;                   // gray-100
+  --index-bg: rgba(243, 244, 246, 0.8);   // gray-100/80
+  --index-hover: rgba(79, 70, 229, 0.1);  // indigo-100
 
   min-height: 100vh;
   background: var(--bg-page);
@@ -352,18 +366,20 @@ async function handleDeleteGroup() { try { await messageBox.confirm({title:'提�
 // 深色模式 - Warm Stone (与设计稿一致)
 // ==========================================
 .page-container.dark {
-  --bg-page: #1c1917;
-  --bg-surface: #1c1917;
-  --bg-highlight: #44403c;
-  --bg-group: rgba(255, 255, 255, 0.03);
-  --text-primary: #f5f5f4;
-  --text-secondary: #e7e5e4;
-  --text-tertiary: #78716c;
-  --border-color: #44403c;
-  --color-brand: #f97316;
-  --tab-bg: #292524;
-  --tab-active-bg: #44403c;
-  --search-bg: #292524;
+  --bg-page: #1c1917;                      // warm-900
+  --bg-surface: #1c1917;                   // warm-900
+  --bg-highlight: #292524;                 // warm-800
+  --bg-group: rgba(41, 37, 36, 0.4);       // warm-800/40
+  --text-primary: #f5f5f4;                 // warm-100
+  --text-secondary: #a8a29e;               // warm-400
+  --text-tertiary: #78716c;                // warm-500
+  --border-color: rgba(41, 37, 36, 0.5);   // warm-800/50
+  --color-brand: #f97316;                  // orange-500
+  --tab-bg: #292524;                       // warm-800
+  --tab-active-bg: #44403c;                // warm-700
+  --search-bg: #292524;                    // warm-800
+  --index-bg: rgba(41, 37, 36, 0.8);       // warm-800/80
+  --index-hover: rgba(154, 52, 18, 0.3);   // orange-900/30
 }
 
 // 动画
@@ -754,23 +770,22 @@ async function handleDeleteGroup() { try { await messageBox.confirm({title:'提�
   overflow: hidden;
 }
 
-// A-Z索引条
+// A-Z索引条 (设计稿: 带模糊背景)
 .index-bar {
   position: fixed;
-  right: 16rpx;
+  right: 20rpx;  // 设计稿: right-[20px] = 40rpx/2
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--index-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 20rpx;
   padding: 16rpx 8rpx;
   z-index: 101;
-
-  .dark & {
-    background: rgba(255, 255, 255, 0.08);
-  }
+  border: 1rpx solid var(--border-color);
 
   .index-item {
-    font-size: 20rpx;
+    font-size: 20rpx;  // 设计稿: text-[10px]
     font-weight: 600;
     width: 32rpx;
     height: 32rpx;
@@ -783,11 +798,7 @@ async function handleDeleteGroup() { try { await messageBox.confirm({title:'提�
 
     &:active {
       color: var(--color-brand);
-      background: rgba(79, 70, 229, 0.1);
-
-      .dark & {
-        background: rgba(249, 115, 22, 0.15);
-      }
+      background: var(--index-hover);
     }
   }
 }

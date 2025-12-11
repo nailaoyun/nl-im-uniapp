@@ -308,30 +308,32 @@ function getImageSize(moment: Moment): string {
 </script>
 
 <style lang="scss" scoped>
-// 页面容器 - 浅色模式
+// 页面容器 - 浅色模式 (与设计稿完全一致)
 .moments-page {
-  --bg-page: #ffffff;
-  --bg-nav-rgb: 255, 255, 255;
-  --bg-detail: #f7f7f7;
-  --text-main: #1d1d1f;
-  --text-blue: #576b95;
-  --color-brand: #4F46E5;
-  --border-color: rgba(0, 0, 0, 0.05);
+  --bg-page: #ffffff;                    // 页面背景
+  --bg-nav-rgb: 255, 255, 255;           // 导航栏背景 RGB
+  --bg-detail: #f3f4f6;                  // gray-100 (评论区背景)
+  --text-main: #1f2937;                  // gray-900 (动态内容)
+  --text-secondary: #9ca3af;             // gray-400 (时间)
+  --text-blue: #576b95;                  // 链接色 (作者名、点赞、评论)
+  --color-brand: #4F46E5;                // indigo-600
+  --border-color: #f3f4f6;               // gray-100
 
   height: 100vh;
   background: var(--bg-page);
   position: relative;
 }
 
-// 深色模式 - Warm Stone
+// 深色模式 - Warm Stone (与设计稿完全一致)
 .moments-page.dark {
-  --bg-page: #1c1917;
-  --bg-nav-rgb: 28, 25, 23;
-  --bg-detail: #292524;
-  --text-main: #f5f5f4;
-  --text-blue: #7e95c5;
-  --color-brand: #f97316;
-  --border-color: rgba(255, 255, 255, 0.1);
+  --bg-page: #1c1917;                    // warm-900
+  --bg-nav-rgb: 28, 25, 23;              // warm-900 RGB
+  --bg-detail: rgba(41, 37, 36, 0.6);    // warm-800/60 (评论区背景)
+  --text-main: #f5f5f4;                  // warm-100 (动态内容)
+  --text-secondary: #78716c;             // warm-500 (时间)
+  --text-blue: #7e95c5;                  // blue-400 (链接色)
+  --color-brand: #f97316;                // orange-500
+  --border-color: #44403c;               // warm-700
 }
 
 // 动画
@@ -577,8 +579,7 @@ function getImageSize(moment: Moment): string {
 
   .time {
     font-size: 24rpx;
-    color: var(--text-blue);
-    opacity: 0.6;
+    color: var(--text-secondary);
   }
 
   .action-btn {
@@ -619,7 +620,11 @@ function getImageSize(moment: Moment): string {
     height: 0;
     border-left: 12rpx solid transparent;
     border-right: 12rpx solid transparent;
-    border-bottom: 12rpx solid var(--bg-detail);
+    border-bottom: 12rpx solid #f3f4f6; // gray-100
+    
+    .dark & {
+      border-bottom-color: #292524; // 设计稿: warm-800
+    }
   }
 
   .likes-list {

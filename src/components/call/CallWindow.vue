@@ -281,6 +281,7 @@ watch(() => props.remoteStream, (stream) => {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  background: #0f172a; // 设计稿: 来电背景
 
   .blur-img {
     width: 100%;
@@ -294,7 +295,35 @@ watch(() => props.remoteStream, (stream) => {
   .blur-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 30%, rgba(0,0,0,0.9) 100%);
+    background: rgba(15, 23, 42, 0.8); // 设计稿: bg-[#0f172a]/80
+    backdrop-filter: blur(48px);
+    -webkit-backdrop-filter: blur(48px);
+  }
+  
+  // 设计稿: 呼吸光球动画
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 600rpx;
+    height: 600rpx;
+    border-radius: 50%;
+    filter: blur(160rpx);
+    opacity: 0.4;
+    animation: glow-breathe 8s ease-in-out infinite;
+  }
+  
+  &::before {
+    top: 10%;
+    left: -100rpx;
+    background: #9333ea; // purple-600
+    animation-delay: 0s;
+  }
+  
+  &::after {
+    bottom: 10%;
+    right: -100rpx;
+    background: #2563eb; // blue-600
+    animation-delay: 4s;
   }
 }
 
@@ -366,23 +395,36 @@ watch(() => props.remoteStream, (stream) => {
   position: relative;
   margin-bottom: 48rpx;
 
+  // 设计稿: 头像波纹效果
   .avatar-ring {
     position: absolute;
+    inset: -20rpx;
     border-radius: 50%;
-    border: 2rpx solid rgba(255, 255, 255, 0.1);
+    border: 2rpx solid rgba(255, 255, 255, 0.3); // 设计稿: border-white/30
+
+    &.ring-1 {
+      animation: ripple 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    
+    &.ring-2 {
+      animation: ripple 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+      animation-delay: 1s;
+    }
 
     &.ring-ping {
       inset: -4rpx;
-      border: 2rpx solid rgba(255, 255, 255, 0.2);
+      border: 2rpx solid rgba(255, 255, 255, 0.3);
       animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
     }
   }
 
   .avatar-container {
+    position: relative;
     border: 4rpx solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     padding: 4rpx;
     box-shadow: 0 40rpx 100rpx rgba(0, 0, 0, 0.4);
+    z-index: 1;
   }
 }
 
@@ -526,5 +568,17 @@ watch(() => props.remoteStream, (stream) => {
 @keyframes fadeInUp {
   from { transform: translateY(40rpx); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+// 设计稿: 呼吸光球动画
+@keyframes glow-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 0.5; }
+}
+
+// 设计稿: 头像波纹动画
+@keyframes ripple {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(2.5); opacity: 0; }
 }
 </style>

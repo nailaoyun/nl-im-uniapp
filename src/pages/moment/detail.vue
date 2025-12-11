@@ -11,15 +11,12 @@
       <view class="moment-content">
         <!-- 用户信息 -->
         <view class="header">
-          <image
-            v-if="moment.user?.avatar"
-            class="avatar"
-            :src="resolveImageUrl(moment.user.avatar)"
-            mode="aspectFill"
+          <app-avatar
+            :src="moment.user?.avatar"
+            :name="moment.user?.name"
+            :size="80"
+            round
           />
-          <view v-else class="avatar avatar-placeholder">
-            {{ moment.user?.name?.charAt(0) || '?' }}
-          </view>
           <view class="user-info">
             <text class="name">{{ moment.user?.name || '未知' }}</text>
             <text class="time">{{ formatTime(moment.created_at) }}</text>
@@ -79,15 +76,12 @@
             :key="comment.id"
             class="comment-item"
           >
-            <image
-              v-if="comment.user?.avatar"
-              class="avatar"
-              :src="resolveImageUrl(comment.user.avatar)"
-              mode="aspectFill"
+            <app-avatar
+              :src="comment.user?.avatar"
+              :name="comment.user?.name"
+              :size="64"
+              round
             />
-            <view v-else class="avatar avatar-placeholder">
-              {{ comment.user?.name?.charAt(0) || '?' }}
-            </view>
             <view class="comment-content">
               <view class="comment-header">
                 <text class="name">{{ comment.user?.name || '未知' }}</text>

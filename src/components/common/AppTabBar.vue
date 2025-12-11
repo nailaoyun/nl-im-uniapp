@@ -50,6 +50,18 @@
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
             </svg>
           </template>
+
+          <!-- 我的图标 (user) -->
+          <template v-else-if="tab.name === 'profile'">
+            <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </template>
         </view>
         <text class="tabbar-text">{{ tab.label }}</text>
       </view>
@@ -74,11 +86,12 @@ const { isDark } = useTheme()
 const conversationStore = useConversationStore()
 const unreadCount = computed(() => conversationStore.totalUnread)
 
-// 底部导航只有3个: 消息/联系人/发现 (无"我的")
+// 底部导航4个: 消息/联系人/发现/我的
 const tabs = [
   { name: 'messages', label: '消息', path: '/pages/index/index' },
   { name: 'contacts', label: '联系人', path: '/pages/contact/index' },
-  { name: 'moments', label: '发现', path: '/pages/moment/index' }
+  { name: 'moments', label: '发现', path: '/pages/moment/index' },
+  { name: 'profile', label: '我的', path: '/pages/profile/index' }
 ]
 
 function switchTab(name: string) {
