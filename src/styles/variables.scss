@@ -1,107 +1,175 @@
 /**
  * 主题变量定义
- * 浅色/暗色两套主题
+ * 浅色/暗色两套主题 - Warm Stone 暖色调系统
  */
 
+// ==========================================
+// Warm 色板定义 (用于深色模式)
+// ==========================================
+$warm-950: #0c0a09;
+$warm-900: #1c1917;
+$warm-800: #292524;
+$warm-700: #44403c;
+$warm-600: #57534e;
+$warm-500: #78716c;
+$warm-200: #e7e5e4;
+$warm-100: #f5f5f4;
+
+// 品牌色
+$color-brand-light: #4F46E5;
+$color-brand-dark: #f97316;
+
+// ==========================================
 // 浅色主题（默认）
+// ==========================================
 page {
-  // 主色调
-  --color-primary: #07c160;
-  --color-primary-dark: #06ad56;
-  --color-danger: #fa5151;
-  --color-warning: #ffc300;
-  --color-success: #07c160;
-  --color-info: #10aeff;
+  // 主色调 - Indigo 品牌色
+  --color-primary: #4F46E5;
+  --color-primary-light: #6366F1;
+  --color-primary-dark: #4338CA;
+  --color-danger: #ef4444;
+  --color-warning: #f97316;
+  --color-success: #10b981;
+  --color-info: #0ea5e9;
 
   // 背景色
-  --bg-page: #ededed;
+  --bg-page: #f7f8fa;
+  --bg-surface: #ffffff;
   --bg-content: #ffffff;
   --bg-hover: #f5f5f5;
+  --bg-highlight: #f2f3f5;
   --bg-mask: rgba(0, 0, 0, 0.5);
   --bg-card: #ffffff;
 
   // 文字颜色
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --text-tertiary: #999999;
-  --text-placeholder: #cccccc;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-placeholder: #a1a1a6;
   --text-link: #576b95;
 
   // 边框颜色
-  --border-color: #e5e5e5;
-  --divider-color: #f0f0f0;
+  --border-color: rgba(0, 0, 0, 0.05);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --divider-color: rgba(0, 0, 0, 0.05);
 
   // 导航栏
-  --nav-bg: #ededed;
-  --nav-text: #000000;
+  --nav-bg: rgba(255, 255, 255, 0.85);
+  --nav-text: #1d1d1f;
 
   // 标签栏
-  --tabbar-bg: #f7f7f7;
+  --tabbar-bg: #ffffff;
   --tabbar-text: #999999;
-  --tabbar-text-active: #07c160;
+  --tabbar-text-active: #4F46E5;
 
   // 消息气泡
-  --bubble-self: #95ec69;
+  --bubble-self-start: #6366F1;
+  --bubble-self-end: #4F46E5;
+  --bubble-self: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
   --bubble-other: #ffffff;
-  --bubble-system: rgba(0, 0, 0, 0.1);
+  --bubble-system: rgba(0, 0, 0, 0.04);
+  --bubble-shadow: rgba(79, 70, 229, 0.2);
 
   // 搜索框
-  --search-bg: #f5f5f5;
+  --search-bg: #f1f1f1;
 
   // 头像
-  --avatar-bg: #07c160;
+  --avatar-bg: #4F46E5;
   --avatar-text: #ffffff;
 
   // 未读徽标
-  --badge-bg: #fa5151;
+  --badge-bg: #ef4444;
   --badge-text: #ffffff;
 
   // 开关
-  --switch-on: #07c160;
-  --switch-off: #e5e5e5;
+  --switch-on: #4F46E5;
+  --switch-off: #e5e7eb;
 
   // 状态栏高度变量 (小程序/App会自动注入，H5需fallback)
   --status-bar-height: 20px;
+
+  // 分段控制器
+  --tab-bg: #e5e7eb;
+  --tab-active-bg: #ffffff;
+
+  // 功能卡片渐变
+  --gradient-orange: linear-gradient(135deg, #f97316, #fb923c);
+  --gradient-blue: linear-gradient(135deg, #0ea5e9, #38bdf8);
+  --gradient-indigo: linear-gradient(135deg, #6366F1, #4F46E5);
+  --gradient-green: linear-gradient(135deg, #10b981, #34d399);
 }
 
-// 暗色主题 (Dark Mode - 高级灰优化)
+// ==========================================
+// 暗色主题 (Dark Mode - Warm Stone 暖色调)
+// ==========================================
 page.dark,
 .dark,
 html.dark,
 body.dark {
-  // 背景色 - 使用 #1c1c1e 替代纯黑
-  --bg-page: #1c1c1e;
-  --bg-content: #2c2c2e;
-  --bg-hover: #3a3a3c;
+  // 主色调 - Orange 品牌色
+  --color-primary: #f97316;
+  --color-primary-light: #fb923c;
+  --color-primary-dark: #ea580c;
+  --color-danger: #ef4444;
+  --color-warning: #fbbf24;
+  --color-success: #10b981;
+  --color-info: #38bdf8;
+
+  // 背景色 - Warm Stone 暖色调
+  --bg-page: #{$warm-900};
+  --bg-surface: #{$warm-800};
+  --bg-content: #{$warm-800};
+  --bg-hover: #{$warm-700};
+  --bg-highlight: #{$warm-700};
   --bg-mask: rgba(0, 0, 0, 0.7);
-  --bg-card: #2c2c2e;
+  --bg-card: #{$warm-800};
 
   // 文字颜色
-  --text-primary: #f2f2f7; // 柔和白
-  --text-secondary: #aeaeb2;
-  --text-tertiary: #636366;
-  --text-placeholder: #505055;
-  --text-link: #7b9ad0;
+  --text-primary: #{$warm-100};
+  --text-secondary: #{$warm-200};
+  --text-tertiary: #{$warm-500};
+  --text-placeholder: #{$warm-600};
+  --text-link: #7e95c5;
 
   // 边框颜色
-  --border-color: #38383a;
-  --divider-color: #38383a;
+  --border-color: #{$warm-700};
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --divider-color: #{$warm-700};
 
   // 导航栏
-  --nav-bg: #1c1c1e;
-  --nav-text: #ffffff;
+  --nav-bg: rgba(28, 25, 23, 0.85);
+  --nav-text: #{$warm-100};
 
   // 标签栏
-  --tabbar-bg: #1c1c1e;
+  --tabbar-bg: #{$warm-900};
+  --tabbar-text: #{$warm-500};
+  --tabbar-text-active: #f97316;
 
-  // 消息气泡
-  --bubble-self: #2d5c2e; // 深绿
-  --bubble-other: #2c2c2e;
-  --bubble-system: rgba(255, 255, 255, 0.1);
+  // 消息气泡 - 深色模式保持渐变
+  --bubble-self-start: #6366F1;
+  --bubble-self-end: #4F46E5;
+  --bubble-self: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  --bubble-other: #262626;
+  --bubble-system: rgba(255, 255, 255, 0.08);
+  --bubble-shadow: none;
 
   // 搜索框
-  --search-bg: #2c2c2e;
+  --search-bg: #{$warm-800};
+
+  // 头像
+  --avatar-bg: #f97316;
 
   // 开关
-  --switch-off: #3a3a3c;
+  --switch-on: #f97316;
+  --switch-off: #{$warm-700};
+
+  // 分段控制器
+  --tab-bg: #{$warm-800};
+  --tab-active-bg: #{$warm-700};
+
+  // 功能卡片渐变 (暖色调版本)
+  --gradient-orange: linear-gradient(135deg, #ea580c, #f97316);
+  --gradient-blue: linear-gradient(135deg, #0284c7, #0ea5e9);
+  --gradient-indigo: linear-gradient(135deg, #c2410c, #ea580c);
+  --gradient-green: linear-gradient(135deg, #059669, #10b981);
 }

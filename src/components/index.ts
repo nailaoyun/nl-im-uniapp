@@ -6,6 +6,9 @@ export { default as AppLoading } from './common/AppLoading.vue'
 export { default as UserInfoCard } from './common/UserInfoCard.vue'
 export { default as VideoPlayer } from './common/VideoPlayer.vue'
 export { default as ImagePreview } from './common/ImagePreview.vue'
+export { default as AppDrawer } from './common/AppDrawer.vue'
+export { default as PlusMenu } from './common/PlusMenu.vue'
+export { default as AppTabBar } from './common/AppTabBar.vue'
 
 // 聊天组件
 export { default as MessageBubble } from './chat/MessageBubble.vue'

@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppAvatar: typeof import('./src/components/common/AppAvatar.vue')['default']
+    AppDrawer: typeof import('./src/components/common/AppDrawer.vue')['default']
     AppEmpty: typeof import('./src/components/common/AppEmpty.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     AppLoading: typeof import('./src/components/common/AppLoading.vue')['default']
@@ -15,6 +16,7 @@ declare module 'vue' {
     AppNavBar: typeof import('./src/components/common/AppNavBar.vue')['default']
     AppTabBar: typeof import('./src/components/common/AppTabBar.vue')['default']
     CallWindow: typeof import('./src/components/call/CallWindow.vue')['default']
+    GlobalCallProvider: typeof import('./src/components/call/GlobalCallProvider.vue')['default']
     GroupCallBanner: typeof import('./src/components/call/GroupCallBanner.vue')['default']
     GroupCallIncoming: typeof import('./src/components/call/GroupCallIncoming.vue')['default']
     GroupCallModal: typeof import('./src/components/call/GroupCallModal.vue')['default']
@@ -28,6 +30,7 @@ declare module 'vue' {
     MomentCommentInput: typeof import('./src/components/moment/MomentCommentInput.vue')['default']
     MomentCommentList: typeof import('./src/components/moment/MomentCommentList.vue')['default']
     MomentNotificationPanel: typeof import('./src/components/moment/MomentNotificationPanel.vue')['default']
+    PlusMenu: typeof import('./src/components/common/PlusMenu.vue')['default']
     SelectContactsModal: typeof import('./src/components/chat/SelectContactsModal.vue')['default']
     UserInfoCard: typeof import('./src/components/common/UserInfoCard.vue')['default']
     UserMomentsModal: typeof import('./src/components/moment/UserMomentsModal.vue')['default']

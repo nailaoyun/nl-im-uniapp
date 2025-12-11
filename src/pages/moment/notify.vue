@@ -25,7 +25,7 @@
       >
         <wd-img
           v-if="item.from_user?.avatar"
-          :src="item.from_user.avatar"
+          :src="resolveImageUrl(item.from_user.avatar)"
           width="80rpx"
           height="80rpx"
           radius="8rpx"
@@ -46,7 +46,7 @@
         <view v-if="item.moment" class="moment-thumb">
           <wd-img
             v-if="item.moment.media_urls"
-            :src="parseMediaUrls(item.moment.media_urls)[0]"
+            :src="resolveImageUrl(parseMediaUrls(item.moment.media_urls)[0])"
             width="80rpx"
             height="80rpx"
             mode="aspectFill"
@@ -68,6 +68,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useMomentStore } from '@/stores'
 import { formatTime, generateColor } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { parseMediaUrls } from '@/types/moment'
 import { useToast } from 'wot-design-uni'
 import { useTheme } from '@/composables/useTheme'

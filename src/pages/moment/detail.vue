@@ -14,7 +14,7 @@
           <image
             v-if="moment.user?.avatar"
             class="avatar"
-            :src="moment.user.avatar"
+            :src="resolveImageUrl(moment.user.avatar)"
             mode="aspectFill"
           />
           <view v-else class="avatar avatar-placeholder">
@@ -82,7 +82,7 @@
             <image
               v-if="comment.user?.avatar"
               class="avatar"
-              :src="comment.user.avatar"
+              :src="resolveImageUrl(comment.user.avatar)"
               mode="aspectFill"
             />
             <view v-else class="avatar avatar-placeholder">
@@ -124,6 +124,7 @@
 import { ref, onMounted } from 'vue'
 import { useMomentStore } from '@/stores'
 import { formatTime } from '@/utils/format'
+import { resolveImageUrl } from '@/utils/image'
 import { parseMediaUrls } from '@/types/moment'
 import { useTheme } from '@/composables/useTheme'
 import AppAvatar from '@/components/common/AppAvatar.vue'

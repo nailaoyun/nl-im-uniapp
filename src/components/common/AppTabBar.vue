@@ -1,5 +1,5 @@
 <template>
-  <view class="app-tabbar">
+  <view class="app-tabbar" :class="{ dark: isDark }">
     <view class="tabbar-wrapper">
       <view
         v-for="tab in tabs"
@@ -9,13 +9,13 @@
         @click="switchTab(tab.name)"
       >
         <view class="tabbar-icon">
-          <!-- 消息图标 -->
+          <!-- 消息图标 (message-circle) -->
           <template v-if="tab.name === 'messages'">
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
-            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
             <!-- 未读角标 -->
             <view v-if="unreadCount > 0" class="badge">
@@ -23,27 +23,31 @@
             </view>
           </template>
 
-          <!-- 联系人图标 -->
+          <!-- 联系人图标 (users) -->
           <template v-else-if="tab.name === 'contacts'">
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4" fill="currentColor"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
-            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </template>
 
-          <!-- 朋友圈图标 -->
+          <!-- 发现图标 (compass) -->
           <template v-else-if="tab.name === 'moments'">
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <circle cx="12" cy="12" r="10" fill="currentColor"/>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="white"/>
             </svg>
-            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
-              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-              <line x1="9" y1="9" x2="9.01" y2="9"/>
-              <line x1="15" y1="9" x2="15.01" y2="9"/>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
             </svg>
           </template>
         </view>
@@ -56,6 +60,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useConversationStore } from '@/stores/conversation'
+import { useTheme } from '@/composables/useTheme'
 
 interface Props {
   current?: string
@@ -65,19 +70,19 @@ const props = withDefaults(defineProps<Props>(), {
   current: 'messages'
 })
 
+const { isDark } = useTheme()
 const conversationStore = useConversationStore()
 const unreadCount = computed(() => conversationStore.totalUnread)
 
+// 底部导航只有3个: 消息/联系人/发现 (无"我的")
 const tabs = [
   { name: 'messages', label: '消息', path: '/pages/index/index' },
   { name: 'contacts', label: '联系人', path: '/pages/contact/index' },
-  { name: 'moments', label: '朋友圈', path: '/pages/moment/index' }
+  { name: 'moments', label: '发现', path: '/pages/moment/index' }
 ]
 
 function switchTab(name: string) {
-  // 点击当前 tab 不跳转
   if (props.current === name) return
-
   const tab = tabs.find(t => t.name === name)
   if (tab) {
     uni.reLaunch({ url: tab.path })
@@ -86,20 +91,25 @@ function switchTab(name: string) {
 </script>
 
 <style lang="scss" scoped>
+// Tab Bar 容器 (高度 84px = 168rpx)
 .app-tabbar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 1;
-  background: var(--bg-content, #fff);
-  border-top: 1rpx solid var(--divider-color, #eee);
+  z-index: 100;
+  height: 168rpx;
+  background: #ffffff;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.05);
   padding-bottom: env(safe-area-inset-bottom);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tabbar-wrapper {
   display: flex;
   height: 100rpx;
+  align-items: center;
+  padding-bottom: 12rpx;
 }
 
 .tabbar-item {
@@ -108,12 +118,13 @@ function switchTab(name: string) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
-  color: #999;
+  gap: 8rpx;
+  color: #9ca3af;
   transition: color 0.2s;
+  cursor: pointer;
 
   &.active {
-    color: #07c160;
+    color: #4F46E5;
   }
 
   &:active {
@@ -137,126 +148,45 @@ function switchTab(name: string) {
 
 .badge {
   position: absolute;
-  top: -8rpx;
-  right: -20rpx;
+  top: -12rpx;
+  right: -24rpx;
   min-width: 32rpx;
   height: 32rpx;
   padding: 0 8rpx;
-  background: #fa5151;
+  background: #ef4444;
   color: #fff;
   font-size: 20rpx;
   line-height: 32rpx;
   text-align: center;
   border-radius: 32rpx;
   white-space: nowrap;
+  font-weight: 700;
+  box-sizing: border-box;
 }
 
 .tabbar-text {
-  font-size: 22rpx;
+  font-size: 20rpx;
   line-height: 1;
+  font-weight: 500;
+
+  .tabbar-item.active & {
+    font-weight: 700;
+  }
+}
+
+// ==========================================
+// 深色模式 (Warm Stone)
+// ==========================================
+.app-tabbar.dark {
+  background: #1c1917;
+  border-top-color: #44403c;
+
+  .tabbar-item {
+    color: #78716c;
+
+    &.active {
+      color: #f97316;
+    }
+  }
 }
 </style>
-<!--/*-->
-<!--<template>-->
-<!--  <view :class="{ dark: isDark }">-->
-<!--    <wd-tabbar-->
-<!--        :modelValue="current"-->
-<!--        fixed-->
-<!--        placeholder-->
-<!--        safe-area-inset-bottom-->
-<!--        bordered-->
-<!--        custom-class="app-tab-bar"-->
-<!--        @change="handleChange"-->
-<!--    >-->
-<!--      <wd-tabbar-item-->
-<!--          v-for="(item, index) in list"-->
-<!--          :key="index"-->
-<!--          :name="item.pagePath"-->
-<!--          :title="item.text"-->
-<!--          :value="item.badge > 0 ? item.badge : null"-->
-<!--          :icon="item.icon"-->
-<!--      >-->
-<!--      </wd-tabbar-item>-->
-<!--    </wd-tabbar>-->
-<!--  </view>-->
-<!--</template>-->
-
-<!--<script setup lang="ts">-->
-<!--import { computed } from 'vue'-->
-<!--import { useTheme } from '@/composables/useTheme'-->
-<!--// 保持原有的 store 引用-->
-<!--import { useAppStore } from '@/stores'-->
-
-<!--const props = defineProps<{-->
-<!--  active?: string-->
-<!--}>()-->
-
-<!--const { isDark } = useTheme()-->
-<!--const appStore = useAppStore()-->
-
-<!--// 核心修改：移除 image 路径，改用 Wot-UI设计 内置 Icon name-->
-<!--// 如果需要自定义 SVG，可以使用 custom-icon 插槽-->
-<!--const list = computed(() => [-->
-<!--  {-->
-<!--    pagePath: '/pages/index/index',-->
-<!--    text: '消息',-->
-<!--    icon: 'chat', // 对应 wd-icon name="chat"-->
-<!--    badge: appStore.unreadCount || 0-->
-<!--  },-->
-<!--  {-->
-<!--    pagePath: '/pages/contact/index',-->
-<!--    text: '通讯录',-->
-<!--    icon: 'user-circle', // 对应 wd-icon name="user-circle"-->
-<!--    badge: appStore.contactUnread || 0-->
-<!--  },-->
-<!--  {-->
-<!--    pagePath: '/pages/moment/index',-->
-<!--    text: '发现',-->
-<!--    icon: 'camera', // 对应 wd-icon name="camera"-->
-<!--    badge: appStore.momentUnread ? 1 : 0-->
-<!--  },-->
-<!--  {-->
-<!--    pagePath: '/pages/profile/index',-->
-<!--    text: '我的',-->
-<!--    icon: 'user', // 对应 wd-icon name="user"-->
-<!--    badge: 0-->
-<!--  }-->
-<!--])-->
-
-<!--const current = computed(() => {-->
-<!--  if (props.active) return props.active-->
-<!--  const pages = getCurrentPages()-->
-<!--  const page = pages[pages.length - 1]-->
-<!--  return '/' + page.route-->
-<!--})-->
-
-<!--function handleChange({ value }: { value: string }) {-->
-<!--  uni.switchTab({ url: value })-->
-<!--}-->
-<!--</script>-->
-
-<!--<style lang="scss" scoped>-->
-<!--:deep(.app-tab-bar) {-->
-<!--  background-color: var(&#45;&#45;bg-content) !important;-->
-
-<!--  // 覆盖选中态颜色，保持与原有设计一致-->
-<!--  .wd-tabbar-item.is-active {-->
-<!--    color: var(&#45;&#45;color-primary) !important;-->
-<!--  }-->
-<!--}-->
-
-<!--.dark {-->
-<!--  :deep(.app-tab-bar) {-->
-<!--    background-color: #1c1c1e !important;-->
-<!--    border-top-color: #333;-->
-
-<!--    .wd-tabbar-item {-->
-<!--      color: var(&#45;&#45;text-secondary);-->
-<!--      &.is-active {-->
-<!--        color: var(&#45;&#45;color-primary);-->
-<!--      }-->
-<!--    }-->
-<!--  }-->
-<!--}-->
-<!--</style>-->
-<!--*/-->

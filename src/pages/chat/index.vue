@@ -2,27 +2,40 @@
   <wd-config-provider :theme="isDark ? 'dark' : 'light'">
     <view class="chat-page-container" :class="{ 'theme-dark': isDark }">
       <!-- 沉浸式导航栏 -->
-      <wd-navbar
-          fixed
-          placeholder
-          left-arrow
-          custom-class="glass-navbar"
-          @click-left="goBack"
-      >
-        <template #title>
-          <view class="nav-center">
-            <text class="nav-name">{{ displayName }}</text>
-            <view v-if="isGroupChat" class="nav-badge">{{ groupMembers.length }}</view>
+      <view class="glass-navbar">
+        <view class="navbar-bg"></view>
+        <view class="navbar-content">
+          <view class="nav-left" @click="goBack">
+            <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+            <view class="nav-info">
+              <text class="nav-name">{{ displayName }}</text>
+              <view v-if="isGroupChat" class="member-count">{{ groupMembers.length }}人</view>
+              <view v-else class="online-status">在线</view>
+            </view>
           </view>
-        </template>
-        <template #right>
+
           <view class="nav-actions">
-            <view class="icon-btn" @click="startAudioCall"><wd-icon name="phone" size="40rpx" /></view>
-            <view class="icon-btn" @click="startVideoCall"><wd-icon name="video" size="40rpx" /></view>
-            <view class="icon-btn" @click="showChatInfo"><wd-icon name="more" size="40rpx" /></view>
+            <view class="icon-btn" @click="startAudioCall">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </view>
+            <view class="icon-btn" @click="startVideoCall">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+            </view>
+            <view class="icon-btn" @click="showChatInfo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+              </svg>
+            </view>
           </view>
-        </template>
-      </wd-navbar>
+        </view>
+      </view>
 
       <!-- WebRTC 通话窗口 -->
       <call-window
@@ -41,7 +54,7 @@
 
       <!-- 消息列表 -->
       <scroll-view
-          class="chat-scroll-area"
+          class="chat-scroll-area custom-scrollbar"
           scroll-y
           :scroll-into-view="scrollToId"
           :scroll-top="scrollTop"
@@ -73,9 +86,8 @@
               <text>{{ msg.content }}</text>
             </view>
 
-            <!-- 普通消息区域 (修正布局逻辑) -->
+            <!-- 普通消息区域 -->
             <view v-else class="bubble-group" :class="{ 'is-me': msg.isSelf }">
-
               <!-- 左侧头像 (对方) -->
               <view class="avatar-box left" v-if="!msg.isSelf" @click="onAvatarClick(msg)">
                 <app-avatar
@@ -99,21 +111,30 @@
                   <text v-if="msg.message_type === 0" class="plain-text" selectable>{{ msg.content }}</text>
 
                   <!-- 图片 -->
-                  <wd-img
-                      v-else-if="msg.message_type === 1"
-                      :src="getMediaUrl(msg)"
-                      width="auto"
-                      custom-style="max-width: 400rpx; max-height: 400rpx; border-radius: 16rpx; display: block;"
-                      mode="heightFix"
-                      enable-preview
-                      :preview-src-list="[getMediaUrl(msg)]"
-                  />
+                  <view v-else-if="msg.message_type === 1" class="image-bubble">
+                    <image
+                        :src="getMediaUrl(msg)"
+                        mode="widthFix"
+                        class="msg-image"
+                        @click="previewImage(msg)"
+                    />
+                  </view>
 
                   <!-- 语音 -->
                   <view v-else-if="msg.message_type === 2" class="audio-capsule" @click="playAudio(msg)">
-                    <wd-icon :name="playingAudioId === msg.id ? 'pause-circle' : 'play-circle'" size="44rpx" />
-                    <view class="visualizer">
-                      <view class="bar" v-for="i in 4" :key="i" :class="{ animating: playingAudioId === msg.id }"></view>
+                    <view class="play-btn">
+                      <svg v-if="playingAudioId !== msg.id" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                      <svg v-else viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                      </svg>
+                    </view>
+                    <view class="wave-visualizer">
+                      <view class="wave-bar" :class="{ animating: playingAudioId === msg.id }"></view>
+                      <view class="wave-bar" :class="{ animating: playingAudioId === msg.id }"></view>
+                      <view class="wave-bar" :class="{ animating: playingAudioId === msg.id }"></view>
+                      <view class="wave-bar" :class="{ animating: playingAudioId === msg.id }"></view>
                     </view>
                     <text class="duration-tag">{{ msg.duration || 0 }}"</text>
                   </view>
@@ -125,8 +146,11 @@
 
                   <!-- 文件 -->
                   <view v-else-if="msg.message_type === 8" class="file-card" @click="openFile(msg)">
-                    <view class="icon-sq">
-                      <wd-icon name="file" size="48rpx" color="#fff" />
+                    <view class="file-icon-box">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
                     </view>
                     <view class="file-meta">
                       <text class="fname text-ellipsis">{{ getFileName(msg) }}</text>
@@ -147,13 +171,36 @@
                     radius="24rpx"
                 />
               </view>
-
             </view>
           </view>
         </view>
 
         <view class="bottom-spacer"></view>
       </scroll-view>
+
+      <!-- 录音浮层 -->
+      <view v-if="isRecording" class="recording-overlay">
+        <view class="recording-content" :class="{ 'cancel-mode': isCancelRecording }">
+          <view class="recording-icon">
+            <svg v-if="!isCancelRecording" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
+              <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </view>
+          <view class="wave-bars">
+            <view class="wave-bar" v-for="i in 5" :key="i" :style="{ animationDelay: `${i * 0.1}s` }"></view>
+          </view>
+          <text class="recording-duration">{{ formatRecordDuration(recordDuration) }}</text>
+          <text class="recording-tip">{{ isCancelRecording ? '松开取消' : '上滑取消发送' }}</text>
+        </view>
+      </view>
 
       <!-- 悬浮输入面板 -->
       <view class="input-floater">
@@ -166,34 +213,62 @@
         />
 
         <view class="input-bar-capsule">
-          <view class="action-trigger" @click="showEmoji = !showEmoji">
-            <wd-icon name="emotion" size="52rpx" />
+          <!-- 左侧: 语音按钮 -->
+          <view
+            class="action-trigger voice-btn"
+            @touchstart="startRecording"
+            @touchmove="onRecordingMove"
+            @touchend="stopRecording"
+            @touchcancel="cancelRecording"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
           </view>
 
+          <!-- 中间: 输入框 -->
           <view class="input-field-wrap">
-            <wd-input
+            <textarea
                 v-model="inputText"
-                type="textarea"
+                class="text-input"
                 :auto-height="true"
-                :max-height="120"
-                :rows="1"
+                :maxlength="-1"
                 placeholder="发送消息..."
-                no-border
-                custom-class="clean-input"
+                placeholder-class="input-placeholder"
+                :adjust-position="true"
                 @confirm="sendTextMessage"
                 @input="onInputChange"
             />
           </view>
 
+          <!-- 右侧: 表情 + 加号/发送 -->
           <view class="right-triggers">
+            <view class="action-trigger" @click="showEmoji = !showEmoji">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+            </view>
             <template v-if="inputText.trim()">
               <view class="send-btn" @click="sendTextMessage">
-                <wd-icon name="check" size="40rpx" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
               </view>
             </template>
             <template v-else>
               <view class="action-trigger" @click="showMore = true">
-                <wd-icon name="add-circle" size="52rpx" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="16"/>
+                  <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
               </view>
             </template>
           </view>
@@ -204,23 +279,47 @@
       <wd-popup v-model="showMore" position="bottom" safe-area-inset-bottom custom-style="background: var(--bg-card); border-radius: 32rpx 32rpx 0 0;">
         <view class="tools-grid">
           <view class="tool-item" @click="chooseImage">
-            <view class="tool-icon album"><wd-icon name="picture" size="52rpx" color="#fff" /></view>
+            <view class="tool-icon album">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </view>
             <text>相册</text>
           </view>
           <view class="tool-item" @click="shootCamera">
-            <view class="tool-icon camera"><wd-icon name="camera" size="52rpx" color="#fff" /></view>
+            <view class="tool-icon camera">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </view>
             <text>拍摄</text>
           </view>
           <view class="tool-item" @click="onMoreVideoCall">
-            <view class="tool-icon video"><wd-icon name="video" size="52rpx" color="#fff" /></view>
+            <view class="tool-icon video">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+            </view>
             <text>视频</text>
           </view>
           <view class="tool-item" @click="onMoreAudioCall">
-            <view class="tool-icon call"><wd-icon name="phone" size="52rpx" color="#fff" /></view>
+            <view class="tool-icon call">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
+              </svg>
+            </view>
             <text>语音</text>
           </view>
           <view class="tool-item" @click="chooseFile">
-            <view class="tool-icon file"><wd-icon name="folder" size="52rpx" color="#fff" /></view>
+            <view class="tool-icon file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            </view>
             <text>文件</text>
           </view>
         </view>
@@ -233,7 +332,12 @@
         <view class="confirm-dialog">
           <view class="dialog-header">确认发送</view>
           <view class="file-preview-box">
-            <wd-icon name="file" size="80rpx" color="var(--primary)" />
+            <view class="preview-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </view>
             <view class="f-info">
               <text class="f-name">{{ pendingFile.name }}</text>
               <text class="f-size">{{ formatSize(pendingFile.size) }}</text>
@@ -292,12 +396,14 @@ const webrtc = useWebRTC(
 
 const roomId = ref(''); const targetId = ref(''); const chatName = ref(''); const targetAvatar = ref('');
 const inputText = ref(''); const messages = ref<ChatMessage[]>([]); const scrollToId = ref(''); const scrollTop = ref(0); const scrollWithAnimation = ref(false); const loadingMore = ref(false); const hasMore = ref(true); const showMore = ref(false); const showEmoji = ref(false); const playingAudioId = ref<number | null>(null); const page = ref(1);
+// 语音录制相关
+const isRecording = ref(false); const isCancelRecording = ref(false); const recordDuration = ref(0); let recordTimer: ReturnType<typeof setInterval> | null = null; let recorderManager: UniApp.RecorderManager | null = null; let recordStartY = 0;
 const showFileConfirm = ref(false); const uploading = ref(false); const pendingFile = ref<{ path: string; name: string; size: number; type: 'image' | 'video' | 'file'; messageType: number }>({ path: '', name: '', size: 0, type: 'file', messageType: 8 });
 const showMsgActions = ref(false); const selectedMessage = ref<ChatMessage | null>(null);
 const showMentionPicker = ref(false); const groupMembers = ref<GroupMember[]>([]); const isGroupChat = ref(false);
 const mentionUsers = computed<MentionUser[]>(() => { return groupMembers.value.filter(m => m.user_id !== currentUser.value?.id).map(m => ({ id: m.user_id, name: m.nickname || m.user?.name || '未知', avatar: m.user?.avatar })) });
 const currentUser = computed(() => authStore.user);
-const msgActionItems = computed(() => { if (!selectedMessage.value) return []; const msg = selectedMessage.value; const items: any[] = []; if (msg.message_type === 0) { items.push({ name: '复制', value: 'copy' }) } if (msg.isSelf) { const sendTime = new Date(msg.created_at).getTime(); const now = Date.now(); if (now - sendTime < 2 * 60 * 1000) { items.push({ name: '撤回', value: 'recall' }) } } items.push({ name: '删除', value: 'delete', color: '#fa5151' }); return items });
+const msgActionItems = computed(() => { if (!selectedMessage.value) return []; const msg = selectedMessage.value; const items: any[] = []; if (msg.message_type === 0) { items.push({ name: '复制', value: 'copy' }) } if (msg.isSelf) { const sendTime = new Date(msg.created_at).getTime(); const now = Date.now(); if (now - sendTime < 2 * 60 * 1000) { items.push({ name: '撤回', value: 'recall' }) } } items.push({ name: '删除', value: 'delete', color: '#ef4444' }); return items });
 const displayName = computed(() => targetUser.value?.name || chatName.value || '聊天');
 const targetUser = computed(() => { const contact = chatStore.contacts.find(c => c.contact_user_id === targetId.value); if (contact?.user) { return contact.user } const conv = conversationStore.conversations.find(c => c.target_id === targetId.value || c.room_id === roomId.value); if (conv) { return { id: conv.target_id, name: conv.name || chatName.value, avatar: conv.avatar || targetAvatar.value } } return { id: targetId.value, name: chatName.value, avatar: targetAvatar.value } });
 
@@ -349,64 +455,181 @@ function deleteMessage(msg: ChatMessage) { const index = messages.value.findInde
 function onInputChange(e: any) { const value = e.detail?.value || inputText.value; if (value.endsWith('@') && isGroupChat.value) { showMentionPicker.value = true } }
 function triggerMention() { inputText.value += '@'; showMentionPicker.value = true }
 function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('@')) { inputText.value = inputText.value.slice(0, -1) + `@${user.name} ` } else { inputText.value += `@${user.name} ` } showMentionPicker.value = false }
+function previewImage(msg: ChatMessage) { const url = getMediaUrl(msg); if (url) { uni.previewImage({ urls: [url], current: url }) } }
+
+// ========== 语音录制处理 ==========
+function formatRecordDuration(seconds: number): string { const m = Math.floor(seconds / 60).toString().padStart(2, '0'); const s = (seconds % 60).toString().padStart(2, '0'); return `${m}:${s}` }
+function initRecorderManager() { if (recorderManager) return recorderManager; recorderManager = uni.getRecorderManager(); recorderManager.onStart(() => { console.log('录音开始'); isRecording.value = true; recordDuration.value = 0; recordTimer = setInterval(() => { recordDuration.value++; if (recordDuration.value >= 60) { stopRecording() } }, 1000) }); recorderManager.onStop((res) => { console.log('录音结束', res); clearRecordTimer(); isRecording.value = false; if (!isCancelRecording.value && res.tempFilePath && recordDuration.value >= 1) { sendVoiceMessage(res.tempFilePath, recordDuration.value) } isCancelRecording.value = false; recordDuration.value = 0 }); recorderManager.onError((err) => { console.error('录音错误', err); clearRecordTimer(); isRecording.value = false; isCancelRecording.value = false; toast.error('录音失败') }); return recorderManager }
+function clearRecordTimer() { if (recordTimer) { clearInterval(recordTimer); recordTimer = null } }
+function startRecording(e: TouchEvent) { recordStartY = e.touches[0].clientY; isCancelRecording.value = false; const recorder = initRecorderManager(); recorder.start({ duration: 60000, sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 48000, format: 'mp3' }) }
+function onRecordingMove(e: TouchEvent) { if (!isRecording.value) return; const currentY = e.touches[0].clientY; const diff = recordStartY - currentY; isCancelRecording.value = diff > 80 }
+function stopRecording() { if (!isRecording.value) return; if (recorderManager) { recorderManager.stop() } }
+function cancelRecording() { isCancelRecording.value = true; stopRecording() }
+async function sendVoiceMessage(filePath: string, duration: number) { toast.loading('发送中...'); try { const attachment = await attachmentApi.uploadAttachment(filePath, 'audio'); toast.close(); const extra: Record<string, any> = { url: attachment.file_url, name: attachment.file_name || 'voice.mp3', size: attachment.file_size || 0, duration: duration, attachment_id: attachment.id }; const message: ChatMessage = { id: Date.now(), room_id: roomId.value, sender_user_id: currentUser.value!.id, receiver_user_id: targetId.value || '', message_type: 2, content: attachment.file_url, duration: duration, extra, created_at: new Date().toISOString(), isSelf: true }; messages.value.push(message); chatStore.addMessage(roomId.value, message); conversationStore.handleMessageUpdate(message, true, true); scrollToBottom(true); await messageApi.sendMessage({ sender_client_id: wsManager.getClientId() || '', receiver_user_id: targetId.value || '', room_id: roomId.value, message_type: 2, content: attachment.file_url, duration: duration, extra: JSON.stringify(extra) }); toast.success('发送成功') } catch (error: any) { toast.close(); toast.error(error.message || '发送失败') } }
 </script>
 
 <style lang="scss" scoped>
-/* 系统变量 (高级灰体系) */
+// ==========================================
+// 系统变量 - 浅色模式 (与设计稿一致)
+// ==========================================
 .chat-page-container {
   --bg-base: #F5F7FA;
-  --bg-card: #FFFFFF;
-  --text-main: #1D1D1F;
-  --text-msg-other: #1D1D1F;
-  --text-msg-self: #FFFFFF;
-  --bubble-other-bg: #FFFFFF;
-  --bubble-self-bg: #4F46E5;
+  --bg-card: #ffffff;
+  --bg-surface: #ffffff;
+  --text-main: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-msg-other: #1f2937;
+  --text-msg-self: #ffffff;
+  --bubble-other-bg: #ffffff;
+  --bubble-other-border: rgba(0, 0, 0, 0.05);
   --bubble-self-gradient: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-  --input-bg: #F7F8FA;
-  --primary: #4F46E5;
+  --bubble-shadow: rgba(79, 70, 229, 0.2);
+  --input-bg: #f1f1f1;
+  --nav-bg: rgba(255, 255, 255, 0.90);
+  --color-primary: #4F46E5;
+  --border-subtle: rgba(0, 0, 0, 0.05);
 
   height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
 
+  // ==========================================
+  // 深色模式 - Warm Stone (与设计稿一致)
+  // ==========================================
   &.theme-dark {
-    --bg-base: #121212; /* 深邃灰，非纯黑 */
-    --bg-card: #1C1C1E; /* 层级灰 */
-    --text-main: #F2F2F7;
-    --text-msg-other: #F2F2F7;
-    --bubble-other-bg: #2C2C2E;
-    --input-bg: #2C2C2E;
+    --bg-base: #121212;
+    --bg-card: #292524;
+    --bg-surface: #1c1917;
+    --text-main: #f5f5f4;
+    --text-secondary: #e7e5e4;
+    --text-tertiary: #78716c;
+    --text-msg-other: #e7e5e4;
+    --bubble-other-bg: #262626;
+    --bubble-other-border: #44403c;
+    --input-bg: #292524;
+    --nav-bg: rgba(28, 25, 23, 0.90);
+    --color-primary: #f97316;
+    --border-subtle: #44403c;
   }
 }
 
-/* 导航栏 */
-:deep(.glass-navbar) {
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(20px);
-  border-bottom: 0.5px solid rgba(0,0,0,0.05);
+// 自定义滚动条
+.custom-scrollbar {
+  &::-webkit-scrollbar { display: none; }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-  .theme-dark & {
-    background: rgba(28, 28, 30, 0.8) !important;
-    border-bottom-color: rgba(255,255,255,0.08);
+// ==========================================
+// 沉浸式导航栏 (与设计稿完全一致)
+// ==========================================
+.glass-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding-top: var(--status-bar-height);
+
+  .navbar-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--nav-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1rpx solid var(--border-subtle);
+    transition: all 0.3s;
+  }
+
+  .navbar-content {
+    position: relative;
+    height: 96rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32rpx 12rpx;
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 4rpx;
+    cursor: pointer;
+    transition: opacity 0.15s;
+
+    &:active { opacity: 0.6; }
+  }
+
+  .back-icon {
+    width: 56rpx;
+    height: 56rpx;
+    color: var(--text-main);
+  }
+
+  .nav-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-name {
+    font-size: 34rpx;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.3;
+  }
+
+  .member-count, .online-status {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    font-size: 20rpx;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    margin-top: 2rpx;
+  }
+
+  .online-status {
+    &::before {
+      content: '';
+      width: 12rpx;
+      height: 12rpx;
+      background: #10b981;
+      border-radius: 50%;
+    }
+  }
+
+  .nav-actions {
+    display: flex;
+    gap: 20rpx;
+    padding-right: 8rpx;
+  }
+
+  .icon-btn {
+    width: 48rpx;
+    height: 48rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    cursor: pointer;
+
+    svg {
+      width: 48rpx;
+      height: 48rpx;
+      color: var(--text-secondary);
+      transition: color 0.15s;
+    }
+
+    &:hover svg,
+    &:active svg {
+      color: var(--color-primary);
+    }
   }
 }
 
-.nav-center {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  .nav-name { font-weight: 600; font-size: 32rpx; color: var(--text-main); }
-  .nav-badge { background: rgba(0,0,0,0.05); padding: 2rpx 10rpx; border-radius: 10rpx; font-size: 20rpx; color: #888; }
-}
-
-.nav-actions {
-  display: flex;
-  gap: 32rpx;
-  .icon-btn { opacity: 0.7; transition: opacity 0.2s; &:active { opacity: 1; } }
-}
-
-/* 滚动区 */
+// 滚动区
 .chat-scroll-area {
   flex: 1;
   overflow: hidden;
@@ -415,17 +638,17 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
 
 .message-feed {
   padding: 24rpx 32rpx;
-  padding-top: calc(44px + var(--status-bar-height) + 20rpx);
+  padding-top: calc(88rpx + var(--status-bar-height) + 20rpx);
 }
 
 .feed-status {
   text-align: center;
   padding: 20rpx;
-  .link-text { color: #4F46E5; font-size: 24rpx; }
-  .end-text { color: #999; font-size: 24rpx; }
+  .link-text { color: var(--color-primary); font-size: 24rpx; }
+  .end-text { color: var(--text-tertiary); font-size: 24rpx; }
 }
 
-/* 消息项容器 */
+// 消息项容器
 .message-item {
   margin-bottom: 40rpx;
 
@@ -433,36 +656,37 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
     display: flex;
     justify-content: center;
     margin-bottom: 30rpx;
+
     text {
-      background: rgba(0,0,0,0.04);
+      background: rgba(0, 0, 0, 0.04);
       padding: 6rpx 18rpx;
       border-radius: 20rpx;
       font-size: 22rpx;
-      color: #9CA3AF;
-      .theme-dark & { background: rgba(255,255,255,0.08); }
+      color: var(--text-tertiary);
+
+      .theme-dark & { background: rgba(255, 255, 255, 0.08); }
     }
   }
 
   .system-notice {
     text-align: center;
     margin: 20rpx 0;
-    text { font-size: 24rpx; color: #9CA3AF; }
+    text { font-size: 24rpx; color: var(--text-tertiary); }
   }
 }
 
-/* 核心布局：使用 Flex 标准流 */
+// 核心布局
 .bubble-group {
   display: flex;
-  align-items: flex-start; /* 顶部对齐 */
+  align-items: flex-start;
   gap: 16rpx;
 
-  /* 自己发的消息：内容靠右对齐 */
   &.is-me {
     justify-content: flex-end;
   }
 }
 
-/* 头像容器 */
+// 头像容器
 .avatar-box {
   width: 80rpx;
   height: 80rpx;
@@ -472,88 +696,156 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
   &.right { order: 3; }
 }
 
-/* 内容容器 */
+// 内容容器
 .content-box {
   order: 2;
-  max-width: 68%;
+  max-width: 75%;
   display: flex;
   flex-direction: column;
 
-  /* 对方消息：名字靠左 */
   .sender-label {
     font-size: 22rpx;
-    color: #9CA3AF;
+    color: var(--text-tertiary);
     margin-bottom: 8rpx;
     margin-left: 12rpx;
   }
 
-  /* 自己消息：气泡靠右 */
   .is-me & {
     align-items: flex-end;
   }
 }
 
-/* 气泡样式 */
+// ==========================================
+// 气泡样式 (与设计稿完全一致)
+// ==========================================
 .bubble-card {
-  padding: 20rpx 28rpx;
-  border-radius: 36rpx;
+  padding: 24rpx 28rpx;
+  border-radius: 32rpx;
   font-size: 30rpx;
-  line-height: 1.5;
+  line-height: 1.6;
   position: relative;
   word-break: break-all;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
 
-  /* 他人样式 */
+  // 对方气泡 - 白色背景
   &.bubble-other {
     background: var(--bubble-other-bg);
     color: var(--text-msg-other);
     border-bottom-left-radius: 8rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+
+    .theme-dark & {
+      border: 1rpx solid var(--bubble-other-border);
+    }
   }
 
-  /* 自己样式 */
+  // 自己气泡 - 渐变背景
   &.bubble-self {
     background: var(--bubble-self-gradient);
     color: var(--text-msg-self);
     border-bottom-right-radius: 8rpx;
-    box-shadow: 0 4rpx 16rpx rgba(79, 70, 229, 0.25);
+    box-shadow: 0 4rpx 16rpx var(--bubble-shadow);
   }
 
   &.media-bubble {
     padding: 0;
     background: transparent !important;
     box-shadow: none !important;
+    border: none !important;
+
+    &.audio {
+      padding: 24rpx 28rpx;
+      background: var(--bubble-other-bg) !important;
+      border-radius: 32rpx;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05) !important;
+
+      .theme-dark & {
+        border: 1rpx solid var(--bubble-other-border) !important;
+      }
+
+      .is-me & {
+        background: var(--bubble-self-gradient) !important;
+        border: none !important;
+        box-shadow: 0 4rpx 16rpx var(--bubble-shadow) !important;
+      }
+    }
+
+    &.file {
+      background: var(--bg-card) !important;
+    }
   }
 }
 
-/* 语音条 */
+// 图片气泡
+.image-bubble {
+  .msg-image {
+    max-width: 400rpx;
+    max-height: 400rpx;
+    border-radius: 16rpx;
+    display: block;
+  }
+}
+
+// 语音条
 .audio-capsule {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  min-width: 140rpx;
-  padding: 16rpx 24rpx;
+  min-width: 180rpx;
+  color: var(--text-main);
 
-  .visualizer {
+  .is-me & {
+    color: #fff;
+  }
+
+  .play-btn {
+    width: 44rpx;
+    height: 44rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 32rpx;
+      height: 32rpx;
+    }
+  }
+
+  .wave-visualizer {
     display: flex;
     align-items: center;
     gap: 4rpx;
-    height: 24rpx;
+    height: 32rpx;
 
-    .bar {
+    .wave-bar {
       width: 4rpx;
-      height: 10rpx;
+      height: 8rpx;
       background: currentColor;
-      border-radius: 2rpx;
+      border-radius: 4rpx;
+      transition: height 0.1s;
 
-      &.animating { animation: wave 1s infinite ease-in-out; }
-      &:nth-child(2) { animation-delay: 0.1s; }
-      &:nth-child(3) { animation-delay: 0.2s; }
+      &.animating {
+        animation: wave 0.8s infinite ease-in-out;
+
+        &:nth-child(1) { animation-delay: 0s; }
+        &:nth-child(2) { animation-delay: 0.1s; }
+        &:nth-child(3) { animation-delay: 0.2s; }
+        &:nth-child(4) { animation-delay: 0.3s; }
+      }
     }
   }
-}
-@keyframes wave { 0%,100%{height:8rpx} 50%{height:24rpx} }
 
-/* 文件卡片 */
+  .duration-tag {
+    font-size: 24rpx;
+    margin-left: 8rpx;
+  }
+}
+
+@keyframes wave {
+  0%, 100% { height: 8rpx; }
+  50% { height: 32rpx; }
+}
+
+// 文件卡片
 .file-card {
   background: var(--bg-card);
   padding: 24rpx;
@@ -562,8 +854,9 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
   align-items: center;
   gap: 20rpx;
   min-width: 400rpx;
+  border: 1rpx solid var(--border-subtle);
 
-  .icon-sq {
+  .file-icon-box {
     width: 80rpx;
     height: 80rpx;
     background: #FFB300;
@@ -571,6 +864,11 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
     display: flex;
     align-items: center;
     justify-content: center;
+
+    svg {
+      width: 44rpx;
+      height: 44rpx;
+    }
   }
 
   .file-meta {
@@ -579,46 +877,186 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
     display: flex;
     flex-direction: column;
 
-    .fname { font-size: 28rpx; color: var(--text-main); margin-bottom: 4rpx; }
-    .fsize { font-size: 22rpx; color: #9CA3AF; }
+    .fname {
+      font-size: 28rpx;
+      color: var(--text-main);
+      margin-bottom: 4rpx;
+    }
+
+    .fsize {
+      font-size: 22rpx;
+      color: var(--text-tertiary);
+    }
   }
 }
 
-.bottom-spacer { height: 180rpx; }
+// 视频预览
+.video-preview {
+  .video-player {
+    width: 400rpx;
+    height: 300rpx;
+    border-radius: 16rpx;
+  }
+}
 
-/* 悬浮输入栏 */
+.bottom-spacer { height: 240rpx; }
+
+// ==========================================
+// 底部输入栏 (与设计稿完全一致)
+// ==========================================
+// ==========================================
+// 录音浮层
+// ==========================================
+.recording-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.recording-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 32rpx;
+  min-width: 300rpx;
+  
+  .theme-dark & {
+    background: rgba(41, 37, 36, 0.95);
+  }
+  
+  &.cancel-mode {
+    .recording-icon {
+      background: #ef4444;
+    }
+    
+    .wave-bars .wave-bar {
+      background: #ef4444;
+      animation: none;
+      height: 8rpx;
+    }
+  }
+}
+
+.recording-icon {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  transition: background 0.2s;
+  
+  svg {
+    width: 60rpx;
+    height: 60rpx;
+    color: #fff;
+  }
+}
+
+.wave-bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 64rpx;
+  margin-bottom: 24rpx;
+}
+
+.wave-bar {
+  width: 8rpx;
+  height: 16rpx;
+  background: #10b981;
+  border-radius: 8rpx;
+  animation: wave 0.8s infinite ease-in-out;
+  
+  @for $i from 1 through 5 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 0.1}s;
+    }
+  }
+}
+
+@keyframes wave {
+  0%, 100% { height: 16rpx; }
+  50% { height: 48rpx; }
+}
+
+.recording-duration {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: monospace;
+  margin-bottom: 16rpx;
+}
+
+.recording-tip {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
 .input-floater {
   position: fixed;
-  bottom: calc(20rpx + env(safe-area-inset-bottom));
-  left: 32rpx;
-  right: 32rpx;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 99;
+  background: var(--bg-card);
+  border-top: 1rpx solid var(--border-subtle);
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  transition: background 0.3s;
 }
 
 .input-bar-capsule {
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(25px);
-  border-radius: 48rpx;
-  padding: 12rpx;
   display: flex;
   align-items: flex-end;
-  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.06);
-  border: 1px solid rgba(255,255,255,0.3);
-
-  .theme-dark & {
-    background: rgba(30,30,30,0.85);
-    border-color: rgba(255,255,255,0.08);
-    box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.3);
-  }
+  gap: 16rpx;
 
   .action-trigger {
-    width: 88rpx;
-    height: 88rpx;
+    width: 56rpx;
+    height: 56rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-main);
+    color: var(--text-secondary);
     flex-shrink: 0;
+    margin-bottom: 16rpx;
+    transition: color 0.15s;
+    cursor: pointer;
+
+    svg {
+      width: 56rpx;
+      height: 56rpx;
+    }
+
+    &:hover,
+    &:active {
+      color: var(--color-primary);
+    }
+  }
+
+  .voice-btn {
+    &:active {
+      color: var(--color-primary);
+      transform: scale(1.1);
+    }
   }
 
   .input-field-wrap {
@@ -628,29 +1066,93 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
     border-radius: 40rpx;
     display: flex;
     align-items: center;
-    padding: 10rpx 24rpx;
-    margin: 0 8rpx;
+    padding: 20rpx 28rpx;
+    border: 1rpx solid transparent;
+    transition: border-color 0.2s;
 
-    :deep(.wd-textarea) { padding: 0; font-size: 32rpx; width: 100%; color: var(--text-main); line-height: 1.4; }
+    .theme-dark & {
+      border-color: var(--border-subtle);
+    }
+
+    .text-input {
+      width: 100%;
+      min-height: 48rpx;
+      max-height: 200rpx;
+      font-size: 30rpx;
+      line-height: 1.5;
+      color: var(--text-main);
+      background: transparent;
+    }
+
+    .input-placeholder {
+      color: var(--text-tertiary);
+    }
+
+    :deep(.wd-input) {
+      padding: 0;
+      font-size: 28rpx;
+      width: 100%;
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    :deep(.wd-textarea) {
+      padding: 0;
+      font-size: 28rpx;
+      width: 100%;
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    :deep(.wd-input__placeholder),
+    :deep(.wd-textarea__placeholder) {
+      color: var(--text-tertiary);
+    }
+  }
+
+  .right-triggers {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    margin-bottom: 16rpx;
   }
 
   .send-btn {
-    width: 88rpx;
-    height: 88rpx;
-    background: var(--primary);
+    width: 72rpx;
+    height: 72rpx;
+    background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
-    box-shadow: 0 4rpx 12rpx rgba(79, 70, 229, 0.4);
+    box-shadow: 0 4rpx 16rpx rgba(79, 70, 229, 0.3);
     animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+
+    .theme-dark & {
+      background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+      box-shadow: 0 4rpx 16rpx rgba(249, 115, 22, 0.3);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    svg {
+      width: 36rpx;
+      height: 36rpx;
+    }
   }
 }
 
-@keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
+@keyframes popIn {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
 
-/* 更多面板Grid */
+// 更多面板Grid
 .tools-grid {
   padding: 40rpx;
   display: grid;
@@ -671,20 +1173,37 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
       align-items: center;
       justify-content: center;
 
-      &.album { background: #34C759; }
-      &.camera { background: #FF9500; }
-      &.video { background: #5856D6; }
-      &.call { background: #007AFF; }
-      &.file { background: #FFCC00; }
+      svg {
+        width: 48rpx;
+        height: 48rpx;
+      }
+
+      &.album { background: #10b981; }
+      &.camera { background: #f97316; }
+      &.video { background: #8b5cf6; }
+      &.call { background: #0ea5e9; }
+      &.file { background: #eab308; }
     }
 
-    text { font-size: 24rpx; color: #888; }
+    text {
+      font-size: 24rpx;
+      color: var(--text-secondary);
+    }
   }
 }
 
+// 确认对话框
 .confirm-dialog {
   padding: 40rpx;
-  .dialog-header { font-size: 32rpx; font-weight: 600; text-align: center; margin-bottom: 30rpx; color: var(--text-main); }
+
+  .dialog-header {
+    font-size: 32rpx;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 30rpx;
+    color: var(--text-main);
+  }
+
   .file-preview-box {
     background: var(--bg-base);
     padding: 30rpx;
@@ -693,10 +1212,50 @@ function handleMentionSelect(user: MentionUser) { if (inputText.value.endsWith('
     align-items: center;
     gap: 20rpx;
     margin-bottom: 40rpx;
-    .f-info { display: flex; flex-direction: column; overflow: hidden; }
-    .f-name { font-size: 28rpx; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .f-size { font-size: 24rpx; color: #999; }
+
+    .preview-icon {
+      width: 80rpx;
+      height: 80rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: 64rpx;
+        height: 64rpx;
+      }
+    }
+
+    .f-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .f-name {
+      font-size: 28rpx;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .f-size {
+      font-size: 24rpx;
+      color: var(--text-tertiary);
+    }
   }
-  .dialog-footer { display: flex; gap: 24rpx; }
+
+  .dialog-footer {
+    display: flex;
+    gap: 24rpx;
+  }
+}
+
+// 文字溢出
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

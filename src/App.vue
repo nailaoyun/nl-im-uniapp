@@ -3,11 +3,13 @@ import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { useTheme } from '@/composables/useTheme'
 import { useAuthStore, useConversationStore } from '@/stores'
 import { wsManager } from '@/api/websocket'
+import { useGroupWebRTC } from '@/composables/useGroupWebRTC'
 import type { ChatMessage } from '@/types/api'
 
 const { initTheme } = useTheme()
 const authStore = useAuthStore()
 const conversationStore = useConversationStore()
+const groupWebRTC = useGroupWebRTC()
 
 // 全局消息处理器
 function handleGlobalMessage(message: ChatMessage) {
@@ -28,6 +30,8 @@ async function initWebSocket() {
     await wsManager.connect(userId)
     // 注册全局消息处理器
     wsManager.onMessage(handleGlobalMessage)
+    // 初始化群通话信令监听器
+    groupWebRTC.initListener()
     console.log('✅ WebSocket 全局初始化成功')
   } catch (error) {
     console.error('WebSocket 初始化失败:', error)
