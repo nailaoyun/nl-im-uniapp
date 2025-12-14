@@ -20,21 +20,31 @@
           </view>
           <!-- 右侧: 添加好友按钮 -->
           <view class="icon-btn" @click="goAddFriend">
+            <!-- #ifdef H5 -->
             <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="8.5" cy="7" r="4"/>
               <line x1="20" y1="8" x2="20" y2="14"/>
               <line x1="23" y1="11" x2="17" y2="11"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="add-circle" size="44rpx" />
+            <!-- #endif -->
           </view>
         </view>
 
         <view class="search-box-wrap">
           <view class="search-inner" @click="goSearch">
+            <!-- #ifdef H5 -->
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="search" size="32rpx" custom-class="search-icon-mp" />
+            <!-- #endif -->
             <text class="search-placeholder">搜索联系人/群聊</text>
           </view>
         </view>
@@ -75,12 +85,17 @@
         <view v-if="activeTab === 'groups'" class="feature-grid">
           <view class="feature-card" @click="goFriendRequests">
             <view class="icon-wrap is-orange">
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="8.5" cy="7" r="4"/>
                 <line x1="20" y1="8" x2="20" y2="14"/>
                 <line x1="23" y1="11" x2="17" y2="11"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="add-circle" size="48rpx" color="#fff" />
+              <!-- #endif -->
             </view>
             <view class="text-wrap">
               <text class="feature-title">新朋友</text>
@@ -89,10 +104,15 @@
           </view>
           <view class="feature-card" @click="goGroupNotify">
             <view class="icon-wrap is-blue">
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="bell" size="48rpx" color="#fff" />
+              <!-- #endif -->
             </view>
             <view class="text-wrap">
               <text class="feature-title">群通知</text>
@@ -111,10 +131,15 @@
             <view class="group-section-header">
               <text class="section-title">我的分组</text>
               <view class="add-group-btn" @click="showCreateGroupModal = true">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"/>
                   <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="add" size="28rpx" />
+                <!-- #endif -->
                 <text>新建</text>
               </view>
             </view>
@@ -123,9 +148,14 @@
             <view v-if="ungroupedContacts.length" class="collapse-item animate-fade-in-up">
               <view class="collapse-header" @click="toggleCollapse(0)">
                 <view class="collapse-arrow" :class="{ collapsed: collapsedIds.includes(0) }">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="arrow-down" size="24rpx" />
+                  <!-- #endif -->
                 </view>
                 <text class="collapse-title">未分组</text>
                 <text class="collapse-count">{{ ungroupedContacts.length }}</text>
@@ -145,9 +175,14 @@
             <view v-for="(group, index) in contactGroups" :key="group.id" class="collapse-item animate-fade-in-up" :style="{ animationDelay: `${(index + 1) * 50}ms` }">
               <view class="collapse-header" @click="toggleCollapse(group.id)" @longpress="handleGroupLongPress(group)">
                 <view class="collapse-arrow" :class="{ collapsed: collapsedIds.includes(group.id) }">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="arrow-down" size="24rpx" />
+                  <!-- #endif -->
                 </view>
                 <text class="collapse-title">{{ group.group_name }}</text>
                 <text class="collapse-count">{{ getGroupContacts(group.id).length }}</text>
@@ -184,9 +219,14 @@
             <view v-if="createdGroups.length" class="collapse-item animate-fade-in-up">
               <view class="collapse-header" @click="toggleCollapse('created')">
                 <view class="collapse-arrow" :class="{ collapsed: collapsedIds.includes('created') }">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="arrow-down" size="24rpx" />
+                  <!-- #endif -->
                 </view>
                 <text class="collapse-title">我创建的群</text>
                 <text class="collapse-count">{{ createdGroups.length }}</text>
@@ -202,9 +242,14 @@
             <view v-if="managedGroups.length" class="collapse-item animate-fade-in-up" style="animation-delay: 50ms;">
               <view class="collapse-header" @click="toggleCollapse('managed')">
                 <view class="collapse-arrow" :class="{ collapsed: collapsedIds.includes('managed') }">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="arrow-down" size="24rpx" />
+                  <!-- #endif -->
                 </view>
                 <text class="collapse-title">我管理的群</text>
                 <text class="collapse-count">{{ managedGroups.length }}</text>
@@ -220,9 +265,14 @@
             <view v-if="joinedGroups.length" class="collapse-item animate-fade-in-up" style="animation-delay: 100ms;">
               <view class="collapse-header" @click="toggleCollapse('joined')">
                 <view class="collapse-arrow" :class="{ collapsed: collapsedIds.includes('joined') }">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="arrow-down" size="24rpx" />
+                  <!-- #endif -->
                 </view>
                 <text class="collapse-title">我加入的群</text>
                 <text class="collapse-count">{{ joinedGroups.length }}</text>
@@ -294,6 +344,9 @@
       <wd-toast />
       <wd-message-box />
       <app-tab-bar current="contacts" />
+      
+      <!-- 全局通话组件 -->
+      <global-call-provider />
     </view>
   </wd-config-provider>
 </template>
@@ -309,6 +362,7 @@ import * as roomApi from '@/api/modules/room'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
+import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Contact, ContactGroup } from '@/types/api'
 
 // --- 逻辑完全不变 ---
@@ -853,6 +907,16 @@ async function logout() { try { await messageBox.confirm({ title: '提示', msg:
     &:active {
       color: var(--color-brand);
       background: var(--index-hover);
+    }
+
+    // 深色模式下提高索引条对比度
+    .dark & {
+      color: #d6d3d1;  // warm-300 - 更亮的颜色提高对比度
+
+      &:active {
+        color: #f97316;  // orange-500
+        background: rgba(249, 115, 22, 0.15);  // orange-500/15
+      }
     }
   }
 }

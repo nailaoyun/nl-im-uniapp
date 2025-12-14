@@ -14,21 +14,31 @@
     <!-- 导航栏 (与设计稿一致) -->
     <view class="nav-header">
       <view class="nav-back" @click="goBack">
+        <!-- #ifdef H5 -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18l-6-6 6-6"/>
         </svg>
+        <!-- #endif -->
+        <!-- #ifdef MP-WEIXIN -->
+        <wd-icon name="arrow-left" size="44rpx" color="#fff" />
+        <!-- #endif -->
       </view>
       <view class="nav-more">
+        <!-- #ifdef H5 -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="1"/>
           <circle cx="19" cy="12" r="1"/>
           <circle cx="5" cy="12" r="1"/>
         </svg>
+        <!-- #endif -->
+        <!-- #ifdef MP-WEIXIN -->
+        <wd-icon name="more" size="44rpx" color="#fff" />
+        <!-- #endif -->
       </view>
     </view>
 
-    <!-- 主体内容 -->
-    <scroll-view scroll-y class="main-scroll custom-scrollbar" v-if="!loading && contact">
+    <!-- 主体内容 - 好友状态 -->
+    <scroll-view scroll-y class="main-scroll custom-scrollbar" v-if="!loading && isFriend && contact">
       <!-- 身份卡片区 (与设计稿一致) -->
       <view class="identity-section">
         <!-- 头像: w-32 h-32 rounded-full border-[6px] border-white shadow-xl -->
@@ -46,7 +56,7 @@
         
         <!-- 标签: text-xs bg-gray-100 px-2 py-0.5 rounded -->
         <view class="tag-row">
-          <view class="info-tag">ID: {{ contact.user?.id || '-' }}</view>
+          <view class="info-tag">ID: {{ contact.user?.id?.slice(-6) || '-' }}</view>
           <view class="info-tag">{{ contact.user?.region || '未知' }}</view>
         </view>
         
@@ -61,9 +71,14 @@
           <text class="row-label">设置备注</text>
           <view class="row-right">
             <text class="row-value">{{ contact.remark_name || '未设置' }}</text>
+            <!-- #ifdef H5 -->
             <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-icon-mp" />
+            <!-- #endif -->
           </view>
         </view>
         
@@ -99,39 +114,118 @@
       <view class="bottom-spacer" />
     </scroll-view>
 
+    <!-- 主体内容 - 陌生人状态 -->
+    <scroll-view scroll-y class="main-scroll custom-scrollbar" v-else-if="!loading && !isFriend && strangerUser">
+      <!-- 身份卡片区 -->
+      <view class="identity-section">
+        <view class="avatar-wrapper">
+          <app-avatar
+            :src="strangerUser.avatar"
+            :name="strangerUser.name"
+            :size="256"
+            round
+          />
+        </view>
+        
+        <text class="user-name">{{ strangerUser.name || '未知' }}</text>
+        
+        <view class="tag-row">
+          <view class="info-tag">ID: {{ strangerUser.id?.slice(-6) || '-' }}</view>
+          <view class="info-tag">{{ strangerUser.region || '未知' }}</view>
+        </view>
+        
+        <text class="bio-text">{{ strangerUser.desc || '这个人很懒，什么都没写' }}</text>
+      </view>
+
+      <!-- 陌生人信息卡片 -->
+      <view class="stranger-card animate-fade-in-up">
+        <text class="section-title">个人简介</text>
+        
+        <view class="info-row" v-if="sourceText">
+          <text class="info-label">来源</text>
+          <text class="info-value">{{ sourceText }}</text>
+        </view>
+        
+        <view class="info-row">
+          <text class="info-label">签名</text>
+          <text class="info-value">{{ strangerUser.desc || '暂无签名' }}</text>
+        </view>
+        
+        <view class="info-row" v-if="strangerUser.region">
+          <text class="info-label">地区</text>
+          <text class="info-value">{{ strangerUser.region }}</text>
+        </view>
+      </view>
+
+      <view class="bottom-spacer" />
+    </scroll-view>
+
     <!-- Loading -->
     <view v-else-if="loading" class="center-loading">
       <wd-loading size="60rpx" :color="isDark ? '#f97316' : '#4F46E5'"/>
     </view>
 
-    <!-- 底部悬浮操作栏 (与设计稿一致: rounded-t-[32px] shadow-[0_-10px_40px]) -->
-    <view class="floating-dock" v-if="contact">
+    <!-- 底部悬浮操作栏 - 好友状态 -->
+    <view class="floating-dock" v-if="isFriend && contact">
       <view class="dock-buttons">
         <!-- 电话: flex-1 -->
         <view class="dock-btn secondary" @click="startAudioCall">
+          <!-- #ifdef H5 -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon name="phone" size="44rpx" />
+          <!-- #endif -->
         </view>
         <!-- 发消息: flex-[2] -->
         <view class="dock-btn primary" @click="goChat">
+          <!-- #ifdef H5 -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon name="chat" size="44rpx" />
+          <!-- #endif -->
           <text>发消息</text>
         </view>
         <!-- 视频: flex-1 -->
         <view class="dock-btn secondary" @click="startVideoCall">
+          <!-- #ifdef H5 -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="23 7 16 12 23 17 23 7"/>
             <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
           </svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon name="video" size="44rpx" />
+          <!-- #endif -->
         </view>
       </view>
       
       <!-- 删除好友: text-xs text-gray-400 underline -->
       <view class="delete-link" @click="deleteFriend">
         <text>删除好友</text>
+      </view>
+    </view>
+
+    <!-- 底部悬浮操作栏 - 陌生人状态 -->
+    <view class="floating-dock" v-else-if="!isFriend && strangerUser">
+      <view class="add-friend-btn" @click="addFriend">
+        <!-- #ifdef H5 -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/>
+          <line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+        <!-- #endif -->
+        <!-- #ifdef MP-WEIXIN -->
+        <wd-icon name="add-circle" size="40rpx" color="#fff" />
+        <!-- #endif -->
+        <text>添加好友</text>
       </view>
     </view>
 
@@ -149,14 +243,103 @@ import { useTheme } from '@/composables/useTheme'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { Contact } from '@/types/api'
 
-// --- 逻辑保持不变 ---
-const toast = useToast(); const messageBox = useMessage(); const { isDark } = useTheme();
-const loading = ref(true); const contact = ref<Contact | null>(null); const contactId = ref(''); const userId = ref('');
+import * as userApi from '@/api/modules/user'
+import type { User } from '@/types/api'
 
-onLoad((options: any) => { contactId.value = options?.id || ''; userId.value = options?.userId || '' })
-onMounted(async () => { if (contactId.value) { await loadContact() } else if (userId.value) { await loadContactByUserId() } })
-async function loadContact() { loading.value = true; try { contact.value = await contactApi.getContactDetail(contactId.value) } catch (error) { console.error('加载联系人失败:', error); toast.error('加载失败') } finally { loading.value = false } }
-async function loadContactByUserId() { loading.value = true; try { const contacts = await contactApi.getContacts(); const found = contacts.find((c: Contact) => c.contact_user_id === userId.value || c.user_id === userId.value); if (found) { contact.value = await contactApi.getContactDetail(found.id?.toString() || '') } else { toast.warning('未找到该联系人'); setTimeout(() => uni.navigateBack(), 1500) } } catch (error) { console.error('加载联系人失败:', error); toast.error('加载失败') } finally { loading.value = false } }
+// --- 状态定义 ---
+const toast = useToast()
+const messageBox = useMessage()
+const { isDark } = useTheme()
+const loading = ref(true)
+const contact = ref<Contact | null>(null)
+const strangerUser = ref<User | null>(null)
+const contactId = ref('')
+const userId = ref('')
+const isFriend = ref(false)
+const sourceText = ref('')
+
+onLoad((options: any) => {
+  contactId.value = options?.id || ''
+  userId.value = options?.userId || ''
+  // 来源信息（如果有）
+  sourceText.value = options?.source ? decodeURIComponent(options.source) : ''
+})
+
+onMounted(async () => {
+  if (contactId.value) {
+    await loadContact()
+  } else if (userId.value) {
+    await loadContactByUserId()
+  }
+})
+
+// 加载好友联系人
+async function loadContact() {
+  loading.value = true
+  try {
+    contact.value = await contactApi.getContactDetail(contactId.value)
+    isFriend.value = true
+  } catch (error) {
+    console.error('加载联系人失败:', error)
+    toast.error('加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 通过用户ID加载 - 可能是好友也可能是陌生人
+async function loadContactByUserId() {
+  loading.value = true
+  try {
+    // 先尝试从好友列表查找
+    const contacts = await contactApi.getContacts()
+    const found = contacts.find((c: Contact) => 
+      c.contact_user_id === userId.value || c.user_id === userId.value
+    )
+    
+    if (found) {
+      // 是好友
+      contact.value = await contactApi.getContactDetail(found.id?.toString() || '')
+      isFriend.value = true
+    } else {
+      // 不是好友，加载用户基本信息
+      try {
+        strangerUser.value = await userApi.getUserInfo(userId.value)
+        isFriend.value = false
+      } catch {
+        // 用户不存在
+        toast.warning('用户不存在')
+        setTimeout(() => uni.navigateBack(), 1500)
+      }
+    }
+  } catch (error) {
+    console.error('加载失败:', error)
+    toast.error('加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 添加好友
+async function addFriend() {
+  try {
+    const { value } = await messageBox.prompt({
+      title: '添加好友',
+      inputValue: '你好，我想加你为好友',
+      inputPlaceholder: '请输入验证消息'
+    })
+    
+    await contactApi.addFriend({
+      to_user_id: userId.value,
+      message: value || ''
+    })
+    toast.success('好友请求已发送')
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      toast.error(e?.message || '发送失败')
+    }
+  }
+}
 function goBack() { uni.navigateBack() }
 function goChat() { if (!contact.value) return; uni.navigateTo({ url: `/pages/chat/index?targetId=${contact.value.contact_user_id}&roomId=${contact.value.room_id || ''}&name=${encodeURIComponent(contact.value.remark_name || contact.value.user?.name || '')}&avatar=${encodeURIComponent(contact.value.user?.avatar || '')}` }) }
 function startAudioCall() { if (!contact.value) return; uni.navigateTo({ url: `/pages/chat/index?targetId=${contact.value.contact_user_id}&roomId=${contact.value.room_id || ''}&name=${encodeURIComponent(contact.value.remark_name || contact.value.user?.name || '')}&avatar=${encodeURIComponent(contact.value.user?.avatar || '')}&callType=audio` }) }
@@ -564,6 +747,91 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
 // 底部留白
 .bottom-spacer {
   height: 360rpx;
+}
+
+// ==========================================
+// 陌生人信息卡片 (参考设计稿)
+// ==========================================
+.stranger-card {
+  margin: 0 24rpx 48rpx;
+  background: var(--bg-card);
+  border-radius: 32rpx;
+  padding: 32rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 2rpx solid var(--border-color);
+
+  .theme-dark & {
+    box-shadow: none;
+    border-color: rgba(41, 37, 36, 0.5);
+  }
+
+  .section-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 24rpx;
+    display: block;
+  }
+
+  .info-row {
+    display: flex;
+    margin-bottom: 16rpx;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      width: 100rpx;
+      font-size: 26rpx;
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+    }
+
+    .info-value {
+      flex: 1;
+      font-size: 26rpx;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+  }
+}
+
+// ==========================================
+// 添加好友按钮 (参考设计稿)
+// ==========================================
+.add-friend-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  height: 96rpx;
+  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  border-radius: 48rpx;
+  box-shadow: 0 8rpx 24rpx rgba(99, 102, 241, 0.3);
+  transition: all 0.15s;
+
+  svg {
+    width: 40rpx;
+    height: 40rpx;
+    stroke: #fff;
+  }
+
+  text {
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  .theme-dark & {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+    box-shadow: 0 8rpx 24rpx rgba(234, 88, 12, 0.3);
+  }
 }
 
 // 加载中

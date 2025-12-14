@@ -5,7 +5,8 @@ import type { ApiResponse, RequestConfig } from './types'
 import { storage } from '@/utils/storage'
 
 // API 基础路径
-const BASE_URL = 'http://127.0.0.1:12080/api'
+// const BASE_URL = 'http://127.0.0.1:12080/api'
+const BASE_URL = 'https://g-ws.nailaoyun.cn/api'
 
 // 默认超时时间
 const TIMEOUT = 30000

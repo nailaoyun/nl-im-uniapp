@@ -18,6 +18,9 @@ export { default as MentionPicker } from './chat/MentionPicker.vue'
 
 // 通话组件
 export { default as CallWindow } from './call/CallWindow.vue'
+export { default as MiniProgramCallWindow } from './call/MiniProgramCallWindow.vue'
+export { default as GlobalCallProvider } from './call/GlobalCallProvider.vue'
+export { default as UnifiedCallWindow } from './call/UnifiedCallWindow.vue'
 export { default as GroupCallBanner } from './call/GroupCallBanner.vue'
 export { default as GroupCallIncoming } from './call/GroupCallIncoming.vue'
 export { default as GroupCallModal } from './call/GroupCallModal.vue'

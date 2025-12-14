@@ -157,8 +157,28 @@
 
   <!-- #ifndef H5 -->
   <view v-if="call.active" class="call-unsupported">
-    <text>当前平台暂不支持音视频通话</text>
-    <wd-button type="primary" @click="$emit('end')">关闭</wd-button>
+    <view class="unsupported-content">
+      <view class="icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 7l-7 5 7 5V7z"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      </view>
+      <text class="unsupported-title">暂不支持音视频通话</text>
+      <text class="unsupported-desc">当前平台暂不支持音视频通话功能</text>
+      <text class="unsupported-desc">请使用网页版体验完整功能</text>
+      
+      <view class="unsupported-actions">
+        <wd-button type="info" plain @click="copyWebUrl" custom-style="margin-right: 20rpx;">
+          复制网页链接
+        </wd-button>
+        <wd-button type="primary" @click="$emit('end')">
+          关闭
+        </wd-button>
+      </view>
+    </view>
+    <wd-toast />
   </view>
   <!-- #endif -->
 </template>
@@ -167,6 +187,7 @@
 import { ref, watch, nextTick } from 'vue'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import { resolveImageUrl } from '@/utils/image'
+import { useToast } from 'wot-design-uni'
 import type { CallState } from '@/composables/useWebRTC'
 
 interface Props {
@@ -189,6 +210,22 @@ defineEmits<{
 
 const localVideoRef = ref<HTMLVideoElement | null>(null)
 const remoteVideoRef = ref<HTMLVideoElement | null>(null)
+const toast = useToast()
+
+// 复制网页链接（用于非H5平台引导用户）
+function copyWebUrl() {
+  // TODO: 替换为实际的网页版地址
+  const webUrl = 'https://your-web-domain.com/chat'
+  uni.setClipboardData({
+    data: webUrl,
+    success: () => {
+      toast.success('链接已复制，请在浏览器中打开')
+    },
+    fail: () => {
+      toast.error('复制失败')
+    }
+  })
+}
 
 watch(() => props.localStream, (stream) => {
   // #ifdef H5
@@ -542,17 +579,58 @@ watch(() => props.remoteStream, (stream) => {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: var(--bg-page);
+  background: linear-gradient(180deg, #1c1917 0%, #0c0a09 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+}
+
+.unsupported-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 40rpx;
+  text-align: center;
+  max-width: 600rpx;
+}
 
-  text {
-    font-size: 32rpx;
-    color: var(--text-secondary);
+.icon-box {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 48rpx;
+
+  svg {
+    width: 80rpx;
+    height: 80rpx;
+    color: #f97316;
   }
+}
+
+.unsupported-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #f5f5f4;
+  margin-bottom: 24rpx;
+}
+
+.unsupported-desc {
+  font-size: 28rpx;
+  color: #a8a29e;
+  line-height: 1.6;
+  margin-bottom: 8rpx;
+}
+
+.unsupported-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 48rpx;
+  gap: 24rpx;
 }
 
 @keyframes pulse {

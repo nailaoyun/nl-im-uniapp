@@ -9,6 +9,11 @@ export function getMyInfo() {
   return request.get<User>('/user/my-info')
 }
 
+// 获取指定用户信息
+export function getUserInfo(userId: string) {
+  return request.get<User>(`/user/${userId}`)
+}
+
 // 获取用户列表
 export function getUserList(page = 1, pageSize = 20) {
   return request.get<PaginatedResponse<User>>('/user/list', {

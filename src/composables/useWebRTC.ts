@@ -1,15 +1,20 @@
 /**
  * WebRTC 通话组合式函数 - 全局单例模式
  * 支持在任意页面接听来电
+ * 支持 SFU 模式和 P2P 模式
  */
 import { reactive, shallowRef, ref, computed } from 'vue'
 import * as messageApi from '@/api/modules/message'
+import * as callApi from '@/api/modules/call'
 import { wsManager } from '@/api/websocket'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { useConversationStore } from '@/stores/conversation'
 import type { ChatMessage, Contact } from '@/types/api'
 import type { CallStatus } from '@/types/message'
+
+// 连接模式
+type ConnectionMode = 'p2p' | 'sfu'
 
 export interface CallState {
   active: boolean
@@ -54,6 +59,10 @@ const pendingCandidates: RTCIceCandidate[] = []
 let currentReceiverUserId = ''
 let currentRoomId = ''
 let audioContext: UniApp.InnerAudioContext | null = null
+
+// SFU 模式配置
+let connectionMode: ConnectionMode = 'p2p'
+let sfuIceServers: RTCIceServer[] = []
 
 export function useWebRTC() {
   const authStore = useAuthStore()
@@ -243,10 +252,37 @@ export function useWebRTC() {
     // #endif
   }
 
+  // 设置连接模式
+  function setConnectionMode(mode: ConnectionMode) {
+    connectionMode = mode
+    console.log(`📡 [WebRTC] 连接模式: ${mode}`)
+  }
+
+  // 获取 ICE 服务器配置
+  async function fetchICEServers() {
+    try {
+      const response = await callApi.getICEServers(userId.value)
+      if (response.ice_servers?.length) {
+        sfuIceServers = response.ice_servers.map(s => ({
+          urls: s.urls,
+          username: s.username,
+          credential: s.credential,
+        }))
+        console.log('📡 [WebRTC] 获取 ICE 服务器配置:', sfuIceServers.length)
+      }
+    } catch (error) {
+      console.warn('⚠️ [WebRTC] 获取 ICE 服务器配置失败:', error)
+    }
+  }
+
   // 创建 RTCPeerConnection
   async function createPC(): Promise<void> {
     // #ifdef H5
-    const servers = [{ urls: 'stun:stun.l.google.com:19302' }]
+    // 优先使用服务器配置的 ICE 服务器
+    let servers: RTCIceServer[] = sfuIceServers.length > 0 
+      ? sfuIceServers 
+      : [{ urls: 'stun:stun.l.google.com:19302' }]
+    
     if (pc) { pc.close(); pc = null }
     pc = new RTCPeerConnection({ iceServers: servers })
 
@@ -269,10 +305,65 @@ export function useWebRTC() {
       }
     }
 
-    pc.onicecandidate = (e) => {
-      if (e.candidate && call.id) sendSignal('candidate', e.candidate)
+    pc.onicecandidate = async (e) => {
+      if (e.candidate && call.id) {
+        // SFU 模式下发送 ICE 候选到服务器
+        if (connectionMode === 'sfu' && currentRoomId) {
+          try {
+            await callApi.sendICECandidate({
+              room_id: currentRoomId,
+              user_id: userId.value,
+              candidate: JSON.stringify(e.candidate)
+            })
+          } catch (error) {
+            console.warn('⚠️ [WebRTC] 发送 ICE 候选失败:', error)
+          }
+        } else {
+          // P2P 模式下通过信令发送
+          sendSignal('candidate', e.candidate)
+        }
+      }
     }
     // #endif
+  }
+
+  // SFU 模式：连接到 SFU 服务器
+  async function connectToSFU(): Promise<void> {
+    if (!currentRoomId || !userId.value) return
+
+    try {
+      // 获取 ICE 服务器配置
+      await fetchICEServers()
+
+      // 创建 PeerConnection
+      await initMedia(call.type === 'video')
+      await createPC()
+
+      // 创建 Offer
+      const offer = await pc!.createOffer()
+      await pc!.setLocalDescription(offer)
+
+      // 发送 Offer 到 SFU，获取 Answer
+      const response = await callApi.sendOffer({
+        room_id: currentRoomId,
+        user_id: userId.value,
+        sdp: offer.sdp!
+      })
+
+      // 设置远端描述
+      await pc!.setRemoteDescription({
+        type: 'answer',
+        sdp: response.sdp
+      })
+
+      // 处理待定的 ICE 候选
+      processPendingCandidates()
+
+      console.log('✅ [WebRTC] 已连接到 SFU')
+    } catch (error) {
+      console.error('❌ [WebRTC] 连接 SFU 失败:', error)
+      throw error
+    }
   }
 
   // 发送信令
@@ -368,8 +459,47 @@ export function useWebRTC() {
     remoteStream.value = null
 
     try {
+      // 获取 ICE 服务器配置
+      await fetchICEServers()
+      
       await initMedia(type === 'video')
       await createPC()
+      playRingtone()
+      sendSignal('invite', undefined, receiverUserId)
+      return true
+    } catch (error: any) {
+      uni.showToast({ title: error.message || '无法启动通话', icon: 'none' })
+      closeCall()
+      return false
+    }
+  }
+
+  // SFU 模式发起通话
+  async function startCallSFU(type: 'audio' | 'video', receiverUserId: string, roomId: string, targetName?: string, targetAvatar?: string) {
+    setConnectionMode('sfu')
+    currentRoomId = roomId
+    currentReceiverUserId = receiverUserId
+    
+    call.type = type
+    call.id = Date.now().toString()
+    call.active = true
+    call.minimized = false
+    call.status = 'outgoing'
+    call.statusText = '正在呼叫...'
+    call.duration = 0
+    call.camOff = false
+    call.remoteCamOff = false
+    call.remoteMuted = false
+    call.callerId = receiverUserId
+
+    if (targetName) call.callerName = targetName
+    if (targetAvatar) call.callerAvatar = targetAvatar
+
+    remoteStream.value = null
+
+    try {
+      // 连接到 SFU
+      await connectToSFU()
       playRingtone()
       sendSignal('invite', undefined, receiverUserId)
       return true
@@ -505,6 +635,7 @@ export function useWebRTC() {
     isActive,
     initListener,
     startCall,
+    startCallSFU,
     acceptCall,
     rejectCall,
     endCall,
@@ -512,7 +643,9 @@ export function useWebRTC() {
     toggleMute,
     toggleCamera,
     toggleMinimize,
-    formatDuration
+    formatDuration,
+    setConnectionMode,
+    fetchICEServers,
   }
 }
 

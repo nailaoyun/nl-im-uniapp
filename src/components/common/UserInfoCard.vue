@@ -137,19 +137,68 @@
         </view>
       </scroll-view>
 
-      <!-- 底部操作栏 -->
+      <!-- 底部操作栏 - 四宫格布局 -->
       <view class="action-bar">
-        <view class="action-btn primary" @click="$emit('send-message')">
-          <wd-icon name="chat" size="40rpx" color="#fff" />
-          <text>发消息</text>
-        </view>
-        <view class="action-btn" @click="$emit('audio-call')">
-          <wd-icon name="phone" size="40rpx" />
-          <text>语音</text>
-        </view>
-        <view class="action-btn" @click="$emit('video-call')">
-          <wd-icon name="video" size="40rpx" />
-          <text>视频</text>
+        <view class="action-grid">
+          <view class="action-item" @click="handleSendMessage">
+            <view class="action-icon blue">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="chat" size="48rpx" color="#fff" />
+              <!-- #endif -->
+            </view>
+            <text>发消息</text>
+          </view>
+
+          <view class="action-item" @click="handleAudioCall">
+            <view class="action-icon green">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="phone" size="48rpx" color="#fff" />
+              <!-- #endif -->
+            </view>
+            <text>语音</text>
+          </view>
+
+          <view class="action-item" @click="handleVideoCall">
+            <view class="action-icon purple">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="video" size="48rpx" color="#fff" />
+              <!-- #endif -->
+            </view>
+            <text>视频</text>
+          </view>
+          
+          <view class="action-item" @click="handleViewMoments">
+            <view class="action-icon orange">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="smile" size="48rpx" color="#fff" />
+              <!-- #endif -->
+            </view>
+            <text>朋友圈</text>
+          </view>
         </view>
       </view>
     </view>
@@ -264,6 +313,35 @@ function viewAvatar() {
 
 function handleClose() {
   emit('update:modelValue', false)
+}
+
+// 发送消息 - 跳转到聊天页
+function handleSendMessage() {
+  handleClose()
+  if (props.user?.id) {
+    uni.navigateTo({
+      url: `/pages/chat/index?targetId=${props.user.id}&name=${encodeURIComponent(props.user.name || '')}&avatar=${encodeURIComponent(props.user.avatar || '')}`
+    })
+  }
+  emit('send-message')
+}
+
+// 语音通话
+function handleAudioCall() {
+  handleClose()
+  emit('audio-call')
+}
+
+// 视频通话
+function handleVideoCall() {
+  handleClose()
+  emit('video-call')
+}
+
+// 查看朋友圈
+function handleViewMoments() {
+  handleClose()
+  emit('view-moments')
 }
 </script>
 
@@ -502,25 +580,23 @@ function handleClose() {
 }
 
 .action-bar {
-  display: flex;
-  justify-content: center;
-  gap: 32rpx;
   padding: 24rpx 40rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid var(--divider-color);
   background: var(--bg-content);
 }
 
-.action-btn {
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+}
+
+.action-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
-  padding: 20rpx 32rpx;
-  border-radius: 24rpx;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  min-width: 140rpx;
+  gap: 12rpx;
   transition: all 0.2s;
 
   &:active {
@@ -528,13 +604,43 @@ function handleClose() {
   }
 
   text {
-    font-size: 22rpx;
+    font-size: 24rpx;
+    color: var(--text-secondary);
+  }
+}
+
+.action-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  svg {
+    width: 44rpx;
+    height: 44rpx;
   }
 
-  &.primary {
-    background: var(--color-primary);
-    color: #fff;
-    box-shadow: 0 8rpx 20rpx rgba(var(--color-primary-rgb), 0.3);
+  &.blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 8rpx 20rpx rgba(59, 130, 246, 0.3);
+  }
+
+  &.green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 8rpx 20rpx rgba(16, 185, 129, 0.3);
+  }
+
+  &.purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 8rpx 20rpx rgba(139, 92, 246, 0.3);
+  }
+
+  &.orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    box-shadow: 0 8rpx 20rpx rgba(249, 115, 22, 0.3);
   }
 }
 </style>

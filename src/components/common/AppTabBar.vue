@@ -11,12 +11,17 @@
         <view class="tabbar-icon">
           <!-- 消息图标 (message-circle) -->
           <template v-if="tab.name === 'messages'">
+            <!-- #ifdef H5 -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
             <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="chat" size="48rpx" :color="current === tab.name ? (isDark ? '#f97316' : '#4F46E5') : (isDark ? '#78716c' : '#9ca3af')" />
+            <!-- #endif -->
             <!-- 未读角标 -->
             <view v-if="unreadCount > 0" class="badge">
               {{ unreadCount > 99 ? '99+' : unreadCount }}
@@ -25,6 +30,7 @@
 
           <!-- 联系人图标 (users) -->
           <template v-else-if="tab.name === 'contacts'">
+            <!-- #ifdef H5 -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4" fill="currentColor"/>
@@ -37,10 +43,15 @@
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="user" size="48rpx" :color="current === tab.name ? (isDark ? '#f97316' : '#4F46E5') : (isDark ? '#78716c' : '#9ca3af')" />
+            <!-- #endif -->
           </template>
 
           <!-- 发现图标 (compass) -->
           <template v-else-if="tab.name === 'moments'">
+            <!-- #ifdef H5 -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="10" fill="currentColor"/>
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="white"/>
@@ -49,10 +60,15 @@
               <circle cx="12" cy="12" r="10"/>
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="photo" size="48rpx" :color="current === tab.name ? (isDark ? '#f97316' : '#4F46E5') : (isDark ? '#78716c' : '#9ca3af')" />
+            <!-- #endif -->
           </template>
 
           <!-- 我的图标 (user) -->
           <template v-else-if="tab.name === 'profile'">
+            <!-- #ifdef H5 -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
@@ -61,6 +77,10 @@
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="person" size="48rpx" :color="current === tab.name ? (isDark ? '#f97316' : '#4F46E5') : (isDark ? '#78716c' : '#9ca3af')" />
+            <!-- #endif -->
           </template>
         </view>
         <text class="tabbar-text">{{ tab.label }}</text>

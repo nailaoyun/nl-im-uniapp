@@ -29,13 +29,17 @@
             @touchend="stopRecording"
             @touchcancel="cancelRecording"
         >
-          <!-- Lucide Icon: Mic -->
+          <!-- #ifdef H5 -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" y1="19" x2="12" y2="23"/>
             <line x1="8" y1="23" x2="16" y2="23"/>
           </svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon name="mike" size="56rpx" />
+          <!-- #endif -->
         </view>
 
         <!-- 中间: 输入框 -->
@@ -60,31 +64,44 @@
         <view class="right-actions">
           <!-- 表情按钮 -->
           <view class="icon-btn" @click="toggleEmoji">
-            <!-- Lucide Icon: Smile -->
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
               <line x1="9" y1="9" x2="9.01" y2="9"/>
               <line x1="15" y1="9" x2="15.01" y2="9"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="smile" size="56rpx" />
+            <!-- #endif -->
           </view>
 
           <!-- 发送按钮 (有文字时显示) -->
           <view v-if="inputValue.trim()" class="send-btn" @click="onSend">
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/>
               <polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="send" size="36rpx" color="#fff" />
+            <!-- #endif -->
           </view>
 
           <!-- 更多按钮 (无文字时显示) -->
           <view v-else class="icon-btn" @click="showMore = true">
-            <!-- Lucide Icon: Plus Circle -->
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="add-circle" size="56rpx" />
+            <!-- #endif -->
           </view>
         </view>
       </view>
@@ -95,19 +112,34 @@
       <view class="tools-grid">
         <view class="tool-item" @click="emitAction('send-image')">
           <view class="tool-icon album">
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="picture" size="56rpx" color="#fff" />
+            <!-- #endif -->
           </view>
           <text>相册</text>
         </view>
         <view class="tool-item" @click="emitAction('send-camera')">
           <view class="tool-icon camera">
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="camera" size="56rpx" color="#fff" />
+            <!-- #endif -->
           </view>
           <text>拍摄</text>
         </view>
         <view class="tool-item" @click="emitAction('send-file')">
           <view class="tool-icon file">
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="folder" size="56rpx" color="#fff" />
+            <!-- #endif -->
           </view>
           <text>文件</text>
         </view>
@@ -118,8 +150,14 @@
     <view v-if="isRecording" class="recording-overlay">
       <view class="recording-content" :class="{ 'cancel-mode': isCancelRecording }">
         <view class="recording-icon">
+          <!-- #ifdef H5 -->
           <svg v-if="!isCancelRecording" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/><line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon v-if="!isCancelRecording" name="mike" size="64rpx" color="#fff" />
+          <wd-icon v-else name="close" size="64rpx" color="#fff" />
+          <!-- #endif -->
         </view>
         <view class="wave-bars">
           <view class="wave-bar" v-for="i in 5" :key="i" :style="{ animationDelay: `${i * 0.1}s` }"></view>
@@ -403,12 +441,62 @@ function formatRecordDuration(s: number) { return `${Math.floor(s/60).toString()
     display: flex; flex-direction: column; align-items: center;
     &.cancel-mode { .recording-icon { background: #ef4444; } }
   }
-  .recording-icon { width: 128rpx; height: 128rpx; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; margin-bottom: 32rpx; svg { width: 64rpx; height: 64rpx; } }
-  .wave-bars { display: flex; gap: 8rpx; height: 48rpx; margin-bottom: 24rpx; .wave-bar { width: 8rpx; height: 16rpx; background: #10b981; border-radius: 8rpx; animation: wave 1s infinite; } }
+  .recording-icon { 
+    width: 128rpx; 
+    height: 128rpx; 
+    background: #10b981; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: #fff; 
+    margin-bottom: 32rpx;
+    box-shadow: 0 0 60rpx rgba(16, 185, 129, 0.4);
+    animation: pulse-glow 2s ease-in-out infinite;
+    
+    svg { width: 64rpx; height: 64rpx; } 
+  }
+  
+  .wave-bars { 
+    display: flex; 
+    align-items: center;
+    gap: 12rpx; 
+    height: 64rpx; 
+    margin-bottom: 24rpx;
+    
+    .wave-bar { 
+      width: 8rpx; 
+      height: 8rpx;
+      min-height: 8rpx;
+      background: #10b981;
+      border-radius: 99px;
+      animation: wave 0.8s ease-in-out infinite;
+
+      &:nth-child(1) { animation-delay: 0s; }
+      &:nth-child(2) { animation-delay: 0.1s; }
+      &:nth-child(3) { animation-delay: 0.2s; }
+      &:nth-child(4) { animation-delay: 0.3s; }
+      &:nth-child(5) { animation-delay: 0.4s; }
+    }
+    
+    .cancel-mode & .wave-bar {
+      background: #ef4444;
+    }
+  }
+  
   .recording-duration { font-size: 36rpx; font-weight: 700; color: var(--text-input); margin-bottom: 16rpx; }
   .recording-tip { font-size: 24rpx; color: var(--icon-normal); }
 }
-@keyframes wave { 0%, 100% { height: 16rpx; } 50% { height: 48rpx; } }
+
+@keyframes wave {
+  0%, 100% { height: 8rpx; }
+  50% { height: 48rpx; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 40rpx rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 80rpx rgba(16, 185, 129, 0.5); }
+}
 
 /* 更多面板 Grid (复用) */
 .tools-grid {

@@ -290,6 +290,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import * as roomApi from '@/api/modules/room'
 import * as contactApi from '@/api/modules/contact'
+import * as conversationApi from '@/api/modules/conversation'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
 import { useGroupWebRTC } from '@/composables/useGroupWebRTC'
@@ -432,17 +433,25 @@ onShow(() => {
 async function loadGroupInfo() {
   loading.value = true
   try {
-    const [info, memberList, announcementRes, contacts] = await Promise.all([
+    const [info, memberList, announcementRes, contacts, conversationRes] = await Promise.all([
       roomApi.getGroup(roomId.value),
       roomApi.getGroupMembers(roomId.value),
       roomApi.getGroupAnnouncement(roomId.value).catch(() => ({ announcement: '' })),
-      contactApi.getContacts()
+      contactApi.getContacts(),
+      // 获取会话设置，用于初始化免打扰和置顶状态
+      conversationApi.getConversationByRoom(roomId.value).catch(() => null)
     ])
     groupInfo.value = info
     members.value = memberList
     // 按角色排序
     members.value.sort((a, b) => b.role - a.role)
     announcement.value = announcementRes.announcement
+
+    // 初始化免打扰和置顶状态
+    if (conversationRes) {
+      isMuted.value = conversationRes.is_muted || false
+      isTop.value = conversationRes.is_top || false
+    }
 
     // 过滤可邀请的好友
     const memberIds = new Set(memberList.map(m => m.user_id))
@@ -542,12 +551,34 @@ async function editMyNickname() {
 }
 
 // 免打扰/置顶
-function toggleMute() {
-  toast.show(isMuted.value ? '已开启免打扰' : '已关闭免打扰')
+async function toggleMute() {
+  const newValue = isMuted.value
+  try {
+    await conversationApi.updateConversation({
+      target_id: roomId.value,
+      is_muted: newValue
+    })
+    toast.success(newValue ? '已开启免打扰' : '已关闭免打扰')
+  } catch (e) {
+    // 回滚状态
+    isMuted.value = !newValue
+    toast.error('操作失败')
+  }
 }
 
-function toggleTop() {
-  toast.show(isTop.value ? '已置顶' : '已取消置顶')
+async function toggleTop() {
+  const newValue = isTop.value
+  try {
+    await conversationApi.updateConversation({
+      target_id: roomId.value,
+      is_top: newValue
+    })
+    toast.success(newValue ? '已置顶' : '已取消置顶')
+  } catch (e) {
+    // 回滚状态
+    isTop.value = !newValue
+    toast.error('操作失败')
+  }
 }
 
 // 成员操作

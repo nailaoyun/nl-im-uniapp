@@ -8,7 +8,12 @@
         <view class="navbar-content">
           <view class="nav-left" @click="goBack">
             <view class="back-btn">
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-left" size="44rpx" />
+              <!-- #endif -->
             </view>
             <view class="nav-info">
               <text class="nav-name">{{ displayName }}</text>
@@ -20,16 +25,55 @@
           </view>
 
           <view class="nav-actions">
-            <view class="icon-btn" @click="startAudioCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></view>
-            <view class="icon-btn" @click="startVideoCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></view>
-            <view class="icon-btn" @click="showChatInfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></view>
+            <view class="icon-btn" @click="startAudioCall">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="phone" size="44rpx" />
+              <!-- #endif -->
+            </view>
+            <view class="icon-btn" @click="startVideoCall">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="video" size="44rpx" />
+              <!-- #endif -->
+            </view>
+            <!-- 群聊：显示群成员图标 -->
+            <view v-if="isGroupChat" class="icon-btn" @click="goGroupInfo">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="user" size="44rpx" />
+              <!-- #endif -->
+            </view>
+            <!-- 单聊：显示更多图标 -->
+            <view v-else class="icon-btn" @click="showChatInfo">
+              <!-- #ifdef H5 -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="more" size="44rpx" />
+              <!-- #endif -->
+            </view>
           </view>
         </view>
       </view>
 
+      <!-- 群通话 Banner -->
+      <group-call-banner
+        v-if="isGroupChat && hasActiveGroupCall"
+        :room-id="roomId"
+        class="call-banner-wrapper"
+      />
+
       <!-- 2. 消息列表区 -->
       <scroll-view
           class="chat-scroll-area custom-scrollbar"
+          :class="{ 'has-banner': hasActiveGroupCall && isGroupChat }"
           scroll-y
           :scroll-into-view="scrollToId"
           :scroll-top="scrollTop"
@@ -101,7 +145,12 @@
           <view class="dialog-header">确认发送</view>
           <view class="file-preview-box">
             <view class="preview-icon">
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="folder" size="48rpx" />
+              <!-- #endif -->
             </view>
             <view class="f-info">
               <text class="f-name">{{ pendingFile.name }}</text>
@@ -116,6 +165,9 @@
       </wd-popup>
 
       <wd-toast />
+      
+      <!-- 全局通话组件 -->
+      <global-call-provider />
     </view>
   </wd-config-provider>
 </template>
@@ -133,18 +185,38 @@ import { resolveImageUrl } from '@/utils/image'
 import { useToast } from 'wot-design-uni'
 import { useTheme } from '@/composables/useTheme'
 import { useWebRTC } from '@/composables/useWebRTC'
+// #ifdef MP-WEIXIN
+import { useMiniProgramCall } from '@/composables/useMiniProgramCall'
+// #endif
 import * as roomApi from '@/api/modules/room'
 import type { ChatMessage, GroupMember } from '@/types/api'
 
 import MessageBubble from '@/components/chat/MessageBubble.vue'
 import MessageInput from '@/components/chat/MessageInput.vue'
+import GroupCallBanner from '@/components/call/GroupCallBanner.vue'
+import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
+import { useGroupWebRTC } from '@/composables/useGroupWebRTC'
 
 const authStore = useAuthStore()
 const chatStore = useChatStore()
 const conversationStore = useConversationStore()
 const toast = useToast()
 const { isDark } = useTheme()
+// #ifdef H5 || APP-PLUS
 const webrtc = useWebRTC()
+// #endif
+// #ifdef MP-WEIXIN
+const mpCall = useMiniProgramCall()
+// #endif
+const groupWebRTC = useGroupWebRTC()
+
+// 检查群聊是否有进行中的通话
+const hasActiveGroupCall = computed(() => {
+  if (!isGroupChat.value || !roomId.value) return false
+  return groupWebRTC.callState.groupId === roomId.value && 
+         !groupWebRTC.callState.joined && 
+         groupWebRTC.callState.roomId !== ''
+})
 // 获取当前组件实例，用于 SelectorQuery
 const instance = getCurrentInstance()
 
@@ -157,6 +229,8 @@ const playingAudioId = ref<number | null>(null); const page = ref(1);
 const showFileConfirm = ref(false); const uploading = ref(false); const pendingFile = ref<{ path: string; name: string; size: number; type: 'image' | 'video' | 'file'; messageType: number }>({ path: '', name: '', size: 0, type: 'file', messageType: 8 });
 const showMsgActions = ref(false); const selectedMessage = ref<ChatMessage | null>(null);
 const groupMembers = ref<GroupMember[]>([]); const isGroupChat = ref(false);
+const membersLoading = ref(false);
+const groupMembersMap = ref<Map<string, GroupMember>>(new Map());
 const userCache = ref<Map<string, { name: string; avatar: string }>>(new Map());
 
 const currentUser = computed(() => authStore.user);
@@ -164,17 +238,21 @@ const msgActionItems = computed(() => { if (!selectedMessage.value) return []; c
 const displayName = computed(() => targetUser.value?.name || chatName.value || '聊天');
 const targetUser = computed(() => { const contact = chatStore.contacts.find(c => c.contact_user_id === targetId.value); if (contact?.user) { return contact.user } const conv = conversationStore.conversations.find(c => c.target_id === targetId.value || c.room_id === roomId.value); if (conv) { return { id: conv.target_id, name: conv.name || chatName.value, avatar: conv.avatar || targetAvatar.value } } return { id: targetId.value, name: chatName.value, avatar: targetAvatar.value } });
 
-onLoad((options: any) => {
+onLoad(async (options: any) => {
   roomId.value = options?.roomId || '';
   targetId.value = options?.targetId || '';
   chatName.value = decodeURIComponent(options?.name || '聊天');
   targetAvatar.value = decodeURIComponent(options?.avatar || '');
   isGroupChat.value = !targetId.value && !!roomId.value;
 
-  loadMessages();
   setupWebSocket();
-
-  if (isGroupChat.value && roomId.value) { loadGroupMembers() }
+  
+  // 群聊时先加载成员，确保消息渲染时能获取到发送者信息
+  if (isGroupChat.value && roomId.value) {
+    await loadGroupMembers()
+  }
+  
+  loadMessages();
 });
 
 onUnmounted(() => { wsManager.offMessage(handleNewMessage); stopAudio(); });
@@ -345,14 +423,107 @@ function handleNewMessage(msg: ChatMessage) {
   }
 }
 
-// ... (Helper Functions 保持不变) ...
-async function loadGroupMembers() { if (!roomId.value) return; try { const members = await roomApi.getGroupMembers(roomId.value); groupMembers.value = members; members.forEach(member => { if (member.user_id) { const userData = { name: member.nickname || member.user?.name || (member as any).name || '', avatar: member.user?.avatar || (member as any).avatar || (member as any).user_avatar || '' }; if (userData.name || userData.avatar) { userCache.value.set(member.user_id, userData) } } }) } catch (e) { console.error('加载群成员失败:', e) } }
+// 群成员加载 - 使用Map提高查找效率
+async function loadGroupMembers() {
+  if (!roomId.value) return
+  membersLoading.value = true
+  try {
+    const members = await roomApi.getGroupMembers(roomId.value)
+    groupMembers.value = members
+    // 建立 user_id 到成员的映射，提高查找效率
+    const memberMap = new Map<string, GroupMember>()
+    members.forEach(member => {
+      if (member.user_id) {
+        memberMap.set(member.user_id, member)
+        // 同时更新 userCache
+        const userData = {
+          name: member.nickname || member.user?.name || (member as any).name || '',
+          avatar: member.user?.avatar || (member as any).avatar || (member as any).user_avatar || ''
+        }
+        if (userData.name || userData.avatar) {
+          userCache.value.set(member.user_id, userData)
+        }
+      }
+    })
+    groupMembersMap.value = memberMap
+  } catch (e) {
+    console.error('加载群成员失败:', e)
+  } finally {
+    membersLoading.value = false
+  }
+}
 async function loadMoreMessages() { if (loadingMore.value || !hasMore.value) { return } loadingMore.value = true; page.value++; const firstMsgId = messages.value.length > 0 ? messages.value[0].id : null; try { const res = await messageApi.getMessages(roomId.value, page.value, 50); const newMessages = mapMessages((res.data || []).reverse()); messages.value = [...newMessages, ...messages.value]; hasMore.value = res.data.length >= 50; if (firstMsgId) { nextTick(() => { scrollWithAnimation.value = false; scrollToId.value = `msg-${firstMsgId}` }) } } catch { page.value-- } finally { loadingMore.value = false } }
 function setupWebSocket() { wsManager.onMessage(handleNewMessage) }
 function onScrollToUpper() { if (!loadingMore.value && hasMore.value) { loadMoreMessages() } }
 function onScrollClick() { /* 点击空白处收起键盘 */ }
-function getMessageSenderAvatar(msg: ChatMessage): string { const msgAny = msg as any; const senderId = msg.sender_user_id; if (msgAny.sender?.avatar) return resolveImageUrl(msgAny.sender.avatar); if (msgAny.sender_avatar) return resolveImageUrl(msgAny.sender_avatar); if (msgAny.from_user?.avatar) return resolveImageUrl(msgAny.from_user.avatar); if (isGroupChat.value && senderId) { const cachedUser = userCache.value.get(senderId); if (cachedUser?.avatar) return resolveImageUrl(cachedUser.avatar); const member = groupMembers.value.find(m => m.user_id === senderId); if (member) { const avatar = member.user?.avatar || (member as any).avatar || (member as any).user_avatar; if (avatar) return resolveImageUrl(avatar) } const contact = chatStore.contacts.find(c => c.contact_user_id === senderId); if (contact?.user?.avatar) return resolveImageUrl(contact.user.avatar); return '' } return resolveImageUrl(targetUser.value?.avatar || '') }
-function getMessageSenderName(msg: ChatMessage): string { const msgAny = msg as any; const senderId = msg.sender_user_id; if (msgAny.sender?.name) return msgAny.sender.name; if (msgAny.sender_name) return msgAny.sender_name; if (msgAny.from_user?.name) return msgAny.from_user.name; if (isGroupChat.value && senderId) { const cachedUser = userCache.value.get(senderId); if (cachedUser?.name) return cachedUser.name; const member = groupMembers.value.find(m => m.user_id === senderId); if (member) { const name = member.nickname || member.user?.name || (member as any).name || (member as any).user_name; if (name) return name } const contact = chatStore.contacts.find(c => c.contact_user_id === senderId); if (contact?.user?.name) return contact.remark_name || contact.user.name; return `用户${senderId.slice(-4)}` } return targetUser.value?.name || chatName.value || '未知' }
+// 获取消息发送者头像 - 使用Map优化查找
+function getMessageSenderAvatar(msg: ChatMessage): string {
+  const msgAny = msg as any
+  const senderId = msg.sender_user_id
+  
+  // 1. 优先从消息体中获取（后端可能返回sender信息）
+  if (msgAny.sender?.avatar) return resolveImageUrl(msgAny.sender.avatar)
+  if (msgAny.sender_avatar) return resolveImageUrl(msgAny.sender_avatar)
+  if (msgAny.from_user?.avatar) return resolveImageUrl(msgAny.from_user.avatar)
+  
+  // 2. 群聊场景
+  if (isGroupChat.value && senderId) {
+    // 2.1 从缓存获取
+    const cachedUser = userCache.value.get(senderId)
+    if (cachedUser?.avatar) return resolveImageUrl(cachedUser.avatar)
+    
+    // 2.2 从成员映射获取（O(1)查找）
+    const member = groupMembersMap.value.get(senderId)
+    if (member) {
+      const avatar = member.user?.avatar || (member as any).avatar || (member as any).user_avatar
+      if (avatar) return resolveImageUrl(avatar)
+    }
+    
+    // 2.3 从联系人列表获取
+    const contact = chatStore.contacts.find(c => c.contact_user_id === senderId)
+    if (contact?.user?.avatar) return resolveImageUrl(contact.user.avatar)
+    
+    return ''
+  }
+  
+  // 3. 单聊场景
+  return resolveImageUrl(targetUser.value?.avatar || '')
+}
+
+// 获取消息发送者名称 - 使用Map优化查找
+function getMessageSenderName(msg: ChatMessage): string {
+  const msgAny = msg as any
+  const senderId = msg.sender_user_id
+  
+  // 1. 优先从消息体中获取
+  if (msgAny.sender?.name) return msgAny.sender.name
+  if (msgAny.sender_name) return msgAny.sender_name
+  if (msgAny.from_user?.name) return msgAny.from_user.name
+  
+  // 2. 群聊场景
+  if (isGroupChat.value && senderId) {
+    // 2.1 从缓存获取
+    const cachedUser = userCache.value.get(senderId)
+    if (cachedUser?.name) return cachedUser.name
+    
+    // 2.2 从成员映射获取（O(1)查找）
+    const member = groupMembersMap.value.get(senderId)
+    if (member) {
+      const name = member.nickname || member.user?.name || (member as any).name || (member as any).user_name
+      if (name) return name
+    }
+    
+    // 2.3 从联系人列表获取
+    const contact = chatStore.contacts.find(c => c.contact_user_id === senderId)
+    if (contact?.user?.name) return contact.remark_name || contact.user.name
+    
+    // 2.4 兜底：显示用户ID末4位
+    return `用户${senderId.slice(-4)}`
+  }
+  
+  // 3. 单聊场景
+  return targetUser.value?.name || chatName.value || '未知'
+}
 function onAvatarClick(userId?: string) { if (userId) uni.navigateTo({ url: `/pages/contact/detail?userId=${userId}` }) }
 function handleMessageLongPress(msg: ChatMessage) { selectedMessage.value = msg; showMsgActions.value = true }
 function previewImage(url: string) { if (url) uni.previewImage({ urls: [url], current: url }) }
@@ -360,8 +531,30 @@ function playVideo(url: string) { if (url) { /* #ifdef H5 */ window.open(url, '_
 function openFile(url: string) { if (!url) return; /* #ifdef H5 */ window.open(url, '_blank'); /* #endif */ /* #ifndef H5 */ toast.loading('正在打开文件...'); uni.downloadFile({ url: url, success: (res) => { toast.close(); if (res.statusCode === 200) { uni.openDocument({ filePath: res.tempFilePath, showMenu: true }) } }, fail: () => { toast.close(); toast.error('下载失败') } }); /* #endif */ }
 let audioContext: UniApp.InnerAudioContext | null = null; function playAudio(msg: ChatMessage) { const audioUrl = typeof msg.extra === 'string' ? JSON.parse(msg.extra).url : msg.extra?.url || msg.content; const url = resolveImageUrl(audioUrl); if (!url) return; if (playingAudioId.value === msg.id) { stopAudio(); return } stopAudio(); audioContext = uni.createInnerAudioContext(); audioContext.src = url; audioContext.autoplay = true; playingAudioId.value = msg.id; audioContext.onEnded(() => { playingAudioId.value = null }); audioContext.onError(() => { playingAudioId.value = null; toast.error('播放失败') }) }
 function stopAudio() { if (audioContext) { audioContext.stop(); audioContext.destroy(); audioContext = null } playingAudioId.value = null }
-function startAudioCall() { if (!targetId.value) return; webrtc.startCall('audio', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar) }
-function startVideoCall() { if (!targetId.value) return; webrtc.startCall('video', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar) }
+function startAudioCall() {
+  if (!targetId.value) return
+  // #ifdef H5 || APP-PLUS
+  webrtc.startCall('audio', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar)
+  // #endif
+  // #ifdef MP-WEIXIN
+  mpCall.startCall('audio', targetId.value, roomId.value, { 
+    user_id: targetId.value, 
+    user: { name: targetUser.value?.name, avatar: targetUser.value?.avatar } 
+  } as any)
+  // #endif
+}
+function startVideoCall() {
+  if (!targetId.value) return
+  // #ifdef H5 || APP-PLUS
+  webrtc.startCall('video', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar)
+  // #endif
+  // #ifdef MP-WEIXIN
+  mpCall.startCall('video', targetId.value, roomId.value, {
+    user_id: targetId.value,
+    user: { name: targetUser.value?.name, avatar: targetUser.value?.avatar }
+  } as any)
+  // #endif
+}
 function chooseImage() { uni.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album'], success: handleFileSelect('image', 1) }) }
 function shootCamera() { uni.chooseImage({ count: 1, sourceType: ['camera'], success: handleFileSelect('image', 1) }) }
 function chooseFile() { /* #ifdef MP-WEIXIN */ wx.chooseMessageFile({ count: 1, type: 'file', success: (res: any) => handleFileSelect('file', 8)({ tempFilePaths: [res.tempFiles[0].path], tempFiles: res.tempFiles }) }); /* #endif */ /* #ifdef APP-PLUS */ uni.chooseFile({ count: 1, success: handleFileSelect('file', 8) }); /* #endif */ /* #ifdef H5 */ const input = document.createElement('input'); input.type = 'file'; input.onchange = (e: any) => { const file = e.target.files[0]; if(file) { pendingFile.value = { path: URL.createObjectURL(file), name: file.name, size: file.size, type: 'file', messageType: 8 }; showFileConfirm.value = true } }; input.click(); /* #endif */ }
@@ -372,6 +565,7 @@ function getFileInfo(filePath: string): Promise<{ name: string; size: number }> 
 async function onMsgActionSelect(action: { value: string }) { if (!selectedMessage.value) return; const msg = selectedMessage.value; showMsgActions.value = false; switch (action.value) { case 'copy': uni.setClipboardData({ data: msg.content }); break; case 'recall': await messageApi.recallMessage(msg.id); msg.message_type = 5; msg.content = '你撤回了一条消息'; break; case 'delete': messages.value = messages.value.filter(m => m.id !== msg.id); chatStore.removeMessage(roomId.value, msg.id); break; } }
 function goBack() { uni.navigateBack() }
 function showChatInfo() { if (roomId.value) { uni.navigateTo({ url: `/pages/group/info?roomId=${roomId.value}` }) } }
+function goGroupInfo() { if (roomId.value) { uni.navigateTo({ url: `/pages/group/info?roomId=${roomId.value}` }) } }
 function shouldShowTime(msg: ChatMessage, index: number): boolean { if (index === 0) return true; const prevMsg = messages.value[index - 1]; const currentTime = new Date(msg.created_at).getTime(); const prevTime = new Date(prevMsg.created_at).getTime(); return currentTime - prevTime > 5 * 60 * 1000 }
 function isSystemMessage(type: number): boolean { return checkSystemMessage(type) }
 function formatRecordDuration(seconds: number): string { const m = Math.floor(seconds / 60).toString().padStart(2, '0'); const s = (seconds % 60).toString().padStart(2, '0'); return `${m}:${s}` }
@@ -451,11 +645,26 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
   }
 }
 
+/* 群通话 Banner 位置 */
+.call-banner-wrapper {
+  position: fixed;
+  top: calc(88rpx + var(--status-bar-height));
+  left: 0;
+  right: 0;
+  z-index: 99;
+}
+
 /* 消息列表 */
 .chat-scroll-area {
   flex: 1;
   background: var(--bg-base);
   transition: background-color 0.5s ease;
+
+  &.has-banner {
+    .message-feed {
+      padding-top: calc(88rpx + var(--status-bar-height) + 160rpx);
+    }
+  }
 }
 .message-feed {
   padding: 32rpx;

@@ -89,6 +89,7 @@ import { ref, computed } from 'vue'
 import { useMomentStore } from '@/stores'
 import { useToast } from 'wot-design-uni'
 import { useTheme } from '@/composables/useTheme'
+import * as attachmentApi from '@/api/modules/attachment'
 
 const momentStore = useMomentStore()
 const toast = useToast()
@@ -223,11 +224,24 @@ async function publish() {
       mediaType = mediaList.value[0].type === 'image' ? 1 : 2
     }
 
-    // TODO: 先上传媒体文件获取 URL
+    // 上传媒体文件获取服务器 URL
     const mediaUrls: string[] = []
-    for (const item of mediaList.value) {
-      // 这里应该调用上传接口
-      mediaUrls.push(item.path) // 暂时使用本地路径
+    if (mediaList.value.length > 0) {
+      toast.loading('上传中...')
+      for (const item of mediaList.value) {
+        try {
+          const uploadType = item.type === 'image' ? 'image' : 'video'
+          const attachment = await attachmentApi.uploadAttachment(item.path, uploadType)
+          if (attachment && attachment.file_url) {
+            mediaUrls.push(attachment.file_url)
+          }
+        } catch (uploadError) {
+          console.error('上传媒体文件失败:', uploadError)
+          toast.error('上传媒体文件失败')
+          return
+        }
+      }
+      toast.close()
     }
 
     await momentStore.publishMoment({
@@ -243,6 +257,7 @@ async function publish() {
     }, 1000)
   } catch (error) {
     console.error('发布失败:', error)
+    toast.error('发布失败')
   } finally {
     publishing.value = false
   }

@@ -23,10 +23,15 @@
           <!-- 右侧: 加号按钮 -->
           <view class="nav-right">
             <view class="icon-btn-circle" @click="showPlusMenu = true">
+              <!-- #ifdef H5 -->
               <svg class="plus-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="add" size="44rpx" />
+              <!-- #endif -->
             </view>
           </view>
         </view>
@@ -44,10 +49,15 @@
         <!-- 2. 搜索栏 (扁平化设计) -->
         <view class="search-wrapper">
           <view class="search-bar" @click="goSearch">
+            <!-- #ifdef H5 -->
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="search" size="32rpx" custom-class="search-icon-mp" />
+            <!-- #endif -->
             <input
                 type="text"
                 class="search-input"
@@ -62,10 +72,15 @@
         </view>
 
         <view v-else-if="conversations.length === 0" class="empty-state">
+          <!-- #ifdef H5 -->
           <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             <line x1="9" y1="10" x2="15" y2="10"/>
           </svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon name="chat" size="120rpx" color="#9ca3af" custom-class="empty-icon-mp" />
+          <!-- #endif -->
           <text class="empty-text">暂无消息</text>
         </view>
 
@@ -109,11 +124,16 @@
                 </view>
                 <view class="row-bottom">
                   <text class="msg-preview text-ellipsis">{{ item.last_message || '暂无消息' }}</text>
+                  <!-- #ifdef H5 -->
                   <svg v-if="item.is_muted" class="mute-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 5L6 9H2v6h4l5 4V5z"/>
                     <line x1="23" y1="9" x2="17" y2="15"/>
                     <line x1="17" y1="9" x2="23" y2="15"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon v-if="item.is_muted" name="mute" size="28rpx" color="#9ca3af" />
+                  <!-- #endif -->
                 </view>
               </view>
             </view>
@@ -121,15 +141,25 @@
             <template #right>
               <view class="swipe-actions">
                 <view class="action-btn top" @click.stop="toggleTop(item)">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="top" size="40rpx" color="#fff" />
+                  <!-- #endif -->
                 </view>
                 <view class="action-btn delete" @click.stop="deleteConversation(item)">
+                  <!-- #ifdef H5 -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
+                  <!-- #endif -->
+                  <!-- #ifdef MP-WEIXIN -->
+                  <wd-icon name="delete" size="40rpx" color="#fff" />
+                  <!-- #endif -->
                 </view>
               </view>
             </template>
@@ -163,6 +193,9 @@
       <wd-toast />
       <wd-message-box :z-index="11000" />
       <app-tab-bar current="messages" />
+      
+      <!-- 全局通话组件 -->
+      <global-call-provider />
     </view>
   </wd-config-provider>
 </template>
@@ -180,6 +213,7 @@ import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import PlusMenu from '@/components/common/PlusMenu.vue'
 import AppAvatar from '@/components/common/AppAvatar.vue'
+import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Conversation } from '@/types/conversation'
 
 const authStore = useAuthStore()

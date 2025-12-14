@@ -96,8 +96,8 @@ const { isDark } = useTheme()
 
 // 表单数据
 const form = ref({
-  account: '',
-  password: '',
+  account: 'user003@example.com',
+  password: '12345678',
   remember: true
 })
 

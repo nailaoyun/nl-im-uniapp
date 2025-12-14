@@ -4,9 +4,14 @@
       <!-- 导航栏 -->
       <view class="nav-bar">
         <view class="nav-back" @click="goBack">
+          <!-- #ifdef H5 -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
+          <!-- #endif -->
+          <!-- #ifdef MP-WEIXIN -->
+          <wd-icon name="arrow-left" size="44rpx" />
+          <!-- #endif -->
         </view>
         <text class="nav-title">设置</text>
         <view class="nav-placeholder"></view>
@@ -19,26 +24,46 @@
           <view class="group-card">
             <view class="setting-item" @click="goTo('/pages/settings/account')">
               <view class="icon-box blue">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="user" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">账号管理</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
             <view class="setting-item" @click="goTo('/pages/settings/privacy')">
               <view class="icon-box purple">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="lock" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">隐私设置</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
           </view>
         </view>
@@ -49,18 +74,29 @@
           <view class="group-card">
             <view class="setting-item" @click="goTo('/pages/settings/notification')">
               <view class="icon-box red">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="bell" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">新消息通知</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
             <view class="setting-item" @click="goTo('/pages/settings/theme')">
               <view class="icon-box indigo">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <circle cx="12" cy="12" r="5"/>
                   <line x1="12" y1="1" x2="12" y2="3"/>
@@ -72,25 +108,44 @@
                   <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
                   <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="photo" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">主题设置</text>
               <text class="item-value">{{ themeText }}</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
             <view class="setting-item" @click="handleClearCache">
               <view class="icon-box green">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="delete" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">清理缓存</text>
               <text class="item-value">{{ cacheSize }}</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
           </view>
         </view>
@@ -101,28 +156,48 @@
           <view class="group-card">
             <view class="setting-item" @click="goTo('/pages/settings/feedback')">
               <view class="icon-box orange">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="chat" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">帮助与反馈</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
             <view class="setting-item" @click="goTo('/pages/settings/about')">
               <view class="icon-box gray">
+                <!-- #ifdef H5 -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="16" x2="12" y2="12"/>
                   <line x1="12" y1="8" x2="12.01" y2="8"/>
                 </svg>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <wd-icon name="info" size="40rpx" color="#fff" />
+                <!-- #endif -->
               </view>
               <text class="item-text">关于我们</text>
               <text class="item-value">v1.0.0</text>
+              <!-- #ifdef H5 -->
               <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="32rpx" custom-class="chevron-mp" />
+              <!-- #endif -->
             </view>
           </view>
         </view>

@@ -214,7 +214,7 @@ function getImageCount(moment: Moment): number {
 // 获取图片尺寸
 function getImageSize(moment: Moment): string {
   const count = getImageCount(moment)
-  if (count === 1) return '400rpx'
+  if (count === 1) return '300rpx'
   if (count <= 4) return '200rpx'
   return '150rpx'
 }

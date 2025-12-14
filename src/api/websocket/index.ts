@@ -39,7 +39,8 @@ class WebSocketManager {
 
       this.userId = userId
       // TODO: 替换为实际的 WebSocket 地址
-      const wsUrl = `ws://localhost:12080/ws?user_id=${userId}`
+      // const wsUrl = `ws://g-ws.nailaoyun.cn/ws?user_id=${userId}`
+      const wsUrl = `wss://g-ws.nailaoyun.cn/ws?user_id=${userId}`
 
       this.socketTask = uni.connectSocket({
         url: wsUrl,

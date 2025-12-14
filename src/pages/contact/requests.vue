@@ -29,7 +29,7 @@
             <view class="card-content">
               <view class="info-top">
                 <text class="name">{{ item.from_user?.name || '未知用户' }}</text>
-                <text class="time">刚刚</text> <!-- 这里可以加个时间字段 -->
+                <text class="time">{{ formatTime(item.created_at) }}</text>
               </view>
               <view class="msg-box">
                 <text class="message">{{ item.message || '请求添加您为好友' }}</text>
@@ -62,6 +62,7 @@ import { useContactStore } from '@/stores'
 import * as contactApi from '@/api/modules/contact'
 import { useToast } from 'wot-design-uni'
 import { useTheme } from '@/composables/useTheme'
+import { formatTime } from '@/utils/format'
 import AppAvatar from '@/components/common/AppAvatar.vue'
 import type { FriendRequest } from '@/types/api'
 

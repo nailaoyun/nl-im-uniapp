@@ -8,10 +8,15 @@
 
           <view class="nav-right">
             <view class="nav-icon-btn" @click="goNotifications">
+              <!-- #ifdef H5 -->
               <svg class="icon" :style="{ color: iconColor }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="bell" size="44rpx" :color="iconColor" />
+              <!-- #endif -->
               <view v-if="unreadCount > 0" class="badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</view>
             </view>
           </view>
@@ -48,12 +53,17 @@
           </view>
 
           <view v-else-if="moments.length === 0" class="empty-state">
+            <!-- #ifdef H5 -->
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <circle cx="12" cy="12" r="10"/>
               <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
               <line x1="9" y1="9" x2="9.01" y2="9"/>
               <line x1="15" y1="9" x2="15.01" y2="9"/>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="smile" size="120rpx" color="#9ca3af" custom-class="empty-icon-mp" />
+            <!-- #endif -->
             <text class="empty-text">暂无动态，快去发布吧</text>
           </view>
 
@@ -103,9 +113,14 @@
                 <view class="feed-footer">
                   <text class="time">{{ formatTime(moment.created_at) }}</text>
                   <view class="action-btn" @click="showActionMenu(moment)">
+                    <!-- #ifdef H5 -->
                     <svg viewBox="0 0 24 24" fill="currentColor">
                       <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
                     </svg>
+                    <!-- #endif -->
+                    <!-- #ifdef MP-WEIXIN -->
+                    <wd-icon name="more" size="32rpx" />
+                    <!-- #endif -->
                   </view>
                 </view>
 
@@ -115,9 +130,14 @@
 
                   <!-- 点赞列表 -->
                   <view v-if="moment.likes && moment.likes.length > 0" class="likes-list">
+                    <!-- #ifdef H5 -->
                     <svg class="heart-icon" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
+                    <!-- #endif -->
+                    <!-- #ifdef MP-WEIXIN -->
+                    <wd-icon name="heart-fill" size="24rpx" color="#ef4444" custom-class="heart-icon-mp" />
+                    <!-- #endif -->
                     <text class="names">{{ moment.likes.map(l => l.user?.name || '').join('、') }}</text>
                   </view>
 
@@ -147,10 +167,15 @@
 
       <!-- 悬浮发布按钮 -->
       <view class="fab-btn" @click="goPublish">
+        <!-- #ifdef H5 -->
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
+        <!-- #endif -->
+        <!-- #ifdef MP-WEIXIN -->
+        <wd-icon name="camera" size="48rpx" color="#fff" />
+        <!-- #endif -->
       </view>
 
       <!-- 操作菜单 -->
@@ -165,6 +190,9 @@
       <wd-message-box />
 
       <app-tab-bar current="moments" />
+      
+      <!-- 全局通话组件 -->
+      <global-call-provider />
     </view>
   </wd-config-provider>
 </template>
@@ -180,6 +208,7 @@ import { parseMediaUrls } from '@/types/moment'
 import { useToast, useMessage } from 'wot-design-uni'
 import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppAvatar from '@/components/common/AppAvatar.vue'
+import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Moment } from '@/types/moment'
 
 const authStore = useAuthStore()
@@ -301,7 +330,7 @@ function getImageCount(moment: Moment): number {
 
 function getImageSize(moment: Moment): string {
   const count = getImageCount(moment)
-  if (count === 1) return '400rpx'
+  if (count === 1) return '300rpx'
   if (count === 4) return '200rpx'
   return '180rpx'
 }

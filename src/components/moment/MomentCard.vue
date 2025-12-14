@@ -104,7 +104,7 @@ const mediaUrls = computed(() => parseMediaUrls(props.moment.media_urls))
 
 const imageSize = computed(() => {
   const count = mediaUrls.value.length
-  if (count === 1) return '400rpx'
+  if (count === 1) return '300rpx'
   if (count <= 4) return '200rpx'
   return '150rpx'
 })

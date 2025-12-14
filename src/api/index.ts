@@ -10,6 +10,8 @@ export * as roomApi from './modules/room'
 export * as momentApi from './modules/moment'
 export * as attachmentApi from './modules/attachment'
 export * as systemApi from './modules/system'
+export * as searchApi from './modules/search'
+export * as callApi from './modules/call'
 
 export { wsManager } from './websocket'
 export type { WebSocketMessage, MessageHandler, SignalHandler, MomentNotifHandler } from './websocket'

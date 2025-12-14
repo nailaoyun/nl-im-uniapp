@@ -19,19 +19,27 @@
         <!-- 导航栏 -->
         <view class="nav-bar">
           <view class="nav-btn" @click="goBack">
-            <!-- Icon: chevron-left -->
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="arrow-left" size="44rpx" color="#fff" />
+            <!-- #endif -->
           </view>
           <text class="nav-title">添加好友</text>
           <view class="nav-btn">
-            <!-- Icon: more-horizontal -->
+            <!-- #ifdef H5 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
               <circle cx="12" cy="12" r="1"></circle>
               <circle cx="19" cy="12" r="1"></circle>
               <circle cx="5" cy="12" r="1"></circle>
             </svg>
+            <!-- #endif -->
+            <!-- #ifdef MP-WEIXIN -->
+            <wd-icon name="more" size="44rpx" color="#fff" />
+            <!-- #endif -->
           </view>
         </view>
 
@@ -45,11 +53,15 @@
         <view class="search-wrapper">
           <view class="search-box" @click="focusSearch">
             <view class="search-icon-wrapper">
-              <!-- Icon: search -->
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="search" size="40rpx" />
+              <!-- #endif -->
             </view>
             <input
                 ref="searchInput"
@@ -62,11 +74,15 @@
                 @confirm="doSearch"
             />
             <view v-if="searchKeyword" class="clear-btn" @click.stop="clearSearch">
-              <!-- Icon: x -->
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="close" size="32rpx" />
+              <!-- #endif -->
             </view>
           </view>
         </view>
@@ -80,23 +96,31 @@
           <!-- 扫一扫卡片 -->
           <view class="scan-card animate-fade-in-up" @click="handleScan">
             <view class="scan-icon-box">
-              <!-- Icon: scan-line -->
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
                 <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
                 <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
                 <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="scan" size="48rpx" color="#fff" />
+              <!-- #endif -->
             </view>
             <view class="scan-info">
               <text class="scan-title">扫一扫</text>
               <text class="scan-desc">扫描二维码名片</text>
             </view>
             <view class="scan-arrow">
-              <!-- Icon: chevron-left (rotated) -->
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-white">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="arrow-right" size="40rpx" color="#fff" />
+              <!-- #endif -->
             </view>
           </view>
 
@@ -144,10 +168,15 @@
         <template v-else-if="viewState === 'empty'">
           <view class="state-card animate-fade-in-up">
             <view class="empty-icon-box">
+              <!-- #ifdef H5 -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
+              <!-- #endif -->
+              <!-- #ifdef MP-WEIXIN -->
+              <wd-icon name="search" size="48rpx" />
+              <!-- #endif -->
             </view>
             <text class="state-text">未找到该用户</text>
           </view>
