@@ -184,10 +184,18 @@
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
+  // 微信小程序额外安全距离（胶囊按钮区域）
+  --mp-safe-top: 0px;
 }
 
+/* #ifdef MP-WEIXIN */
+page {
+  --mp-safe-top: env(safe-area-inset-top, 20px);
+}
+/* #endif */
+
 .safe-area-top {
-  padding-top: var(--status-bar-height, 0);
+  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
 }
 
 .safe-area-bottom {
@@ -441,7 +449,7 @@
   background: var(--nav-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding-top: var(--status-bar-height, 0);
+  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   border-bottom: 1rpx solid var(--border-subtle);
 
   .navbar-content {

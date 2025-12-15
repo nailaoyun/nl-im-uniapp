@@ -445,7 +445,7 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
 .nav-header {
   position: relative;
   z-index: 10;
-  padding: calc(var(--status-bar-height) + 24rpx) 32rpx 16rpx;
+  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 24rpx) 32rpx 16rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;

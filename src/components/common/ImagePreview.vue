@@ -247,8 +247,8 @@ function handleClose() {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(88rpx + var(--status-bar-height, 0));
-  padding-top: var(--status-bar-height, 0);
+  height: calc(88rpx + var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
+  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;

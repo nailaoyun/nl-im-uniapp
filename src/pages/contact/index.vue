@@ -492,7 +492,7 @@ async function logout() { try { await messageBox.confirm({ title: '提示', msg:
   right: 0;
   z-index: 100;
   background: var(--bg-page);
-  padding-top: var(--status-bar-height);
+  padding-top: calc(var(--status-bar-height) + var(--mp-safe-top, 0px));
   // 与消息页一致，不要下边框
   border-bottom: none;
   transition: background 0.3s;
@@ -641,8 +641,8 @@ async function logout() { try { await messageBox.confirm({ title: '提示', msg:
 
 // 滚动区
 .main-scroll {
-  margin-top: calc(var(--status-bar-height) + 290rpx);
-  height: calc(100vh - var(--status-bar-height) - 290rpx);
+  margin-top: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 290rpx);
+  height: calc(100vh - var(--status-bar-height) - var(--mp-safe-top, 0px) - 290rpx);
 }
 
 .scroll-spacer {

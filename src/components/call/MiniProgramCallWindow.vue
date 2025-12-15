@@ -1,139 +1,130 @@
 <!--
-  小程序音视频通话窗口组件
-  使用 live-pusher/live-player 实现
-  适用平台：微信小程序
+  小程序音视频通话窗口组件 - 同层渲染 + wot-ui Icon 版
+  适用平台：微信小程序 (需基础库 2.9.1+)
 -->
 <template>
   <!-- #ifdef MP-WEIXIN -->
-  <view v-if="call.active" class="call-window" :class="{ minimized: call.minimized }">
-    <!-- 最小化状态 -->
-    <view v-if="call.minimized" class="minimized-view" @click="toggleMinimize">
-      <view class="mini-avatar">
-        <image v-if="call.callerAvatar" :src="call.callerAvatar" mode="aspectFill" />
-        <text v-else class="avatar-text">{{ call.callerName?.charAt(0) || '?' }}</text>
-      </view>
-      <view class="mini-info">
-        <text class="mini-duration">{{ formatDuration(call.duration) }}</text>
-        <text class="mini-status">{{ call.statusText }}</text>
-      </view>
-    </view>
+  <view v-if="call.active" class="mp-call-container">
 
-    <!-- 全屏状态 -->
-    <view v-else class="fullscreen-view">
-      <!-- 视频区域 -->
-      <view class="video-container">
-        <!-- 远端视频 -->
-        <view class="remote-videos">
-          <live-player
+    <!-- 1. 视频层 -->
+    <view class="video-layer">
+      <!-- 远端视频流 -->
+      <view class="remote-grid" :class="gridClass">
+        <live-player
             v-for="stream in remoteStreams"
             :key="stream.userId"
-            class="remote-video"
+            class="live-player-item"
             :src="stream.pullUrl"
             mode="RTC"
             autoplay
-            muted="{{false}}"
-            :object-fit="'contain'"
-            @statechange="(e: any) => onPlayerStateChange(e, stream.userId)"
-          >
-            <view class="video-overlay">
-              <text class="user-name">{{ stream.userName || '对方' }}</text>
-            </view>
-          </live-player>
-          
-          <!-- 无远端视频时的占位 -->
-          <view v-if="remoteStreams.length === 0" class="remote-placeholder">
-            <view class="caller-avatar-large">
-              <image v-if="call.callerAvatar" :src="call.callerAvatar" mode="aspectFill" />
-              <text v-else class="avatar-text">{{ call.callerName?.charAt(0) || '?' }}</text>
-            </view>
-            <text class="caller-name">{{ call.callerName || '未知' }}</text>
-            <text class="call-status">{{ call.statusText }}</text>
+            :muted="false"
+            object-fit="fillCrop"
+            @statechange="(e) => onPlayerStateChange(e, stream.userId)"
+            @error="(e) => onPlayerError(e, stream.userId)"
+        >
+          <!-- 名字标签 (同层渲染直接使用 view) -->
+          <view class="player-tag">
+            <text class="tag-text">{{ stream.userName || '连线中...' }}</text>
           </view>
-        </view>
+        </live-player>
 
-        <!-- 本地视频（小窗） -->
-        <view v-if="call.type === 'video' && !call.camOff" class="local-video-container">
-          <live-pusher
-            class="local-video"
-            :url="pushUrl"
-            mode="RTC"
-            autopush
-            :muted="call.muted"
-            :enable-camera="!call.camOff"
-            aspect="9:16"
-            beauty="5"
-            whiteness="3"
-            @statechange="onPusherStateChange"
-          />
+        <!-- 等待中的占位符 -->
+        <view v-if="remoteStreams.length === 0" class="waiting-placeholder">
+          <image :src="call.callerAvatar || '/static/default-avatar.png'" class="placeholder-avatar" mode="aspectFill" />
+          <text class="placeholder-text">{{ call.statusText }}</text>
         </view>
       </view>
 
-      <!-- 通话信息 -->
-      <view class="call-info">
-        <text class="duration">{{ formatDuration(call.duration) }}</text>
-        <text class="status-text">{{ call.statusText }}</text>
+      <!-- 本地推流 -->
+      <live-pusher
+          id="local-pusher"
+          class="local-pusher"
+          :url="pushUrl"
+          mode="RTC"
+          :autopush="true"
+          :enable-camera="!call.camOff"
+          :enable-mic="!call.muted"
+          aspect="9:16"
+          beauty="5"
+          whiteness="3"
+          @statechange="onPusherStateChange"
+          @error="onPusherError"
+      />
+    </view>
+
+    <!-- 2. UI 交互层 (标准 View 层级) -->
+
+    <!-- 顶部栏 -->
+    <view class="ui-header">
+      <view class="header-left">
+        <view class="status-dot"></view>
+        <text class="header-title">通话中</text>
+        <text class="header-time">{{ formatDuration(call.duration) }}</text>
       </view>
-
-      <!-- 控制按钮 -->
-      <view class="controls">
-        <!-- 来电状态 -->
-        <view v-if="call.status === 'incoming'" class="incoming-controls">
-          <view class="control-btn reject" @click="rejectCall">
-            <wd-icon name="close" size="60rpx" color="#fff" />
-            <text>拒绝</text>
-          </view>
-          <view class="control-btn accept" @click="acceptCall">
-            <wd-icon name="phone" size="60rpx" color="#fff" />
-            <text>接听</text>
-          </view>
-        </view>
-
-        <!-- 呼叫/通话中状态 -->
-        <view v-else class="call-controls">
-          <!-- 静音 -->
-          <view class="control-btn" :class="{ active: call.muted }" @click="toggleMute">
-            <wd-icon :name="call.muted ? 'mute' : 'sound'" size="48rpx" />
-            <text>{{ call.muted ? '取消静音' : '静音' }}</text>
-          </view>
-
-          <!-- 摄像头 -->
-          <view v-if="call.type === 'video'" class="control-btn" :class="{ active: call.camOff }" @click="toggleCamera">
-            <wd-icon :name="call.camOff ? 'camera-off' : 'camera'" size="48rpx" />
-            <text>{{ call.camOff ? '开启摄像头' : '关闭摄像头' }}</text>
-          </view>
-
-          <!-- 切换摄像头 -->
-          <view v-if="call.type === 'video' && !call.camOff" class="control-btn" @click="switchCamera">
-            <wd-icon name="refresh" size="48rpx" />
-            <text>翻转</text>
-          </view>
-
-          <!-- 挂断 -->
-          <view class="control-btn hangup" @click="endCall">
-            <wd-icon name="phone" size="48rpx" color="#fff" />
-            <text>挂断</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 最小化按钮 -->
       <view class="minimize-btn" @click="toggleMinimize">
-        <wd-icon name="arrow-down" size="40rpx" />
+        <!-- 最小化图标 -->
+        <wd-icon name="arrow-down-circle" size="60rpx" color="rgba(255,255,255,0.8)" />
       </view>
     </view>
-  </view>
-  <!-- #endif -->
 
-  <!-- 非小程序平台提示 -->
-  <!-- #ifndef MP-WEIXIN -->
-  <view v-if="showUnsupportedTip" class="unsupported-tip">
-    <text>当前平台请使用 WebRTC 通话</text>
+    <!-- 底部控制栏 -->
+    <view class="ui-controls">
+      <!-- 呼叫中状态 (接听/拒绝) -->
+      <view v-if="call.status === 'incoming'" class="incoming-actions">
+        <view class="action-btn reject" @click="rejectCall">
+          <view class="btn-circle reject-bg">
+            <wd-icon name="close-bold" size="50rpx" color="#fff" />
+          </view>
+          <text class="action-text">拒绝</text>
+        </view>
+        <view class="action-btn accept" @click="acceptCall">
+          <view class="btn-circle accept-bg">
+            <wd-icon name="phone-filled" size="56rpx" color="#fff" />
+          </view>
+          <text class="action-text">接听</text>
+        </view>
+      </view>
+
+      <!-- 通话中状态 -->
+      <view v-else class="active-actions">
+        <!-- 静音 -->
+        <view class="ctrl-btn-wrap" @click="toggleMute">
+          <view class="ctrl-btn" :class="{ active: call.muted }">
+            <wd-icon :name="call.muted ? 'mic-off' : 'mic-on'" size="50rpx" :color="call.muted ? '#000' : '#fff'" />
+          </view>
+          <text class="ctrl-text">静音</text>
+        </view>
+
+        <!-- 挂断 -->
+        <view class="ctrl-btn-wrap" @click="endCall">
+          <view class="ctrl-btn hangup">
+            <wd-icon name="phone-off-filled" size="50rpx" color="#fff" />
+          </view>
+          <text class="ctrl-text">挂断</text>
+        </view>
+
+        <!-- 摄像头 -->
+        <view class="ctrl-btn-wrap" @click="toggleCamera">
+          <view class="ctrl-btn" :class="{ active: call.camOff }">
+            <wd-icon :name="call.camOff ? 'video-off' : 'video'" size="50rpx" :color="call.camOff ? '#000' : '#fff'" />
+          </view>
+          <text class="ctrl-text">摄像头</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 最小化悬浮球 -->
+    <view v-if="call.minimized" class="minimized-ball" @click="toggleMinimize">
+      <image :src="call.callerAvatar || '/static/default-avatar.png'" class="ball-avatar" mode="aspectFill" />
+      <text class="ball-time">{{ formatDuration(call.duration) }}</text>
+    </view>
+
   </view>
   <!-- #endif -->
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, watch, nextTick, getCurrentInstance } from 'vue'
 import { useMiniProgramCall } from '@/composables/useMiniProgramCall'
 
 const {
@@ -145,304 +136,191 @@ const {
   endCall,
   toggleMute,
   toggleCamera,
-  switchCamera,
   toggleMinimize,
   formatDuration,
   onPusherStateChange,
   onPlayerStateChange,
+  initPusherContext
 } = useMiniProgramCall()
 
-const showUnsupportedTip = ref(false)
+// 获取当前组件实例，用于绑定 Context
+const instance = getCurrentInstance()
 
-// 注意：信令监听器在 GlobalCallProvider 中已初始化
-// 这里不需要再次调用 initListener 和 initPusherContext
+const gridClass = computed(() => remoteStreams.value.length > 1 ? 'grid-multi' : 'grid-single')
 
-onMounted(() => {
-  // #ifndef MP-WEIXIN
-  showUnsupportedTip.value = true
-  // #endif
+// 监听通话激活，初始化 Context
+watch(() => call.active, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      // 传入当前组件实例，确保 live-pusher 能被找到
+      // 在同层渲染模式下，这点尤为重要
+      initPusherContext(instance)
+    })
+  }
 })
 
-onUnmounted(() => {
-  // 清理资源
-})
+const onPusherError = (e: any) => {
+  console.error('Pusher Error:', e)
+  uni.showToast({ title: '推流失败，请检查摄像头权限', icon: 'none' })
+}
+
+const onPlayerError = (e: any, userId: string) => {
+  console.error(`Player Error [${userId}]:`, e)
+}
 </script>
 
 <style lang="scss" scoped>
-.call-window {
+.mp-call-container {
   position: fixed;
+  inset: 0;
+  background: #1c1c1e;
   z-index: 9999;
-  
-  &.minimized {
-    top: 100rpx;
-    right: 20rpx;
-    width: 240rpx;
-    height: 80rpx;
-    border-radius: 40rpx;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(20rpx);
-  }
-  
-  &:not(.minimized) {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #000;
-  }
 }
 
-.minimized-view {
-  display: flex;
-  align-items: center;
-  padding: 10rpx 20rpx;
-  height: 100%;
-  
-  .mini-avatar {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--wd-color-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    image {
-      width: 100%;
-      height: 100%;
-    }
-    
-    .avatar-text {
-      color: #fff;
-      font-size: 28rpx;
-      font-weight: bold;
-    }
-  }
-  
-  .mini-info {
-    margin-left: 16rpx;
-    flex: 1;
-    
-    .mini-duration {
-      color: #fff;
-      font-size: 28rpx;
-      font-weight: bold;
-    }
-    
-    .mini-status {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 22rpx;
-      display: block;
-    }
-  }
-}
-
-.fullscreen-view {
+.video-layer {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.video-container {
-  flex: 1;
   position: relative;
-  background: #1a1a1a;
+  z-index: 1; /* 视频层在底层 */
 }
 
-.remote-videos {
+.remote-grid {
   width: 100%;
   height: 100%;
-  
-  .remote-video {
-    width: 100%;
-    height: 100%;
-  }
-  
-  .video-overlay {
-    position: absolute;
-    bottom: 20rpx;
-    left: 20rpx;
-    
-    .user-name {
-      color: #fff;
-      font-size: 28rpx;
-      text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.5);
-    }
-  }
+  display: flex;
+  flex-wrap: wrap;
+  &.grid-single .live-player-item { width: 100%; height: 100%; }
+  &.grid-multi .live-player-item { width: 50%; height: 50%; }
 }
 
-.remote-placeholder {
-  width: 100%;
-  height: 100%;
+.live-player-item { position: relative; }
+
+.player-tag {
+  position: absolute;
+  bottom: 20rpx;
+  left: 20rpx;
+  background: rgba(0,0,0,0.5);
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  z-index: 10;
+}
+.tag-text { font-size: 24rpx; color: #fff; }
+
+.local-pusher {
+  position: absolute;
+  right: 30rpx;
+  top: 180rpx;
+  width: 200rpx;
+  height: 300rpx;
+  border-radius: 16rpx;
+  z-index: 10;
+  border: 2rpx solid rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+
+.waiting-placeholder {
+  position: absolute;
+  inset: 0;
+  background: #2c2c2e;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  
-  .caller-avatar-large {
-    width: 200rpx;
-    height: 200rpx;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--wd-color-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 40rpx;
-    
-    image {
-      width: 100%;
-      height: 100%;
-    }
-    
-    .avatar-text {
-      color: #fff;
-      font-size: 80rpx;
-      font-weight: bold;
-    }
-  }
-  
-  .caller-name {
-    color: #fff;
-    font-size: 40rpx;
-    font-weight: bold;
-    margin-bottom: 20rpx;
-  }
-  
-  .call-status {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 28rpx;
-  }
 }
+.placeholder-avatar { width: 160rpx; height: 160rpx; border-radius: 50%; margin-bottom: 20rpx; }
+.placeholder-text { color: #aaa; font-size: 30rpx; }
 
-.local-video-container {
+/* 顶部栏 - 使用标准 view */
+.ui-header {
   position: absolute;
-  top: 100rpx;
-  right: 20rpx;
-  width: 200rpx;
-  height: 280rpx;
-  border-radius: 20rpx;
-  overflow: hidden;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
-  
-  .local-video {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-.call-info {
-  position: absolute;
-  top: 40rpx;
+  top: 0;
   left: 0;
-  right: 0;
-  text-align: center;
-  padding-top: env(safe-area-inset-top);
-  
-  .duration {
-    color: #fff;
-    font-size: 48rpx;
-    font-weight: bold;
-    display: block;
-  }
-  
-  .status-text {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 28rpx;
-    margin-top: 10rpx;
-    display: block;
-  }
-}
-
-.controls {
-  padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-}
-
-.incoming-controls {
+  width: 100%;
+  height: 160rpx;
+  padding-top: 60rpx;
   display: flex;
-  justify-content: space-around;
-  
-  .control-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 30rpx;
-    border-radius: 50%;
-    
-    &.reject {
-      background: #ff4d4f;
-    }
-    
-    &.accept {
-      background: #52c41a;
-    }
-    
-    text {
-      color: #fff;
-      font-size: 24rpx;
-      margin-top: 10rpx;
-    }
-  }
+  justify-content: space-between;
+  padding-left: 30rpx;
+  padding-right: 30rpx;
+  background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+  z-index: 100; /* 高于视频层 */
+  pointer-events: none; /* 让点击穿透到视频层(如果有交互) */
+}
+.header-left { display: flex; align-items: center; pointer-events: auto; }
+.status-dot { width: 12rpx; height: 12rpx; background: #10b981; border-radius: 50%; margin-right: 16rpx; }
+.header-title { color: #fff; font-size: 32rpx; font-weight: bold; }
+.header-time { color: rgba(255,255,255,0.8); font-size: 26rpx; margin-left: 20rpx; }
+.minimize-btn { pointer-events: auto; padding: 10rpx; }
+
+/* 底部栏 */
+.ui-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 240rpx;
+  background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 40rpx;
+  pointer-events: auto;
 }
 
-.call-controls {
+.active-actions, .incoming-actions {
   display: flex;
+  width: 100%;
   justify-content: space-around;
   align-items: center;
-  
-  .control-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20rpx;
-    border-radius: 20rpx;
-    color: #fff;
-    
-    &.active {
-      background: rgba(255, 255, 255, 0.2);
-    }
-    
-    &.hangup {
-      background: #ff4d4f;
-      padding: 24rpx 40rpx;
-      border-radius: 50rpx;
-    }
-    
-    text {
-      font-size: 22rpx;
-      margin-top: 8rpx;
-      opacity: 0.9;
-    }
-  }
 }
 
-.minimize-btn {
-  position: absolute;
-  top: 40rpx;
-  left: 40rpx;
-  padding: 16rpx;
+.ctrl-btn-wrap { display: flex; flex-direction: column; align-items: center; }
+.ctrl-btn {
+  width: 110rpx;
+  height: 110rpx;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  padding-top: calc(16rpx + env(safe-area-inset-top));
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
 }
+.ctrl-btn.active { background: #fff; }
+.ctrl-btn.hangup { background: #ef4444; }
 
-.unsupported-tip {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 40rpx;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 20rpx;
-  
-  text {
-    color: #fff;
-    font-size: 28rpx;
-  }
+.ctrl-text { font-size: 24rpx; color: rgba(255,255,255,0.8); }
+
+.action-btn { display: flex; flex-direction: column; align-items: center; gap: 20rpx; }
+.btn-circle {
+  width: 130rpx;
+  height: 130rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.reject-bg { background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); }
+.accept-bg { background: #10b981; box-shadow: 0 4rpx 20rpx rgba(16, 185, 129, 0.4); }
+.action-text { color: #fff; font-size: 28rpx; }
+
+/* 最小化球 */
+.minimized-ball {
+  position: absolute;
+  top: 200rpx;
+  right: 30rpx;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.8);
+  border: 2rpx solid rgba(255,255,255,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 101;
+}
+.ball-avatar { width: 60rpx; height: 60rpx; border-radius: 50%; margin-bottom: 4rpx; }
+.ball-time { color: #10b981; font-size: 20rpx; }
 </style>
-

@@ -1,18 +1,16 @@
 <template>
   <view
-    v-if="showBanner"
-    class="group-call-banner"
-    :class="{ dark: isDark }"
+      v-if="showBanner"
+      class="group-call-banner"
+      :class="{ dark: isDark }"
   >
     <view class="banner-left">
       <!-- 动态图标 -->
       <view class="call-icon">
         <view class="pulse-ring"></view>
         <view class="icon-inner">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-            <polygon points="23 7 16 12 23 17 23 7"/>
-            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-          </svg>
+          <!-- 使用 wot-ui icon 替代 SVG/Image -->
+          <wd-icon name="video" size="40rpx" color="#fff" />
         </view>
       </view>
 
@@ -27,21 +25,21 @@
         <!-- 头像堆叠 -->
         <view class="avatar-stack">
           <view
-            v-for="(user, index) in previewParticipants"
-            :key="user.userId"
-            class="stacked-avatar"
-            :style="{ marginLeft: index > 0 ? '-24rpx' : '0', zIndex: 10 - index }"
+              v-for="(user, index) in previewParticipants"
+              :key="user.userId"
+              class="stacked-avatar"
+              :style="{ marginLeft: index > 0 ? '-24rpx' : '0', zIndex: 10 - index }"
           >
             <app-avatar
-              :src="user.avatar"
-              :name="user.name"
-              :size="40"
-              round
+                :src="user.avatar"
+                :name="user.name"
+                :size="40"
+                round
             />
           </view>
           <view
-            v-if="participantsCount > 5"
-            class="more-count"
+              v-if="participantsCount > 5"
+              class="more-count"
           >
             +{{ participantsCount - 5 }}
           </view>
@@ -71,9 +69,9 @@ const { callState, participants } = groupWebRTC
 
 const showBanner = computed(() => {
   return callState.groupId === props.roomId &&
-    !callState.joined &&
-    !callState.incoming &&
-    callState.roomId !== ''
+      !callState.joined &&
+      !callState.incoming &&
+      callState.roomId !== ''
 })
 
 const participantsCount = computed(() => participants.value.length)
@@ -153,13 +151,6 @@ function handleJoin() {
       position: absolute;
       inset: 0;
       background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
-    }
-
-    svg {
-      width: 40rpx;
-      height: 40rpx;
-      position: relative;
-      z-index: 1;
     }
   }
 }

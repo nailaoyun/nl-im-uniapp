@@ -305,7 +305,7 @@ function handleClearCache() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(var(--status-bar-height) + 16rpx) 24rpx 16rpx;
+  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 16rpx) 24rpx 16rpx;
   background: var(--bg-page);
 
   .nav-back {

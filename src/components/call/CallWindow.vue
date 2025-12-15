@@ -4,10 +4,14 @@
     <!-- 最小化悬浮窗 -->
     <view v-if="call.minimized" class="minimized-bar" @click="$emit('toggleMinimize')">
       <view class="pulse-dot"></view>
-      <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path v-if="call.type === 'video'" d="M23 7l-7 5 7 5V7z M16 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/>
-        <path v-else d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-      </svg>
+      <!-- 替换 SVG 为 wd-icon -->
+      <view class="mini-icon-wrap">
+        <wd-icon
+            :name="call.type === 'video' ? 'video' : 'phone'"
+            size="48rpx"
+            color="#10b981"
+        />
+      </view>
       <text class="mini-duration">{{ formatDuration(call.duration) }}</text>
     </view>
 
@@ -21,24 +25,19 @@
 
       <!-- 最小化按钮 (右上角) -->
       <view class="minimize-btn" @click="$emit('toggleMinimize')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="4 14 10 14 10 20"/>
-          <polyline points="20 10 14 10 14 4"/>
-          <line x1="14" y1="10" x2="21" y2="3"/>
-          <line x1="3" y1="21" x2="10" y2="14"/>
-        </svg>
+        <wd-icon name="arrow-down" size="48rpx" color="#fff" />
       </view>
 
       <!-- 视频区域 -->
       <view v-if="call.type === 'video'" class="video-area">
-        <!-- 远端视频 - 使用原生 video 元素以支持 srcObject -->
+        <!-- 远端视频 -->
         <video
-          v-if="remoteStream"
-          ref="remoteVideoRef"
-          class="remote-video"
-          autoplay
-          playsinline
-          :srcObject="remoteStream"
+            v-if="remoteStream"
+            ref="remoteVideoRef"
+            class="remote-video"
+            autoplay
+            playsinline
+            :srcObject="remoteStream"
         ></video>
         <view v-else class="video-placeholder">
           <view class="avatar-section">
@@ -49,15 +48,15 @@
           <text class="caller-name">{{ call.callerName || '对方' }}</text>
         </view>
 
-        <!-- 本地视频 - 使用原生 video 元素以支持 srcObject -->
+        <!-- 本地视频 -->
         <video
-          v-if="localStream && !call.camOff"
-          ref="localVideoRef"
-          class="local-video"
-          autoplay
-          muted
-          playsinline
-          :srcObject="localStream"
+            v-if="localStream && !call.camOff"
+            ref="localVideoRef"
+            class="local-video"
+            autoplay
+            muted
+            playsinline
+            :srcObject="localStream"
         ></video>
       </view>
 
@@ -80,17 +79,13 @@
         <template v-if="call.status === 'incoming'">
           <view class="action-item" @click="$emit('reject')">
             <view class="control-btn decline">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                <path d="M23 7l-7 5 7 5V7z M16 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/>
-              </svg>
+              <wd-icon name="close-bold" size="56rpx" color="#fff" />
             </view>
             <text class="action-label">拒绝</text>
           </view>
           <view class="action-item" @click="$emit('accept')">
             <view class="control-btn accept">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
+              <wd-icon name="phone-filled" size="64rpx" color="#fff" />
             </view>
             <text class="action-label">接听</text>
           </view>
@@ -98,42 +93,34 @@
 
         <!-- 通话中状态 -->
         <template v-else-if="call.status === 'connected'">
+          <!-- 静音 -->
           <view class="action-item" @click="$emit('toggleMute')">
             <view class="control-btn" :class="{ active: call.muted }">
-              <svg v-if="call.muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="1" y1="1" x2="23" y2="23"/>
-                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
-                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
+              <wd-icon
+                  :name="call.muted ? 'mic-off' : 'mic-on'"
+                  size="56rpx"
+                  :color="call.muted ? '#000' : '#fff'"
+              />
             </view>
             <text class="action-label">{{ call.muted ? '已静音' : '静音' }}</text>
           </view>
+
+          <!-- 摄像头 (仅视频通话) -->
           <view v-if="call.type === 'video'" class="action-item" @click="$emit('toggleCamera')">
             <view class="control-btn" :class="{ active: call.camOff }">
-              <svg v-if="call.camOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="23 7 16 12 23 17 23 7"/>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-              </svg>
+              <wd-icon
+                  :name="call.camOff ? 'video-off' : 'video'"
+                  size="56rpx"
+                  :color="call.camOff ? '#000' : '#fff'"
+              />
             </view>
             <text class="action-label">{{ call.camOff ? '已关闭' : '摄像头' }}</text>
           </view>
+
+          <!-- 挂断 -->
           <view class="action-item" @click="$emit('end')">
             <view class="control-btn hangup">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                <path d="M23 7l-7 5 7 5V7z M16 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/>
-              </svg>
+              <wd-icon name="phone-off-filled" size="64rpx" color="#fff" />
             </view>
             <text class="action-label">挂断</text>
           </view>
@@ -143,9 +130,7 @@
         <template v-else-if="call.status === 'outgoing'">
           <view class="action-item" @click="$emit('end')">
             <view class="control-btn hangup">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-                <path d="M23 7l-7 5 7 5V7z M16 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/>
-              </svg>
+              <wd-icon name="phone-off-filled" size="64rpx" color="#fff" />
             </view>
             <text class="action-label">挂断</text>
           </view>
@@ -159,16 +144,12 @@
   <view v-if="call.active" class="call-unsupported">
     <view class="unsupported-content">
       <view class="icon-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 7l-7 5 7 5V7z"/>
-          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-          <line x1="1" y1="1" x2="23" y2="23"/>
-        </svg>
+        <wd-icon name="video-off" size="80rpx" color="#f97316" />
       </view>
       <text class="unsupported-title">暂不支持音视频通话</text>
       <text class="unsupported-desc">当前平台暂不支持音视频通话功能</text>
       <text class="unsupported-desc">请使用网页版体验完整功能</text>
-      
+
       <view class="unsupported-actions">
         <wd-button type="info" plain @click="copyWebUrl" custom-style="margin-right: 20rpx;">
           复制网页链接
@@ -212,9 +193,7 @@ const localVideoRef = ref<HTMLVideoElement | null>(null)
 const remoteVideoRef = ref<HTMLVideoElement | null>(null)
 const toast = useToast()
 
-// 复制网页链接（用于非H5平台引导用户）
 function copyWebUrl() {
-  // TODO: 替换为实际的网页版地址
   const webUrl = 'https://your-web-domain.com/chat'
   uni.setClipboardData({
     data: webUrl,
@@ -260,7 +239,7 @@ watch(() => props.remoteStream, (stream) => {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &.minimized {
-    top: calc(var(--status-bar-height, 0) + 240rpx);
+    top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px) + 240rpx);
     right: 32rpx;
     left: auto;
     bottom: auto;
@@ -294,10 +273,12 @@ watch(() => props.remoteStream, (stream) => {
     animation: pulse 2s infinite;
   }
 
-  .mini-icon {
+  .mini-icon-wrap {
     width: 64rpx;
     height: 64rpx;
-    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .mini-duration {
@@ -318,7 +299,7 @@ watch(() => props.remoteStream, (stream) => {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: #0f172a; // 设计稿: 来电背景
+  background: #0f172a;
 
   .blur-img {
     width: 100%;
@@ -332,12 +313,11 @@ watch(() => props.remoteStream, (stream) => {
   .blur-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.8); // 设计稿: bg-[#0f172a]/80
+    background: rgba(15, 23, 42, 0.8);
     backdrop-filter: blur(48px);
     -webkit-backdrop-filter: blur(48px);
   }
-  
-  // 设计稿: 呼吸光球动画
+
   &::before, &::after {
     content: '';
     position: absolute;
@@ -348,25 +328,25 @@ watch(() => props.remoteStream, (stream) => {
     opacity: 0.4;
     animation: glow-breathe 8s ease-in-out infinite;
   }
-  
+
   &::before {
     top: 10%;
     left: -100rpx;
-    background: #9333ea; // purple-600
+    background: #9333ea;
     animation-delay: 0s;
   }
-  
+
   &::after {
     bottom: 10%;
     right: -100rpx;
-    background: #2563eb; // blue-600
+    background: #2563eb;
     animation-delay: 4s;
   }
 }
 
 .minimize-btn {
   position: absolute;
-  top: calc(28rpx + var(--status-bar-height, 0));
+  top: calc(28rpx + var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   right: 40rpx;
   z-index: 20;
   width: 72rpx;
@@ -378,12 +358,6 @@ watch(() => props.remoteStream, (stream) => {
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
-
-  svg {
-    width: 40rpx;
-    height: 40rpx;
-    color: #fff;
-  }
 
   &:active {
     transform: scale(0.9);
@@ -432,17 +406,16 @@ watch(() => props.remoteStream, (stream) => {
   position: relative;
   margin-bottom: 48rpx;
 
-  // 设计稿: 头像波纹效果
   .avatar-ring {
     position: absolute;
     inset: -20rpx;
     border-radius: 50%;
-    border: 2rpx solid rgba(255, 255, 255, 0.3); // 设计稿: border-white/30
+    border: 2rpx solid rgba(255, 255, 255, 0.3);
 
     &.ring-1 {
       animation: ripple 2s cubic-bezier(0, 0, 0.2, 1) infinite;
     }
-    
+
     &.ring-2 {
       animation: ripple 2s cubic-bezier(0, 0, 0.2, 1) infinite;
       animation-delay: 1s;
@@ -518,11 +491,6 @@ watch(() => props.remoteStream, (stream) => {
   color: #fff;
   transition: all 0.3s;
 
-  svg {
-    width: 56rpx;
-    height: 56rpx;
-  }
-
   &:active { transform: scale(0.95); }
 
   &.active {
@@ -537,19 +505,12 @@ watch(() => props.remoteStream, (stream) => {
     background: #10b981;
     border: none;
     box-shadow: 0 0 80rpx rgba(16, 185, 129, 0.4);
-
-    svg {
-      width: 72rpx;
-      height: 72rpx;
-    }
-
     &:active { background: #059669; }
   }
 
   &.decline {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.1);
-
     &:active { background: #ef4444; }
   }
 
@@ -560,12 +521,6 @@ watch(() => props.remoteStream, (stream) => {
     border: none;
     border-radius: 50%;
     box-shadow: 0 8rpx 40rpx rgba(239, 68, 68, 0.3);
-
-    svg {
-      width: 72rpx;
-      height: 72rpx;
-    }
-
     &:active { background: #dc2626; }
   }
 }
@@ -603,12 +558,6 @@ watch(() => props.remoteStream, (stream) => {
   align-items: center;
   justify-content: center;
   margin-bottom: 48rpx;
-
-  svg {
-    width: 80rpx;
-    height: 80rpx;
-    color: #f97316;
-  }
 }
 
 .unsupported-title {
@@ -648,13 +597,11 @@ watch(() => props.remoteStream, (stream) => {
   to { transform: translateY(0); opacity: 1; }
 }
 
-// 设计稿: 呼吸光球动画
 @keyframes glow-breathe {
   0%, 100% { transform: scale(1); opacity: 0.3; }
   50% { transform: scale(1.2); opacity: 0.5; }
 }
 
-// 设计稿: 头像波纹动画
 @keyframes ripple {
   0% { transform: scale(1); opacity: 0.4; }
   100% { transform: scale(2.5); opacity: 0; }

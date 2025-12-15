@@ -394,7 +394,7 @@ function getImageSize(moment: Moment): string {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(88rpx + var(--status-bar-height));
+  height: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px));
   z-index: 100;
   display: flex;
   align-items: flex-end;

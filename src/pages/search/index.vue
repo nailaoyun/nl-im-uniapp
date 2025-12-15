@@ -436,7 +436,7 @@ function formatTime(time: string): string {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: calc(var(--status-bar-height) + 16rpx) 24rpx 16rpx;
+  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 16rpx) 24rpx 16rpx;
   background: var(--bg-page);
   position: sticky;
   top: 0;

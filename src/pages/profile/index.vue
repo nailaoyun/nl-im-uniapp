@@ -197,7 +197,7 @@ function goProfileEdit() { uni.navigateTo({ url: '/pages/profile/edit' }) }
 // 头部
 .profile-header {
   background: var(--bg-surface);
-  padding: calc(var(--status-bar-height) + 24rpx) 40rpx 60rpx;
+  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 24rpx) 40rpx 60rpx;
   border-bottom-left-radius: 80rpx;
   border-bottom-right-radius: 80rpx;
   box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.05);

@@ -1,10 +1,9 @@
 /**
  * 小程序音视频通话组合式函数
  * 使用 live-pusher/live-player 组件
- * 
- * 适用平台：微信小程序
+ * * 适用平台：微信小程序
  */
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, nextTick } from 'vue'
 import * as callApi from '@/api/modules/call'
 import * as messageApi from '@/api/modules/message'
 import { wsManager } from '@/api/websocket'
@@ -70,10 +69,20 @@ export function useMiniProgramCall() {
 
   /**
    * 初始化 live-pusher 上下文
+   * 修复：接收组件实例，并绑定具体的 ID 'local-pusher'
+   * @param componentInstance Vue组件实例 (getCurrentInstance())
    */
-  function initPusherContext() {
+  function initPusherContext(componentInstance?: any) {
     // #ifdef MP-WEIXIN
-    pusherContext = uni.createLivePusherContext()
+    // 关键修复：必须指定 id="local-pusher" 和 组件实例
+    // 如果不传 componentInstance，在自定义组件中会找不到 live-pusher
+    if (!componentInstance) {
+      console.warn('[MiniProgramCall] initPusherContext: 缺少组件实例，推流可能失败')
+    }
+
+    // 这里的 'local-pusher' 必须与 template 中的 <live-pusher id="local-pusher"> 一致
+    pusherContext = uni.createLivePusherContext('local-pusher', componentInstance)
+    console.log('[MiniProgramCall] Pusher Context Initialized', !!pusherContext)
     // #endif
   }
 
@@ -99,7 +108,7 @@ export function useMiniProgramCall() {
       if (signal === 'invite') {
         // 收到来电
         if (call.active) return
-        
+
         currentReceiverUserId = message.sender_user_id
         call.roomId = message.room_id
         call.callId = message.call_id
@@ -132,13 +141,16 @@ export function useMiniProgramCall() {
       } else if (signal === 'participant_joined') {
         // 新参与者加入
         if (content.pull_url) {
-          remoteStreams.value.push({
-            userId: content.user_id,
-            pullUrl: content.pull_url,
-            flvUrl: content.flv_url,
-            userName: content.user_name,
-            userAvatar: content.user_avatar,
-          })
+          const exists = remoteStreams.value.some(s => s.userId === content.user_id)
+          if (!exists) {
+            remoteStreams.value.push({
+              userId: content.user_id,
+              pullUrl: content.pull_url,
+              flvUrl: content.flv_url,
+              userName: content.user_name,
+              userAvatar: content.user_avatar,
+            })
+          }
         }
 
       } else if (signal === 'participant_left') {
@@ -163,10 +175,10 @@ export function useMiniProgramCall() {
    * 发起通话
    */
   async function startCall(
-    type: 'audio' | 'video',
-    receiverUserId: string,
-    roomId: string,
-    contact?: Contact
+      type: 'audio' | 'video',
+      receiverUserId: string,
+      roomId: string,
+      contact?: Contact
   ): Promise<boolean> {
     if (call.active) {
       uni.showToast({ title: '当前有正在进行的通话', icon: 'none' })
@@ -234,8 +246,12 @@ export function useMiniProgramCall() {
         }))
       }
 
-      // 开始推流
-      startPushing()
+      // 关键修复：使用 nextTick 确保 DOM 更新，live-pusher 的 url 属性生效后再启动
+      nextTick(() => {
+        setTimeout(() => {
+          startPushing()
+        }, 500) // 延迟500ms确保组件渲染完成
+      })
 
       // 开始计时
       startCallTimer()
@@ -331,15 +347,34 @@ export function useMiniProgramCall() {
    */
   function startPushing() {
     // #ifdef MP-WEIXIN
-    if (!pusherContext) {
-      initPusherContext()
+    // 检测是否在开发者工具中运行
+    const systemInfo = uni.getSystemInfoSync()
+    if (systemInfo.platform === 'devtools') {
+      console.warn('[MiniProgramCall] 开发者工具不支持 live-pusher，请在真机上测试')
+      // 仅提示一次，避免阻塞流程
     }
-    pusherContext?.start({
+
+    if (!pusherContext) {
+      console.error('[MiniProgramCall] Pusher Context 未初始化，无法推流')
+      return
+    }
+
+    // 确保 URL 存在
+    if (!pushUrl.value) {
+      console.error('[MiniProgramCall] 推流地址为空')
+      return
+    }
+
+    pusherContext.start({
       success: () => {
-        console.log('[MiniProgramCall] 推流成功')
+        console.log('[MiniProgramCall] 推流启动成功')
       },
       fail: (err: any) => {
-        console.error('[MiniProgramCall] 推流失败:', err)
+        console.error('[MiniProgramCall] 推流启动失败:', err)
+        // 提示用户可能的原因
+        if (err.errMsg?.includes('operateLivePusher:fail')) {
+          uni.showToast({ title: '推流失败，请检查网络或权限', icon: 'none' })
+        }
       }
     })
     // #endif
@@ -433,7 +468,8 @@ export function useMiniProgramCall() {
   function toggleMute() {
     call.muted = !call.muted
     // #ifdef MP-WEIXIN
-    pusherContext?.mute(call.muted)
+    // 依赖 template 中的 :enable-mic="!call.muted"
+    // 或者可以使用 API: pusherContext?.setMicVolume({ volume: call.muted ? 0 : 1 })
     // #endif
   }
 
@@ -443,6 +479,8 @@ export function useMiniProgramCall() {
   function toggleCamera() {
     call.camOff = !call.camOff
     // #ifdef MP-WEIXIN
+    // 依赖 template 中的 :enable-camera="!call.camOff"
+    // 也可以手动控制 pause/resume
     if (call.camOff) {
       pusherContext?.pause()
     } else {
@@ -499,10 +537,6 @@ export function useMiniProgramCall() {
       case -1302: // 打开麦克风失败
         uni.showToast({ title: '麦克风打开失败', icon: 'none' })
         break
-      case -1303: // 视频编码失败
-        break
-      case -1304: // 音频编码失败
-        break
       case -1307: // 推流连接断开
         call.statusText = '连接已断开'
         break
@@ -516,16 +550,7 @@ export function useMiniProgramCall() {
     const code = e.detail?.code
     console.log(`[MiniProgramCall] 拉流状态 [${userId}]:`, code)
 
-    switch (code) {
-      case 2002: // 已连接到服务器
-        break
-      case 2003: // 收到首帧视频
-        break
-      case 2004: // 收到首帧音频
-        break
-      case -2301: // 网络断开，正在重连
-        break
-    }
+    // 状态码参考微信文档
   }
 
   return {
@@ -550,4 +575,3 @@ export function useMiniProgramCall() {
 }
 
 export default useMiniProgramCall
-

@@ -504,7 +504,7 @@ function goUserDetail(user: User) {
 .header-content {
   position: relative;
   z-index: 10;
-  padding-top: var(--status-bar-height);
+  padding-top: calc(var(--status-bar-height) + var(--mp-safe-top, 0px));
   padding-bottom: 40rpx;
 }
 

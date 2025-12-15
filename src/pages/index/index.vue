@@ -406,7 +406,7 @@ async function logout() {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding-top: var(--status-bar-height, 0);
+  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   // 确保没有任何边框
   border: none;
 

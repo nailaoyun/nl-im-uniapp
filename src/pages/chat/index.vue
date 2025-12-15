@@ -65,9 +65,9 @@
 
       <!-- 群通话 Banner -->
       <group-call-banner
-        v-if="isGroupChat && hasActiveGroupCall"
-        :room-id="roomId"
-        class="call-banner-wrapper"
+          v-if="isGroupChat && hasActiveGroupCall"
+          :room-id="roomId"
+          class="call-banner-wrapper"
       />
 
       <!-- 2. 消息列表区 -->
@@ -165,7 +165,7 @@
       </wd-popup>
 
       <wd-toast />
-      
+
       <!-- 全局通话组件 -->
       <global-call-provider />
     </view>
@@ -213,9 +213,9 @@ const groupWebRTC = useGroupWebRTC()
 // 检查群聊是否有进行中的通话
 const hasActiveGroupCall = computed(() => {
   if (!isGroupChat.value || !roomId.value) return false
-  return groupWebRTC.callState.groupId === roomId.value && 
-         !groupWebRTC.callState.joined && 
-         groupWebRTC.callState.roomId !== ''
+  return groupWebRTC.callState.groupId === roomId.value &&
+      !groupWebRTC.callState.joined &&
+      groupWebRTC.callState.roomId !== ''
 })
 // 获取当前组件实例，用于 SelectorQuery
 const instance = getCurrentInstance()
@@ -246,12 +246,12 @@ onLoad(async (options: any) => {
   isGroupChat.value = !targetId.value && !!roomId.value;
 
   setupWebSocket();
-  
+
   // 群聊时先加载成员，确保消息渲染时能获取到发送者信息
   if (isGroupChat.value && roomId.value) {
     await loadGroupMembers()
   }
-  
+
   loadMessages();
 });
 
@@ -460,32 +460,32 @@ function onScrollClick() { /* 点击空白处收起键盘 */ }
 function getMessageSenderAvatar(msg: ChatMessage): string {
   const msgAny = msg as any
   const senderId = msg.sender_user_id
-  
+
   // 1. 优先从消息体中获取（后端可能返回sender信息）
   if (msgAny.sender?.avatar) return resolveImageUrl(msgAny.sender.avatar)
   if (msgAny.sender_avatar) return resolveImageUrl(msgAny.sender_avatar)
   if (msgAny.from_user?.avatar) return resolveImageUrl(msgAny.from_user.avatar)
-  
+
   // 2. 群聊场景
   if (isGroupChat.value && senderId) {
     // 2.1 从缓存获取
     const cachedUser = userCache.value.get(senderId)
     if (cachedUser?.avatar) return resolveImageUrl(cachedUser.avatar)
-    
+
     // 2.2 从成员映射获取（O(1)查找）
     const member = groupMembersMap.value.get(senderId)
     if (member) {
       const avatar = member.user?.avatar || (member as any).avatar || (member as any).user_avatar
       if (avatar) return resolveImageUrl(avatar)
     }
-    
+
     // 2.3 从联系人列表获取
     const contact = chatStore.contacts.find(c => c.contact_user_id === senderId)
     if (contact?.user?.avatar) return resolveImageUrl(contact.user.avatar)
-    
+
     return ''
   }
-  
+
   // 3. 单聊场景
   return resolveImageUrl(targetUser.value?.avatar || '')
 }
@@ -494,33 +494,33 @@ function getMessageSenderAvatar(msg: ChatMessage): string {
 function getMessageSenderName(msg: ChatMessage): string {
   const msgAny = msg as any
   const senderId = msg.sender_user_id
-  
+
   // 1. 优先从消息体中获取
   if (msgAny.sender?.name) return msgAny.sender.name
   if (msgAny.sender_name) return msgAny.sender_name
   if (msgAny.from_user?.name) return msgAny.from_user.name
-  
+
   // 2. 群聊场景
   if (isGroupChat.value && senderId) {
     // 2.1 从缓存获取
     const cachedUser = userCache.value.get(senderId)
     if (cachedUser?.name) return cachedUser.name
-    
+
     // 2.2 从成员映射获取（O(1)查找）
     const member = groupMembersMap.value.get(senderId)
     if (member) {
       const name = member.nickname || member.user?.name || (member as any).name || (member as any).user_name
       if (name) return name
     }
-    
+
     // 2.3 从联系人列表获取
     const contact = chatStore.contacts.find(c => c.contact_user_id === senderId)
     if (contact?.user?.name) return contact.remark_name || contact.user.name
-    
+
     // 2.4 兜底：显示用户ID末4位
     return `用户${senderId.slice(-4)}`
   }
-  
+
   // 3. 单聊场景
   return targetUser.value?.name || chatName.value || '未知'
 }
@@ -531,20 +531,94 @@ function playVideo(url: string) { if (url) { /* #ifdef H5 */ window.open(url, '_
 function openFile(url: string) { if (!url) return; /* #ifdef H5 */ window.open(url, '_blank'); /* #endif */ /* #ifndef H5 */ toast.loading('正在打开文件...'); uni.downloadFile({ url: url, success: (res) => { toast.close(); if (res.statusCode === 200) { uni.openDocument({ filePath: res.tempFilePath, showMenu: true }) } }, fail: () => { toast.close(); toast.error('下载失败') } }); /* #endif */ }
 let audioContext: UniApp.InnerAudioContext | null = null; function playAudio(msg: ChatMessage) { const audioUrl = typeof msg.extra === 'string' ? JSON.parse(msg.extra).url : msg.extra?.url || msg.content; const url = resolveImageUrl(audioUrl); if (!url) return; if (playingAudioId.value === msg.id) { stopAudio(); return } stopAudio(); audioContext = uni.createInnerAudioContext(); audioContext.src = url; audioContext.autoplay = true; playingAudioId.value = msg.id; audioContext.onEnded(() => { playingAudioId.value = null }); audioContext.onError(() => { playingAudioId.value = null; toast.error('播放失败') }) }
 function stopAudio() { if (audioContext) { audioContext.stop(); audioContext.destroy(); audioContext = null } playingAudioId.value = null }
-function startAudioCall() {
+
+// --- 3. 小程序权限检查与通话启动逻辑 ---
+
+/**
+ * 检查小程序通话权限
+ * 顺序：scope.record (麦克风) -> scope.camera (摄像头，仅视频通话需要)
+ */
+async function checkCallPermissions(type: 'audio' | 'video'): Promise<boolean> {
+  // #ifndef MP-WEIXIN
+  return true // 非小程序环境默认认为有权限（由浏览器控制）
+  // #endif
+
+  // #ifdef MP-WEIXIN
+  const scopes = ['scope.record']
+  if (type === 'video') {
+    scopes.push('scope.camera')
+  }
+
+  for (const scope of scopes) {
+    try {
+      await new Promise((resolve, reject) => {
+        uni.authorize({
+          scope,
+          success: resolve,
+          fail: reject
+        })
+      })
+    } catch (e) {
+      // 授权失败（用户拒绝或未授权）
+      const scopeName = scope === 'scope.camera' ? '摄像头' : '麦克风'
+      const res = await uni.showModal({
+        title: '权限申请',
+        content: `需要获取您的${scopeName}权限才能进行通话，请在设置中开启`,
+        confirmText: '去设置',
+        showCancel: true
+      })
+
+      if (res.confirm) {
+        // 引导用户打开设置页
+        const settingRes = await new Promise<any>((resolve) => {
+          uni.openSetting({
+            success: resolve,
+            fail: () => resolve({ authSetting: {} })
+          })
+        })
+
+        // 再次检查设置结果
+        if (!settingRes.authSetting[scope]) {
+          toast.error(`未获取${scopeName}权限，无法通话`)
+          return false
+        }
+      } else {
+        // 用户点击取消
+        return false
+      }
+    }
+  }
+  return true
+  // #endif
+}
+
+async function startAudioCall() {
   if (!targetId.value) return
+
+  // 1. 权限检查
+  const granted = await checkCallPermissions('audio')
+  if (!granted) return
+
+  // 2. 启动通话
   // #ifdef H5 || APP-PLUS
   webrtc.startCall('audio', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar)
   // #endif
   // #ifdef MP-WEIXIN
-  mpCall.startCall('audio', targetId.value, roomId.value, { 
-    user_id: targetId.value, 
-    user: { name: targetUser.value?.name, avatar: targetUser.value?.avatar } 
+  mpCall.startCall('audio', targetId.value, roomId.value, {
+    user_id: targetId.value,
+    user: { name: targetUser.value?.name, avatar: targetUser.value?.avatar }
   } as any)
   // #endif
 }
-function startVideoCall() {
+
+async function startVideoCall() {
   if (!targetId.value) return
+
+  // 1. 权限检查
+  const granted = await checkCallPermissions('video')
+  if (!granted) return
+
+  // 2. 启动通话
   // #ifdef H5 || APP-PLUS
   webrtc.startCall('video', targetId.value, roomId.value, targetUser.value?.name, targetUser.value?.avatar)
   // #endif
@@ -555,6 +629,7 @@ function startVideoCall() {
   } as any)
   // #endif
 }
+
 function chooseImage() { uni.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album'], success: handleFileSelect('image', 1) }) }
 function shootCamera() { uni.chooseImage({ count: 1, sourceType: ['camera'], success: handleFileSelect('image', 1) }) }
 function chooseFile() { /* #ifdef MP-WEIXIN */ wx.chooseMessageFile({ count: 1, type: 'file', success: (res: any) => handleFileSelect('file', 8)({ tempFilePaths: [res.tempFiles[0].path], tempFiles: res.tempFiles }) }); /* #endif */ /* #ifdef APP-PLUS */ uni.chooseFile({ count: 1, success: handleFileSelect('file', 8) }); /* #endif */ /* #ifdef H5 */ const input = document.createElement('input'); input.type = 'file'; input.onchange = (e: any) => { const file = e.target.files[0]; if(file) { pendingFile.value = { path: URL.createObjectURL(file), name: file.name, size: file.size, type: 'file', messageType: 8 }; showFileConfirm.value = true } }; input.click(); /* #endif */ }
@@ -614,7 +689,7 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
 /* 导航栏 */
 .glass-navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  padding-top: var(--status-bar-height);
+  padding-top: calc(var(--status-bar-height) + var(--mp-safe-top, 0px));
   .navbar-bg {
     position: absolute; inset: 0; background: var(--nav-bg);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -648,7 +723,7 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
 /* 群通话 Banner 位置 */
 .call-banner-wrapper {
   position: fixed;
-  top: calc(88rpx + var(--status-bar-height));
+  top: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px));
   left: 0;
   right: 0;
   z-index: 99;
@@ -662,13 +737,13 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
 
   &.has-banner {
     .message-feed {
-      padding-top: calc(88rpx + var(--status-bar-height) + 160rpx);
+      padding-top: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px) + 160rpx);
     }
   }
 }
 .message-feed {
   padding: 32rpx;
-  padding-top: calc(88rpx + var(--status-bar-height) + 32rpx);
+  padding-top: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px) + 32rpx);
   /* 增加底部 Padding 以防输入框遮挡 */
   padding-bottom: 240rpx;
 }

@@ -113,7 +113,7 @@ function handleClick(key: string) {
 // ==========================================
 .plus-menu {
   position: fixed;
-  top: calc(var(--status-bar-height, 20px) + 180rpx);
+  top: calc(var(--status-bar-height, 20px) + var(--mp-safe-top, 0px) + 180rpx);
   right: 32rpx;
   width: 288rpx;
   background: var(--menu-bg);
