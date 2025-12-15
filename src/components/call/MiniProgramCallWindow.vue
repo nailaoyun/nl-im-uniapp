@@ -36,7 +36,15 @@
       </view>
 
       <!-- 本地推流 -->
+      <!-- autopush: URL 设置后自动推流，组件会自动判断何时准备好 -->
+      <!-- 
+        关键配置说明：
+        - video-codec: 优先使用硬件编码，兼容性更好
+        - min-bitrate/max-bitrate: 设置合理的码率范围，避免超出设备能力
+        - video-width/video-height: 明确指定分辨率，避免自动选择不支持的分辨率
+      -->
       <live-pusher
+          v-if="pushUrl"
           id="local-pusher"
           class="local-pusher"
           :url="pushUrl"
@@ -45,9 +53,18 @@
           :enable-camera="!call.camOff"
           :enable-mic="!call.muted"
           aspect="9:16"
-          beauty="5"
-          whiteness="3"
+          :beauty="5"
+          :whiteness="3"
+          orientation="vertical"
+          device-position="front"
+          video-codec="hardware"
+          :min-bitrate="200"
+          :max-bitrate="1000"
+          :video-width="360"
+          :video-height="640"
+          audio-quality="high"
           @statechange="onPusherStateChange"
+          @netstatus="onPusherNetStatus"
           @error="onPusherError"
       />
     </view>
@@ -175,24 +192,42 @@ const statusDotClass = computed(() => {
   }
 })
 
-// 监听通话激活，初始化 Context
-watch(() => call.active, (newVal) => {
-  if (newVal) {
+// 监听推流地址变化，在 live-pusher 渲染完成后初始化 Context
+// 关键修复：之前监听 call.active，但此时 pushUrl 还是空的，live-pusher 未渲染
+// 现在改为监听 pushUrl，确保 live-pusher 渲染后再初始化 Context
+watch(() => pushUrl.value, (newVal, oldVal) => {
+  if (newVal && !oldVal) {
+    // pushUrl 从空变为有值，live-pusher 即将渲染
+    console.log('[MiniProgramCall] pushUrl 已设置，准备初始化 Context')
     nextTick(() => {
-      // 传入当前组件实例，确保 live-pusher 能被找到
-      // 在同层渲染模式下，这点尤为重要
-      initPusherContext(instance)
+      // 等待 live-pusher 完全渲染后再初始化
+      setTimeout(() => {
+        console.log('[MiniProgramCall] 延迟后初始化 Pusher Context')
+        initPusherContext(instance)
+      }, 500)
     })
   }
 })
 
 const onPusherError = (e: any) => {
-  console.error('Pusher Error:', e)
-  uni.showToast({ title: '推流失败，请检查摄像头权限', icon: 'none' })
+  console.error('[MiniProgramCall] Pusher Error:', e)
+  const detail = e.detail || e
+  if (detail.errCode === 10001) {
+    uni.showToast({ title: '请授权摄像头和麦克风权限', icon: 'none' })
+  } else {
+    uni.showToast({ title: '推流失败，请检查权限设置', icon: 'none' })
+  }
+}
+
+const onPusherNetStatus = (e: any) => {
+  const info = e.detail?.info || e.detail
+  if (info) {
+    console.log('[MiniProgramCall] 推流网络状态:', info)
+  }
 }
 
 const onPlayerError = (e: any, userId: string) => {
-  console.error(`Player Error [${userId}]:`, e)
+  console.error(`[MiniProgramCall] Player Error [${userId}]:`, e)
 }
 </script>
 

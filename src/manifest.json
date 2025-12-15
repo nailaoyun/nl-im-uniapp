@@ -57,7 +57,7 @@
             "urlCheck" : false,
             "preloadBackgroundData" : false
         },
-        "libVersion" : "2.7.0",
+        "libVersion" : "2.10.0",
         "usingComponents" : true,
         "darkmode" : true,
         "themeLocation" : "theme.json",
@@ -66,7 +66,7 @@
                 "desc" : "用于获取您的位置信息"
             },
             "scope.record" : {
-                "desc" : "用于语音消息录制"
+                "desc" : "用于语音消息录制和视频通话"
             },
             "scope.camera" : {
                 "desc" : "用于拍摄照片和视频通话"
@@ -75,7 +75,8 @@
                 "desc" : "用于保存图片到相册"
             }
         },
-        "requiredPrivateInfos" : [ "chooseImage", "chooseVideo", "chooseLocation", "getLocation" ]
+        "requiredPrivateInfos" : [ "chooseLocation", "getLocation" ],
+        "requiredBackgroundModes" : [ "audio", "voip" ]
     },
     "mp-alipay" : {
         "usingComponents" : true
