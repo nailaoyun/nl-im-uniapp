@@ -57,13 +57,13 @@
     <!-- 顶部栏 -->
     <view class="ui-header">
       <view class="header-left">
-        <view class="status-dot"></view>
-        <text class="header-title">通话中</text>
+        <view class="status-dot" :class="statusDotClass"></view>
+        <text class="header-title">{{ headerTitle }}</text>
         <text class="header-time">{{ formatDuration(call.duration) }}</text>
       </view>
       <view class="minimize-btn" @click="toggleMinimize">
         <!-- 最小化图标 -->
-        <wd-icon name="arrow-down-circle" size="60rpx" color="rgba(255,255,255,0.8)" />
+        <wd-icon name="arrow-down" size="60rpx" color="rgba(255,255,255,0.8)" />
       </view>
     </view>
 
@@ -73,13 +73,13 @@
       <view v-if="call.status === 'incoming'" class="incoming-actions">
         <view class="action-btn reject" @click="rejectCall">
           <view class="btn-circle reject-bg">
-            <wd-icon name="close-bold" size="50rpx" color="#fff" />
+            <wd-icon name="close" size="50rpx" color="#fff" />
           </view>
           <text class="action-text">拒绝</text>
         </view>
         <view class="action-btn accept" @click="acceptCall">
           <view class="btn-circle accept-bg">
-            <wd-icon name="phone-filled" size="56rpx" color="#fff" />
+            <wd-icon name="phone" size="56rpx" color="#fff" />
           </view>
           <text class="action-text">接听</text>
         </view>
@@ -90,7 +90,7 @@
         <!-- 静音 -->
         <view class="ctrl-btn-wrap" @click="toggleMute">
           <view class="ctrl-btn" :class="{ active: call.muted }">
-            <wd-icon :name="call.muted ? 'mic-off' : 'mic-on'" size="50rpx" :color="call.muted ? '#000' : '#fff'" />
+            <wd-icon :name="call.muted ? 'mute' : 'sound'" size="50rpx" :color="call.muted ? '#000' : '#fff'" />
           </view>
           <text class="ctrl-text">静音</text>
         </view>
@@ -98,7 +98,7 @@
         <!-- 挂断 -->
         <view class="ctrl-btn-wrap" @click="endCall">
           <view class="ctrl-btn hangup">
-            <wd-icon name="phone-off-filled" size="50rpx" color="#fff" />
+            <wd-icon name="phone" size="50rpx" color="#fff" custom-style="transform: rotate(135deg);" />
           </view>
           <text class="ctrl-text">挂断</text>
         </view>
@@ -106,7 +106,7 @@
         <!-- 摄像头 -->
         <view class="ctrl-btn-wrap" @click="toggleCamera">
           <view class="ctrl-btn" :class="{ active: call.camOff }">
-            <wd-icon :name="call.camOff ? 'video-off' : 'video'" size="50rpx" :color="call.camOff ? '#000' : '#fff'" />
+            <wd-icon name="video" size="50rpx" :color="call.camOff ? '#000' : '#fff'" />
           </view>
           <text class="ctrl-text">摄像头</text>
         </view>
@@ -147,6 +147,33 @@ const {
 const instance = getCurrentInstance()
 
 const gridClass = computed(() => remoteStreams.value.length > 1 ? 'grid-multi' : 'grid-single')
+
+// 顶部状态显示
+const headerTitle = computed(() => {
+  switch (call.status) {
+    case 'outgoing':
+      return '正在呼叫...'
+    case 'incoming':
+      return '来电...'
+    case 'connected':
+      return '通话中'
+    default:
+      return call.statusText || '通话'
+  }
+})
+
+// 状态指示点样式
+const statusDotClass = computed(() => {
+  switch (call.status) {
+    case 'connected':
+      return 'status-connected'
+    case 'outgoing':
+    case 'incoming':
+      return 'status-pending'
+    default:
+      return ''
+  }
+})
 
 // 监听通话激活，初始化 Context
 watch(() => call.active, (newVal) => {
@@ -236,8 +263,8 @@ const onPlayerError = (e: any, userId: string) => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 160rpx;
-  padding-top: 60rpx;
+  height: calc(var(--status-bar-height, 44px) + var(--mp-navbar-height, 48px) + 20rpx);
+  padding-top: calc(var(--status-bar-height, 44px) + 20rpx);
   display: flex;
   justify-content: space-between;
   padding-left: 30rpx;
@@ -247,7 +274,19 @@ const onPlayerError = (e: any, userId: string) => {
   pointer-events: none; /* 让点击穿透到视频层(如果有交互) */
 }
 .header-left { display: flex; align-items: center; pointer-events: auto; }
-.status-dot { width: 12rpx; height: 12rpx; background: #10b981; border-radius: 50%; margin-right: 16rpx; }
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: #666;
+  border-radius: 50%;
+  margin-right: 16rpx;
+}
+.status-dot.status-connected { background: #10b981; } /* 绿色 = 已连接 */
+.status-dot.status-pending { background: #f59e0b; animation: pulse 1.5s infinite; } /* 橙色 = 呼叫中 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 .header-title { color: #fff; font-size: 32rpx; font-weight: bold; }
 .header-time { color: rgba(255,255,255,0.8); font-size: 26rpx; margin-left: 20rpx; }
 .minimize-btn { pointer-events: auto; padding: 10rpx; }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { useTheme } from '@/composables/useTheme'
+import { initSafeArea } from '@/composables/useSafeArea'
 import { useAuthStore, useConversationStore } from '@/stores'
 import { wsManager } from '@/api/websocket'
 import type { ChatMessage } from '@/types/api'
@@ -37,6 +38,8 @@ async function initWebSocket() {
 
 onLaunch(() => {
   console.log('App Launch')
+  // 初始化安全区域（获取胶囊按钮位置等）
+  initSafeArea()
   // 初始化主题
   initTheme()
 })

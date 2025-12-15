@@ -74,7 +74,7 @@ export function useWebRTC() {
 
   function playRingtone() {
     stopRingtone()
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext
       const ctx = new AudioContext()
@@ -230,7 +230,7 @@ export function useWebRTC() {
 
   // 初始化媒体设备
   async function initMedia(videoEnabled: boolean): Promise<void> {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     try {
       if (localStream.value) {
         localStream.value.getTracks().forEach(t => t.stop())
@@ -247,7 +247,7 @@ export function useWebRTC() {
     }
     // #endif
 
-    // #ifndef H5
+    // #ifndef H5 || APP-PLUS
     throw new Error('当前平台暂不支持音视频通话')
     // #endif
   }
@@ -277,7 +277,7 @@ export function useWebRTC() {
 
   // 创建 RTCPeerConnection
   async function createPC(): Promise<void> {
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     // 优先使用服务器配置的 ICE 服务器
     let servers: RTCIceServer[] = sfuIceServers.length > 0 
       ? sfuIceServers 
@@ -562,7 +562,7 @@ export function useWebRTC() {
     call.remoteCamOff = false
     stopCallTimer()
     
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (pc) {
       pc.close()
       pc = null
@@ -609,7 +609,7 @@ export function useWebRTC() {
   function toggleMute() {
     call.muted = !call.muted
     sendSyncState('mic-toggle', call.muted)
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (localStream.value) localStream.value.getAudioTracks().forEach(t => t.enabled = !call.muted)
     // #endif
   }
@@ -618,7 +618,7 @@ export function useWebRTC() {
   function toggleCamera() {
     call.camOff = !call.camOff
     sendSyncState('cam-toggle', call.camOff)
-    // #ifdef H5
+    // #ifdef H5 || APP-PLUS
     if (localStream.value) localStream.value.getVideoTracks().forEach(t => t.enabled = !call.camOff)
     // #endif
   }

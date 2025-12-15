@@ -178,8 +178,15 @@ async function save() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 16rpx) 24rpx 16rpx;
   background: var(--bg-page);
+
+  /* #ifdef MP-WEIXIN */
+  padding: calc(var(--status-bar-height, 44px) + 88rpx + 16rpx) 24rpx 16rpx;
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  padding: calc(var(--status-bar-height, 0) + 16rpx) 24rpx 16rpx;
+  /* #endif */
 
   .nav-back {
     width: 72rpx;

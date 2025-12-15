@@ -14,7 +14,7 @@
     <!-- 导航栏 (与设计稿一致) -->
     <view class="nav-header">
       <view class="nav-back" @click="goBack">
-        <!-- #ifdef H5 -->
+        <!-- #ifdef H5 || APP-PLUS -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18l-6-6 6-6"/>
         </svg>
@@ -24,7 +24,7 @@
         <!-- #endif -->
       </view>
       <view class="nav-more">
-        <!-- #ifdef H5 -->
+        <!-- #ifdef H5 || APP-PLUS -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="1"/>
           <circle cx="19" cy="12" r="1"/>
@@ -71,7 +71,7 @@
           <text class="row-label">设置备注</text>
           <view class="row-right">
             <text class="row-value">{{ contact.remark_name || '未设置' }}</text>
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
@@ -170,7 +170,7 @@
       <view class="dock-buttons">
         <!-- 电话: flex-1 -->
         <view class="dock-btn secondary" @click="startAudioCall">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.05 12.05 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.05 12.05 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
@@ -181,7 +181,7 @@
         </view>
         <!-- 发消息: flex-[2] -->
         <view class="dock-btn primary" @click="goChat">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
@@ -193,7 +193,7 @@
         </view>
         <!-- 视频: flex-1 -->
         <view class="dock-btn secondary" @click="startVideoCall">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="23 7 16 12 23 17 23 7"/>
             <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
@@ -214,7 +214,7 @@
     <!-- 底部悬浮操作栏 - 陌生人状态 -->
     <view class="floating-dock" v-else-if="!isFriend && strangerUser">
       <view class="add-friend-btn" @click="addFriend">
-        <!-- #ifdef H5 -->
+        <!-- #ifdef H5 || APP-PLUS -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
           <circle cx="8.5" cy="7" r="4"/>
@@ -445,10 +445,17 @@ async function deleteFriend() { try { await messageBox.confirm({ title: '提示'
 .nav-header {
   position: relative;
   z-index: 10;
-  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 24rpx) 32rpx 16rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  /* #ifdef MP-WEIXIN */
+  padding: calc(var(--status-bar-height, 44px) + 88rpx + 24rpx) 32rpx 16rpx;
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  padding: calc(var(--status-bar-height, 0) + 24rpx) 32rpx 16rpx;
+  /* #endif */
 
   .nav-back, .nav-more {
     width: 56rpx;

@@ -8,7 +8,7 @@
         <view class="navbar-content">
           <view class="nav-left" @click="goBack">
             <view class="back-btn">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               <!-- #endif -->
               <!-- #ifdef MP-WEIXIN -->
@@ -26,7 +26,7 @@
 
           <view class="nav-actions">
             <view class="icon-btn" @click="startAudioCall">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               <!-- #endif -->
               <!-- #ifdef MP-WEIXIN -->
@@ -34,7 +34,7 @@
               <!-- #endif -->
             </view>
             <view class="icon-btn" @click="startVideoCall">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
               <!-- #endif -->
               <!-- #ifdef MP-WEIXIN -->
@@ -43,7 +43,7 @@
             </view>
             <!-- 群聊：显示群成员图标 -->
             <view v-if="isGroupChat" class="icon-btn" @click="goGroupInfo">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               <!-- #endif -->
               <!-- #ifdef MP-WEIXIN -->
@@ -52,7 +52,7 @@
             </view>
             <!-- 单聊：显示更多图标 -->
             <view v-else class="icon-btn" @click="showChatInfo">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               <!-- #endif -->
               <!-- #ifdef MP-WEIXIN -->
@@ -145,7 +145,7 @@
           <view class="dialog-header">确认发送</view>
           <view class="file-preview-box">
             <view class="preview-icon">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
               <!-- #endif -->
               <!-- #ifdef MP-WEIXIN -->
@@ -165,9 +165,6 @@
       </wd-popup>
 
       <wd-toast />
-
-      <!-- 全局通话组件 -->
-      <global-call-provider />
     </view>
   </wd-config-provider>
 </template>
@@ -194,7 +191,6 @@ import type { ChatMessage, GroupMember } from '@/types/api'
 import MessageBubble from '@/components/chat/MessageBubble.vue'
 import MessageInput from '@/components/chat/MessageInput.vue'
 import GroupCallBanner from '@/components/call/GroupCallBanner.vue'
-import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import { useGroupWebRTC } from '@/composables/useGroupWebRTC'
 
 const authStore = useAuthStore()
@@ -668,6 +664,7 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
+  padding-top: 130rpx;
 
   &.theme-dark {
     --bg-base: #0c0a09;
@@ -689,7 +686,16 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
 /* 导航栏 */
 .glass-navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  padding-top: calc(var(--status-bar-height) + var(--mp-safe-top, 0px));
+
+  /* #ifdef MP-WEIXIN */
+  /* 微信小程序：状态栏 + 胶囊按钮区域 */
+  padding-top: calc(var(--status-bar-height, 44px) + 88rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  /* H5/App：仅状态栏 */
+  padding-top: var(--status-bar-height, 0);
+  /* #endif */
   .navbar-bg {
     position: absolute; inset: 0; background: var(--nav-bg);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -723,10 +729,17 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
 /* 群通话 Banner 位置 */
 .call-banner-wrapper {
   position: fixed;
-  top: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px));
   left: 0;
   right: 0;
   z-index: 99;
+
+  /* #ifdef MP-WEIXIN */
+  top: calc(88rpx + var(--status-bar-height, 44px) + 88rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  top: calc(88rpx + var(--status-bar-height, 0));
+  /* #endif */
 }
 
 /* 消息列表 */
@@ -737,15 +750,29 @@ function cancelRecording() { isCancelRecording.value = true; stopRecording() }
 
   &.has-banner {
     .message-feed {
-      padding-top: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px) + 160rpx);
+      /* #ifdef MP-WEIXIN */
+      padding-top: calc(88rpx + var(--status-bar-height, 44px) + 88rpx + 160rpx);
+      /* #endif */
+      /* #ifndef MP-WEIXIN */
+      padding-top: calc(88rpx + var(--status-bar-height, 0) + 160rpx);
+      /* #endif */
     }
   }
 }
 .message-feed {
   padding: 32rpx;
-  padding-top: calc(88rpx + var(--status-bar-height) + var(--mp-safe-top, 0px) + 32rpx);
   /* 增加底部 Padding 以防输入框遮挡 */
   padding-bottom: 240rpx;
+
+  /* #ifdef MP-WEIXIN */
+  /* 微信小程序：导航栏高度 + 状态栏 + 胶囊区域 */
+  padding-top: calc(88rpx + var(--status-bar-height, 44px) + 88rpx + 32rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  /* H5/App：导航栏高度 + 状态栏 */
+  padding-top: calc(88rpx + var(--status-bar-height, 0) + 32rpx);
+  /* #endif */
 }
 .feed-status { text-align: center; padding: 24rpx; margin-bottom: 24rpx; .link-text { color: var(--color-primary); font-size: 24rpx; } }
 

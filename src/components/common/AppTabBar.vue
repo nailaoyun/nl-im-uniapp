@@ -11,7 +11,7 @@
         <view class="tabbar-icon">
           <!-- 消息图标 (message-circle) -->
           <template v-if="tab.name === 'messages'">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
@@ -30,7 +30,7 @@
 
           <!-- 联系人图标 (users) -->
           <template v-else-if="tab.name === 'contacts'">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4" fill="currentColor"/>
@@ -51,7 +51,7 @@
 
           <!-- 发现图标 (compass) -->
           <template v-else-if="tab.name === 'moments'">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="10" fill="currentColor"/>
               <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="white"/>
@@ -68,7 +68,7 @@
 
           <!-- 我的图标 (user) -->
           <template v-else-if="tab.name === 'profile'">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg v-if="current === tab.name" class="icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>

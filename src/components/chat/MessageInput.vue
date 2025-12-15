@@ -29,7 +29,7 @@
             @touchend="stopRecording"
             @touchcancel="cancelRecording"
         >
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -64,7 +64,7 @@
         <view class="right-actions">
           <!-- 表情按钮 -->
           <view class="icon-btn" @click="toggleEmoji">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
@@ -79,7 +79,7 @@
 
           <!-- 发送按钮 (有文字时显示) -->
           <view v-if="inputValue.trim()" class="send-btn" @click="onSend">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/>
               <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -92,7 +92,7 @@
 
           <!-- 更多按钮 (无文字时显示) -->
           <view v-else class="icon-btn" @click="showMore = true">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
@@ -112,7 +112,7 @@
       <view class="tools-grid">
         <view class="tool-item" @click="emitAction('send-image')">
           <view class="tool-icon album">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <!-- #endif -->
             <!-- #ifdef MP-WEIXIN -->
@@ -123,7 +123,7 @@
         </view>
         <view class="tool-item" @click="emitAction('send-camera')">
           <view class="tool-icon camera">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <!-- #endif -->
             <!-- #ifdef MP-WEIXIN -->
@@ -134,7 +134,7 @@
         </view>
         <view class="tool-item" @click="emitAction('send-file')">
           <view class="tool-icon file">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
             <!-- #endif -->
             <!-- #ifdef MP-WEIXIN -->
@@ -150,7 +150,7 @@
     <view v-if="isRecording" class="recording-overlay">
       <view class="recording-content" :class="{ 'cancel-mode': isCancelRecording }">
         <view class="recording-icon">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg v-if="!isCancelRecording" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/><line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2"/></svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           <!-- #endif -->

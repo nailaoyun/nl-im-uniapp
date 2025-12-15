@@ -185,17 +185,30 @@
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
   // 微信小程序额外安全距离（胶囊按钮区域）
+  // 默认值：胶囊按钮高度约32px，上下间距约8px，总计约48px
   --mp-safe-top: 0px;
+  // 微信小程序导航栏内容高度（不含状态栏）
+  --mp-navbar-height: 44px;
 }
 
 /* #ifdef MP-WEIXIN */
 page {
-  --mp-safe-top: env(safe-area-inset-top, 20px);
+  // 微信小程序：状态栏 + 导航栏区域
+  // 胶囊按钮通常距状态栏底部约 4-8px，高度约 32px
+  // 导航栏高度 = (胶囊top - 状态栏高度) * 2 + 胶囊高度 ≈ 8 * 2 + 32 = 48px
+  --mp-safe-top: 8px; // 胶囊按钮上方间距
+  --mp-navbar-height: 48px; // 导航栏内容区高度
 }
 /* #endif */
 
 .safe-area-top {
-  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
+  /* #ifdef MP-WEIXIN */
+  padding-top: calc(var(--status-bar-height, 44px) + 95rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  padding-top: var(--status-bar-height, 0);
+  /* #endif */
 }
 
 .safe-area-bottom {
@@ -205,6 +218,11 @@ page {
 // 安全区域占位
 .safe-area-spacer {
   height: calc(160rpx + env(safe-area-inset-bottom));
+}
+
+// 微信小程序导航栏占位（含状态栏 + 导航栏）
+.mp-navbar-spacer {
+  height: calc(var(--status-bar-height, 0) + var(--mp-navbar-height, 44px));
 }
 
 // 响应式断点
@@ -449,14 +467,28 @@ page {
   background: var(--nav-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   border-bottom: 1rpx solid var(--border-subtle);
+
+  /* #ifdef MP-WEIXIN */
+  // 微信小程序：状态栏 + 胶囊按钮区域
+  padding-top: calc(var(--status-bar-height, 44px) + 20rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  // H5/App：仅状态栏高度
+  padding-top: var(--status-bar-height, 0);
+  /* #endif */
 
   .navbar-content {
     display: flex;
     align-items: center;
-    height: 88rpx;
+    height: var(--mp-navbar-height, 88rpx);
     padding: 0 32rpx;
+
+    /* #ifdef MP-WEIXIN */
+    // 微信小程序：避开右侧胶囊按钮，预留约 100px 空间
+    padding-right: 200rpx;
+    /* #endif */
   }
 
   .navbar-title {

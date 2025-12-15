@@ -19,7 +19,7 @@
         <!-- 导航栏 -->
         <view class="nav-bar">
           <view class="nav-btn" @click="goBack">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -30,7 +30,7 @@
           </view>
           <text class="nav-title">添加好友</text>
           <view class="nav-btn">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
               <circle cx="12" cy="12" r="1"></circle>
               <circle cx="19" cy="12" r="1"></circle>
@@ -53,7 +53,7 @@
         <view class="search-wrapper">
           <view class="search-box" @click="focusSearch">
             <view class="search-icon-wrapper">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -74,7 +74,7 @@
                 @confirm="doSearch"
             />
             <view v-if="searchKeyword" class="clear-btn" @click.stop="clearSearch">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -96,7 +96,7 @@
           <!-- 扫一扫卡片 -->
           <view class="scan-card animate-fade-in-up" @click="handleScan">
             <view class="scan-icon-box">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
                 <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
@@ -113,7 +113,7 @@
               <text class="scan-desc">扫描二维码名片</text>
             </view>
             <view class="scan-arrow">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-white">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
@@ -168,7 +168,7 @@
         <template v-else-if="viewState === 'empty'">
           <view class="state-card animate-fade-in-up">
             <view class="empty-icon-box">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -504,8 +504,17 @@ function goUserDetail(user: User) {
 .header-content {
   position: relative;
   z-index: 10;
-  padding-top: calc(var(--status-bar-height) + var(--mp-safe-top, 0px));
   padding-bottom: 40rpx;
+
+  /* #ifdef MP-WEIXIN */
+  /* 微信小程序：状态栏 + 胶囊按钮区域 */
+  padding-top: calc(var(--status-bar-height, 44px) + 88rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  /* H5/App：仅状态栏 */
+  padding-top: var(--status-bar-height, 0);
+  /* #endif */
 }
 
 .nav-bar {

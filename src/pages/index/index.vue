@@ -23,7 +23,7 @@
           <!-- 右侧: 加号按钮 -->
           <view class="nav-right">
             <view class="icon-btn-circle" @click="showPlusMenu = true">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg class="plus-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -49,7 +49,7 @@
         <!-- 2. 搜索栏 (扁平化设计) -->
         <view class="search-wrapper">
           <view class="search-bar" @click="goSearch">
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -72,7 +72,7 @@
         </view>
 
         <view v-else-if="conversations.length === 0" class="empty-state">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             <line x1="9" y1="10" x2="15" y2="10"/>
@@ -124,7 +124,7 @@
                 </view>
                 <view class="row-bottom">
                   <text class="msg-preview text-ellipsis">{{ item.last_message || '暂无消息' }}</text>
-                  <!-- #ifdef H5 -->
+                  <!-- #ifdef H5 || APP-PLUS -->
                   <svg v-if="item.is_muted" class="mute-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 5L6 9H2v6h4l5 4V5z"/>
                     <line x1="23" y1="9" x2="17" y2="15"/>
@@ -141,7 +141,7 @@
             <template #right>
               <view class="swipe-actions">
                 <view class="action-btn top" @click.stop="toggleTop(item)">
-                  <!-- #ifdef H5 -->
+                  <!-- #ifdef H5 || APP-PLUS -->
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
                   </svg>
@@ -151,7 +151,7 @@
                   <!-- #endif -->
                 </view>
                 <view class="action-btn delete" @click.stop="deleteConversation(item)">
-                  <!-- #ifdef H5 -->
+                  <!-- #ifdef H5 || APP-PLUS -->
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -193,9 +193,6 @@
       <wd-toast />
       <wd-message-box :z-index="11000" />
       <app-tab-bar current="messages" />
-      
-      <!-- 全局通话组件 -->
-      <global-call-provider />
     </view>
   </wd-config-provider>
 </template>
@@ -213,7 +210,6 @@ import AppTabBar from '@/components/common/AppTabBar.vue'
 import AppDrawer from '@/components/common/AppDrawer.vue'
 import PlusMenu from '@/components/common/PlusMenu.vue'
 import AppAvatar from '@/components/common/AppAvatar.vue'
-import GlobalCallProvider from '@/components/call/GlobalCallProvider.vue'
 import type { Conversation } from '@/types/conversation'
 
 const authStore = useAuthStore()
@@ -406,9 +402,18 @@ async function logout() {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   // 确保没有任何边框
   border: none;
+
+  /* #ifdef MP-WEIXIN */
+  // 微信小程序：状态栏 + 胶囊按钮区域 (约88rpx)
+  padding-top: calc(var(--status-bar-height, 44px) + 88rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  // H5/App：仅状态栏
+  padding-top: var(--status-bar-height, 0);
+  /* #endif */
 
   .navbar-bg {
     position: absolute;

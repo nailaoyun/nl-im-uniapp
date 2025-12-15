@@ -247,8 +247,6 @@ function handleClose() {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(88rpx + var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
-  padding-top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -256,6 +254,16 @@ function handleClose() {
   padding-right: 24rpx;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
   z-index: 10;
+
+  /* #ifdef MP-WEIXIN */
+  height: calc(88rpx + var(--status-bar-height, 44px) + 88rpx);
+  padding-top: calc(var(--status-bar-height, 44px) + 88rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  height: calc(88rpx + var(--status-bar-height, 0));
+  padding-top: var(--status-bar-height, 0);
+  /* #endif */
 }
 
 .close-btn,

@@ -3,7 +3,7 @@
     <!-- 搜索栏 -->
     <view class="search-header">
       <view class="search-box">
-        <!-- #ifdef H5 -->
+        <!-- #ifdef H5 || APP-PLUS -->
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -21,7 +21,7 @@
             @confirm="doSearch"
         />
         <view v-if="keyword" class="clear-btn" @click="clearKeyword">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
           </svg>
@@ -39,7 +39,7 @@
       <view class="section-header">
         <text class="title">搜索历史</text>
         <view class="clear" @click="clearHistory">
-          <!-- #ifdef H5 -->
+          <!-- #ifdef H5 || APP-PLUS -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -88,7 +88,7 @@
 
       <!-- 空结果 -->
       <view v-else-if="getCurrentResults.length === 0" class="empty-state">
-        <!-- #ifdef H5 -->
+        <!-- #ifdef H5 || APP-PLUS -->
         <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -120,7 +120,7 @@
               <text class="name" v-html="highlightKeyword(item.remark_name || item.user?.name || '')"></text>
               <text class="desc">{{ item.user?.desc || '暂无签名' }}</text>
             </view>
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
@@ -153,7 +153,7 @@
               <text class="desc">{{ item.member_count }}人</text>
             </view>
             <view class="group-badge">
-              <!-- #ifdef H5 -->
+              <!-- #ifdef H5 || APP-PLUS -->
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
@@ -165,7 +165,7 @@
               <wd-icon name="user" size="28rpx" />
               <!-- #endif -->
             </view>
-            <!-- #ifdef H5 -->
+            <!-- #ifdef H5 || APP-PLUS -->
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
@@ -436,11 +436,18 @@ function formatTime(time: string): string {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: calc(var(--status-bar-height) + var(--mp-safe-top, 0px) + 16rpx) 24rpx 16rpx;
   background: var(--bg-page);
   position: sticky;
   top: 0;
   z-index: 100;
+
+  /* #ifdef MP-WEIXIN */
+  padding: calc(var(--status-bar-height, 44px) + 88rpx + 16rpx) 24rpx 16rpx;
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  padding: calc(var(--status-bar-height, 0) + 16rpx) 24rpx 16rpx;
+  /* #endif */
 }
 
 .search-box {

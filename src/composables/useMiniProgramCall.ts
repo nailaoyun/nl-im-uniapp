@@ -220,10 +220,33 @@ export function useMiniProgramCall() {
   }
 
   /**
+   * 验证 RTMP URL 格式
+   */
+  function validateRtmpUrl(url: string): { valid: boolean; error?: string } {
+    if (!url) {
+      return { valid: false, error: '推流地址为空' }
+    }
+    // 检查是否为 RTMP 协议
+    if (!url.startsWith('rtmp://')) {
+      return { valid: false, error: `推流地址格式错误，期望 rtmp://` }
+    }
+    return { valid: true }
+  }
+
+  /**
    * 加入通话房间
    */
   async function joinCallRoom() {
-    if (!call.roomId || !userId.value) return
+    if (!call.roomId || !userId.value) {
+      console.error('[MiniProgramCall] 缺少 roomId 或 userId')
+      return
+    }
+
+    console.log('[MiniProgramCall] 加入房间:', {
+      roomId: call.roomId,
+      userId: userId.value,
+      platform: 'miniprogram'
+    })
 
     try {
       const response = await callApi.joinCallRoom({
@@ -232,18 +255,37 @@ export function useMiniProgramCall() {
         platform: 'miniprogram'
       })
 
-      // 设置推流地址
+      console.log('[MiniProgramCall] 加入房间响应:', JSON.stringify(response, null, 2))
+
+      // 验证并设置推流地址
       if (response.push_url) {
-        pushUrl.value = response.push_url
+        const validation = validateRtmpUrl(response.push_url)
+        if (validation.valid) {
+          pushUrl.value = response.push_url
+          console.log('[MiniProgramCall] ✅ 推流地址:', response.push_url)
+        } else {
+          console.error('[MiniProgramCall] ❌ 推流地址验证失败:', validation.error)
+          uni.showToast({ title: validation.error || '推流地址无效', icon: 'none' })
+          pushUrl.value = response.push_url
+        }
+      } else {
+        console.error('[MiniProgramCall] ❌ 服务器未返回推流地址')
+        uni.showToast({ title: '服务器未返回推流地址', icon: 'none' })
       }
 
       // 设置拉流地址
-      if (response.pull_urls) {
+      if (response.pull_urls && response.pull_urls.length > 0) {
         remoteStreams.value = response.pull_urls.map(p => ({
           userId: p.user_id,
           pullUrl: p.url,
           flvUrl: p.flv_url,
         }))
+        console.log('[MiniProgramCall] 拉流地址:', remoteStreams.value)
+      }
+
+      // 参与者信息
+      if (response.participants) {
+        console.log('[MiniProgramCall] 房间参与者:', response.participants)
       }
 
       // 关键修复：使用 nextTick 确保 DOM 更新，live-pusher 的 url 属性生效后再启动
@@ -258,8 +300,9 @@ export function useMiniProgramCall() {
       call.status = 'connected'
       call.statusText = '通话中'
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('[MiniProgramCall] 加入房间失败:', error)
+      uni.showToast({ title: error?.message || '加入房间失败', icon: 'none' })
       throw error
     }
   }
@@ -349,31 +392,55 @@ export function useMiniProgramCall() {
     // #ifdef MP-WEIXIN
     // 检测是否在开发者工具中运行
     const systemInfo = uni.getSystemInfoSync()
-    if (systemInfo.platform === 'devtools') {
-      console.warn('[MiniProgramCall] 开发者工具不支持 live-pusher，请在真机上测试')
-      // 仅提示一次，避免阻塞流程
+    const isDevtools = systemInfo.platform === 'devtools'
+    if (isDevtools) {
+      console.warn('[MiniProgramCall] ⚠️ 开发者工具不支持 live-pusher，请在真机上测试')
+      uni.showToast({ title: '开发者工具不支持推流，请真机测试', icon: 'none', duration: 3000 })
     }
 
     if (!pusherContext) {
-      console.error('[MiniProgramCall] Pusher Context 未初始化，无法推流')
+      console.error('[MiniProgramCall] ❌ Pusher Context 未初始化')
+      console.error('[MiniProgramCall] 请确保：')
+      console.error('  1. 组件中有 <live-pusher id="local-pusher" ...>')
+      console.error('  2. 调用了 initPusherContext(getCurrentInstance())')
+      uni.showToast({ title: 'live-pusher 组件未初始化', icon: 'none' })
       return
     }
 
     // 确保 URL 存在
     if (!pushUrl.value) {
-      console.error('[MiniProgramCall] 推流地址为空')
+      console.error('[MiniProgramCall] ❌ 推流地址为空，无法推流')
       return
     }
 
+    console.log('[MiniProgramCall] 开始推流，URL:', pushUrl.value)
+
     pusherContext.start({
       success: () => {
-        console.log('[MiniProgramCall] 推流启动成功')
+        console.log('[MiniProgramCall] ✅ 推流启动成功')
       },
       fail: (err: any) => {
-        console.error('[MiniProgramCall] 推流启动失败:', err)
-        // 提示用户可能的原因
-        if (err.errMsg?.includes('operateLivePusher:fail')) {
-          uni.showToast({ title: '推流失败，请检查网络或权限', icon: 'none' })
+        console.error('[MiniProgramCall] ❌ 推流启动失败:', err)
+        console.error('[MiniProgramCall] 错误信息:', JSON.stringify(err))
+
+        // 详细的错误提示
+        let errorMsg = '推流失败'
+        if (err.errMsg) {
+          if (err.errMsg.includes('internal error')) {
+            errorMsg = '推流内部错误，请检查RTMP服务器'
+          } else if (err.errMsg.includes('operateLivePusher:fail')) {
+            errorMsg = '推流操作失败'
+          } else if (err.errMsg.includes('permission')) {
+            errorMsg = '缺少摄像头/麦克风权限'
+          }
+        }
+
+        uni.showToast({ title: errorMsg, icon: 'none', duration: 3000 })
+
+        // 在开发者工具中，提示用户
+        if (isDevtools) {
+          console.warn('[MiniProgramCall] 💡 提示：开发者工具不支持 live-pusher')
+          console.warn('[MiniProgramCall] 请使用手机扫码在真机预览中测试')
         }
       }
     })
@@ -517,29 +584,87 @@ export function useMiniProgramCall() {
 
   /**
    * 处理推流状态变化
+   * 状态码参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html
    */
   function onPusherStateChange(e: any) {
     const code = e.detail?.code
-    console.log('[MiniProgramCall] 推流状态:', code)
+    const message = e.detail?.message || ''
+    console.log('[MiniProgramCall] 推流状态:', code, message)
 
     switch (code) {
-      case 1002: // 已成功连接到服务器
+      // 成功状态
+      case 1001: // 已连接到云端推流服务器
+        console.log('[MiniProgramCall] ✅ 已连接到推流服务器')
+        break
+      case 1002: // 已与云端推流服务器握手完毕
+        console.log('[MiniProgramCall] ✅ 握手完成，开始推流')
         call.statusText = '通话中'
         break
-      case 1003: // 已开始推流
+      case 1003: // 已成功打开摄像头
+        console.log('[MiniProgramCall] ✅ 摄像头已打开')
         break
-      case 1004: // 推流断开,正在重连
-        call.statusText = '重新连接中...'
+      case 1004: // 自动调整分辨率
         break
-      case -1301: // 打开摄像头失败
-        uni.showToast({ title: '摄像头打开失败', icon: 'none' })
+      case 1005: // 成功打开麦克风
+        console.log('[MiniProgramCall] ✅ 麦克风已打开')
         break
-      case -1302: // 打开麦克风失败
-        uni.showToast({ title: '麦克风打开失败', icon: 'none' })
+
+      // 警告状态
+      case 1101: // 网络状况不佳：上行带宽不足
+        call.statusText = '网络不佳...'
         break
-      case -1307: // 推流连接断开
+      case 1102: // 视频编码器启动失败
+        console.warn('[MiniProgramCall] ⚠️ 视频编码器启动失败')
+        break
+      case 1103: // 摄像头被占用
+        uni.showToast({ title: '摄像头被占用', icon: 'none' })
+        break
+      case 3001: // RTMP 服务器建立连接失败
+        console.error('[MiniProgramCall] ❌ RTMP 服务器连接失败')
+        call.statusText = '服务器连接失败'
+        uni.showToast({ title: 'RTMP服务器连接失败', icon: 'none' })
+        break
+      case 3002: // RTMP 服务器握手失败
+        console.error('[MiniProgramCall] ❌ RTMP 服务器握手失败')
+        uni.showToast({ title: 'RTMP服务器握手失败', icon: 'none' })
+        break
+      case 3003: // RTMP 服务器连接已断开
+        console.warn('[MiniProgramCall] ⚠️ RTMP 连接断开')
         call.statusText = '连接已断开'
         break
+      case 3004: // RTMP 推流地址格式不正确
+        console.error('[MiniProgramCall] ❌ RTMP 推流地址格式错误:', pushUrl.value)
+        uni.showToast({ title: '推流地址格式错误', icon: 'none' })
+        break
+      case 3005: // RTMP 服务器连接异常断开
+        console.error('[MiniProgramCall] ❌ RTMP 连接异常断开')
+        call.statusText = '连接异常断开'
+        break
+
+      // 错误状态
+      case -1301: // 打开摄像头失败
+        console.error('[MiniProgramCall] ❌ 摄像头打开失败')
+        uni.showToast({ title: '摄像头打开失败，请检查权限', icon: 'none' })
+        break
+      case -1302: // 打开麦克风失败
+        console.error('[MiniProgramCall] ❌ 麦克风打开失败')
+        uni.showToast({ title: '麦克风打开失败，请检查权限', icon: 'none' })
+        break
+      case -1303: // 视频编码失败
+        console.error('[MiniProgramCall] ❌ 视频编码失败')
+        break
+      case -1304: // 音频编码失败
+        console.error('[MiniProgramCall] ❌ 音频编码失败')
+        break
+      case -1307: // 推流连接断开
+        console.error('[MiniProgramCall] ❌ 推流连接断开')
+        call.statusText = '连接已断开'
+        break
+
+      default:
+        if (code < 0) {
+          console.error('[MiniProgramCall] ❌ 未知错误:', code, message)
+        }
     }
   }
 

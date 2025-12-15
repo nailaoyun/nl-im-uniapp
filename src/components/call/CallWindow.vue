@@ -1,5 +1,5 @@
 <template>
-  <!-- #ifdef H5 -->
+  <!-- #ifdef H5 || APP-PLUS -->
   <view v-if="call.active" class="call-window" :class="{ minimized: call.minimized }">
     <!-- 最小化悬浮窗 -->
     <view v-if="call.minimized" class="minimized-bar" @click="$emit('toggleMinimize')">
@@ -79,13 +79,13 @@
         <template v-if="call.status === 'incoming'">
           <view class="action-item" @click="$emit('reject')">
             <view class="control-btn decline">
-              <wd-icon name="close-bold" size="56rpx" color="#fff" />
+              <wd-icon name="close" size="56rpx" color="#fff" />
             </view>
             <text class="action-label">拒绝</text>
           </view>
           <view class="action-item" @click="$emit('accept')">
             <view class="control-btn accept">
-              <wd-icon name="phone-filled" size="64rpx" color="#fff" />
+              <wd-icon name="phone" size="64rpx" color="#fff" />
             </view>
             <text class="action-label">接听</text>
           </view>
@@ -97,7 +97,7 @@
           <view class="action-item" @click="$emit('toggleMute')">
             <view class="control-btn" :class="{ active: call.muted }">
               <wd-icon
-                  :name="call.muted ? 'mic-off' : 'mic-on'"
+                  :name="call.muted ? 'mute' : 'sound'"
                   size="56rpx"
                   :color="call.muted ? '#000' : '#fff'"
               />
@@ -109,7 +109,7 @@
           <view v-if="call.type === 'video'" class="action-item" @click="$emit('toggleCamera')">
             <view class="control-btn" :class="{ active: call.camOff }">
               <wd-icon
-                  :name="call.camOff ? 'video-off' : 'video'"
+                  name="video"
                   size="56rpx"
                   :color="call.camOff ? '#000' : '#fff'"
               />
@@ -120,7 +120,7 @@
           <!-- 挂断 -->
           <view class="action-item" @click="$emit('end')">
             <view class="control-btn hangup">
-              <wd-icon name="phone-off-filled" size="64rpx" color="#fff" />
+              <wd-icon name="phone" size="64rpx" color="#fff" custom-style="transform: rotate(135deg);" />
             </view>
             <text class="action-label">挂断</text>
           </view>
@@ -130,7 +130,7 @@
         <template v-else-if="call.status === 'outgoing'">
           <view class="action-item" @click="$emit('end')">
             <view class="control-btn hangup">
-              <wd-icon name="phone-off-filled" size="64rpx" color="#fff" />
+              <wd-icon name="phone" size="64rpx" color="#fff" custom-style="transform: rotate(135deg);" />
             </view>
             <text class="action-label">挂断</text>
           </view>
@@ -140,11 +140,11 @@
   </view>
   <!-- #endif -->
 
-  <!-- #ifndef H5 -->
+  <!-- #ifndef H5 || APP-PLUS -->
   <view v-if="call.active" class="call-unsupported">
     <view class="unsupported-content">
       <view class="icon-box">
-        <wd-icon name="video-off" size="80rpx" color="#f97316" />
+        <wd-icon name="video" size="80rpx" color="#f97316" />
       </view>
       <text class="unsupported-title">暂不支持音视频通话</text>
       <text class="unsupported-desc">当前平台暂不支持音视频通话功能</text>
@@ -207,7 +207,7 @@ function copyWebUrl() {
 }
 
 watch(() => props.localStream, (stream) => {
-  // #ifdef H5
+  // #ifdef H5 || APP-PLUS
   nextTick(() => {
     if (localVideoRef.value && stream) {
       localVideoRef.value.srcObject = stream
@@ -217,7 +217,7 @@ watch(() => props.localStream, (stream) => {
 }, { immediate: true })
 
 watch(() => props.remoteStream, (stream) => {
-  // #ifdef H5
+  // #ifdef H5 || APP-PLUS
   nextTick(() => {
     if (remoteVideoRef.value && stream) {
       remoteVideoRef.value.srcObject = stream
@@ -239,7 +239,6 @@ watch(() => props.remoteStream, (stream) => {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   &.minimized {
-    top: calc(var(--status-bar-height, 0) + var(--mp-safe-top, 0px) + 240rpx);
     right: 32rpx;
     left: auto;
     bottom: auto;
@@ -249,6 +248,14 @@ watch(() => props.remoteStream, (stream) => {
     border: 2rpx solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.4);
     overflow: hidden;
+
+    /* #ifdef MP-WEIXIN */
+    top: calc(var(--status-bar-height, 44px) + 88rpx + 240rpx);
+    /* #endif */
+
+    /* #ifndef MP-WEIXIN */
+    top: calc(var(--status-bar-height, 0) + 240rpx);
+    /* #endif */
   }
 }
 
@@ -346,7 +353,6 @@ watch(() => props.remoteStream, (stream) => {
 
 .minimize-btn {
   position: absolute;
-  top: calc(28rpx + var(--status-bar-height, 0) + var(--mp-safe-top, 0px));
   right: 40rpx;
   z-index: 20;
   width: 72rpx;
@@ -355,6 +361,14 @@ watch(() => props.remoteStream, (stream) => {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(8px);
   display: flex;
+
+  /* #ifdef MP-WEIXIN */
+  top: calc(28rpx + var(--status-bar-height, 44px) + 88rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  top: calc(28rpx + var(--status-bar-height, 0));
+  /* #endif */
   align-items: center;
   justify-content: center;
   transition: all 0.15s;

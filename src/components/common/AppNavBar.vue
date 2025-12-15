@@ -7,7 +7,7 @@
         :left-arrow="leftArrow"
         :fixed="fixed"
         :placeholder="placeholder"
-        :safe-area-inset-top="safeAreaInsetTop"
+        :safe-area-inset-top="true"
         :bordered="bordered"
         custom-class="app-nav-bar"
         @click-left="handleClickLeft"
@@ -81,6 +81,7 @@ function handleClickRight() {
 
 <style lang="scss" scoped>
 :deep(.app-nav-bar) {
+  position: relative;
   // 适配暗黑模式的背景色和文字颜色
   // 假设 src/uni.scss 或 variables.scss 中定义了这些 CSS 变量
   background-color: rgba(255, 255, 255, 0.85) !important;
@@ -101,6 +102,18 @@ function handleClickRight() {
   }
 }
 
+/* #ifdef MP-WEIXIN */
+:deep(.app-nav-bar) {
+  top: 130rpx !important;
+}
+/* #endif */
+
+/* #ifndef MP-WEIXIN */
+:deep(.app-nav-bar) {
+  top: 0 !important;
+}
+/* #endif */
+
 // 暗黑模式下的特殊覆盖（如果 CSS 变量不够用）
 .dark {
   :deep(.app-nav-bar) {
@@ -111,7 +124,7 @@ function handleClickRight() {
     .wd-navbar__title {
       color: #f5f5f4 !important;
     }
-    
+
     .wd-icon {
       color: #e7e5e4 !important;
     }

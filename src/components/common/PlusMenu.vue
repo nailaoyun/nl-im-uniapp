@@ -113,7 +113,6 @@ function handleClick(key: string) {
 // ==========================================
 .plus-menu {
   position: fixed;
-  top: calc(var(--status-bar-height, 20px) + var(--mp-safe-top, 0px) + 180rpx);
   right: 32rpx;
   width: 288rpx;
   background: var(--menu-bg);
@@ -122,6 +121,14 @@ function handleClick(key: string) {
   z-index: 999;
   box-shadow: var(--menu-shadow);
   border: 2rpx solid var(--menu-border);
+
+  /* #ifdef MP-WEIXIN */
+  top: calc(var(--status-bar-height, 44px) + 88rpx + 180rpx);
+  /* #endif */
+
+  /* #ifndef MP-WEIXIN */
+  top: calc(var(--status-bar-height, 20px) + 180rpx);
+  /* #endif */
   transform-origin: top right;
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   overflow: hidden;

@@ -3,7 +3,7 @@
  */
 
 // 图片资源基础域名
-const IMAGE_BASE_URL = 'http://127.0.0.1:12080'
+const IMAGE_BASE_URL = 'https://g-ws.nailaoyun.cn'
 
 /**
  * 解析图片 URL，为相对路径添加域名前缀
