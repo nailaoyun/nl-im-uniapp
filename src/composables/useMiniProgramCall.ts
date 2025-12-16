@@ -65,6 +65,8 @@ let pusherContext: UniApp.LivePusherContext | null = null
 let isPushingSucceeded = false  // autopush 是否已成功（收到 1009）
 let isStartingPush = false      // 是否正在启动推流（防止并发调用）
 let hasJoinedRoom = false       // 是否已加入房间（防止重复调用 joinCallRoom）
+let hasSentParticipantJoined = false  // 是否已发送 participant_joined 信令（防止重复发送）
+let pendingJoinResponse: any = null   // 保存加入房间的响应，用于推流成功后发送信令
 
 export function useMiniProgramCall() {
   const authStore = useAuthStore()
@@ -367,13 +369,24 @@ export function useMiniProgramCall() {
         console.log('[MiniProgramCall] 房间参与者:', response.participants)
       }
 
-      // 关键修复：通知房间内其他参与者"我已加入"
-      // 发送 participant_joined 信令，让 PC 端知道可以拉取我的流
-      sendParticipantJoinedSignal(response)
+      // 保存响应，用于推流成功后发送 participant_joined 信令
+      // 修复：不再立即发送，而是等推流成功（收到 1009 状态码）后再发送
+      // 这样 Web 端拉流时，小程序的视频流已经准备好了
+      pendingJoinResponse = response
+      hasSentParticipantJoined = false
 
       // 重置推流状态标记
       isPushingSucceeded = false
       isStartingPush = false
+      
+      // 兼容性：如果 3 秒后推流还未成功但通话仍活跃，也发送信令（避免对方一直等待）
+      setTimeout(() => {
+        if (!hasSentParticipantJoined && call.active && pendingJoinResponse) {
+          console.log('[MiniProgramCall] ⏰ 超时兜底：发送 participant_joined 信令')
+          sendParticipantJoinedSignal(pendingJoinResponse)
+          hasSentParticipantJoined = true
+        }
+      }, 3000)
 
       // autopush=true 模式下，live-pusher 会在 URL 设置后自动推流
       // 时序说明：
@@ -501,6 +514,8 @@ export function useMiniProgramCall() {
     isPushingSucceeded = false
     isStartingPush = false
     hasJoinedRoom = false
+    hasSentParticipantJoined = false
+    pendingJoinResponse = null
   }
 
   /**
@@ -982,6 +997,14 @@ export function useMiniProgramCall() {
         isPushingSucceeded = true  // 关键：标记推流成功
         isStartingPush = false
         call.statusText = '通话中'
+        
+        // 关键修复：推流成功后才发送 participant_joined 信令
+        // 这样 Web 端拉流时，小程序的视频流已经准备好了
+        if (!hasSentParticipantJoined && pendingJoinResponse) {
+          console.log('[MiniProgramCall] 📤 推流成功，现在发送 participant_joined 信令')
+          sendParticipantJoinedSignal(pendingJoinResponse)
+          hasSentParticipantJoined = true
+        }
         break
 
       // 警告/网络状态
