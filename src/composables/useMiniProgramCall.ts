@@ -64,6 +64,7 @@ let pusherContext: UniApp.LivePusherContext | null = null
 // 推流状态标记
 let isPushingSucceeded = false  // autopush 是否已成功（收到 1009）
 let isStartingPush = false      // 是否正在启动推流（防止并发调用）
+let hasJoinedRoom = false       // 是否已加入房间（防止重复调用 joinCallRoom）
 
 export function useMiniProgramCall() {
   const authStore = useAuthStore()
@@ -307,6 +308,13 @@ export function useMiniProgramCall() {
       return
     }
 
+    // 防止重复加入房间（多次调用会导致流 ID 变化）
+    if (hasJoinedRoom) {
+      console.log('[MiniProgramCall] ⏩ 已加入房间，跳过重复调用')
+      return
+    }
+    hasJoinedRoom = true
+
     console.log('[MiniProgramCall] 加入房间:', {
       roomId: call.roomId,
       userId: userId.value,
@@ -492,6 +500,7 @@ export function useMiniProgramCall() {
     // 重置推流状态标记
     isPushingSucceeded = false
     isStartingPush = false
+    hasJoinedRoom = false
   }
 
   /**
