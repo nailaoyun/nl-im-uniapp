@@ -308,7 +308,7 @@ export function useMiniProgramCall() {
         } else {
           console.error('[MiniProgramCall] ❌ 推流地址验证失败:', validation.error)
           uni.showToast({ title: validation.error || '推流地址无效', icon: 'none' })
-          pushUrl.value = response.push_url
+        pushUrl.value = response.push_url
         }
       } else {
         console.error('[MiniProgramCall] ❌ 服务器未返回推流地址')
@@ -364,7 +364,7 @@ export function useMiniProgramCall() {
           
           if (call.active && pushUrl.value && pusherContext) {
             console.log('[MiniProgramCall] 🔄 autopush 未成功，尝试手动启动推流')
-            startPushing()
+          startPushing()
           } else if (call.active && pushUrl.value && !pusherContext) {
             console.warn('[MiniProgramCall] ⚠️ pusherContext 未初始化，等待后重试')
             setTimeout(() => {

@@ -76,8 +76,9 @@ onMounted(() => {
 
   // #ifdef MP-WEIXIN
   // 初始化小程序通话信令监听器
+  // 注意：initPusherContext 不在这里调用，因为此时 live-pusher 组件还未渲染
+  // live-pusher 的 Context 初始化由 MiniProgramCallWindow.vue 在 pushUrl 设置后处理
   mpCall.initListener()
-  mpCall.initPusherContext()
   console.log('✅ [GlobalCallProvider] 微信小程序通话监听器已初始化')
   // #endif
 

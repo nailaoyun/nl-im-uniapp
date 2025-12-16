@@ -28,7 +28,7 @@ const { initListener: initWebRTCListener } = useWebRTC()
 import MiniProgramCallWindow from './MiniProgramCallWindow.vue'
 import { useMiniProgramCall } from '@/composables/useMiniProgramCall'
 
-const { initListener: initMPListener, initPusherContext } = useMiniProgramCall()
+const { initListener: initMPListener } = useMiniProgramCall()
 // #endif
 
 onMounted(() => {
@@ -37,8 +37,9 @@ onMounted(() => {
   // #endif
   
   // #ifdef MP-WEIXIN
+  // 注意：initPusherContext 不在这里调用，因为此时 live-pusher 组件还未渲染
+  // live-pusher 的 Context 初始化由 MiniProgramCallWindow.vue 在 pushUrl 设置后处理
   initMPListener()
-  initPusherContext()
   // #endif
 })
 </script>
