@@ -107,6 +107,14 @@ export function useMiniProgramCall() {
       const signal = message.call_status as string
       const extra = message.extra ? (typeof message.extra === 'string' ? JSON.parse(message.extra) : message.extra) : {}
 
+      console.log('[MiniProgramCall] 📨 收到信令:', signal, {
+        from: message.sender_user_id,
+        room_id: message.room_id,
+        call_id: message.call_id,
+        content: content,
+        extra: extra
+      })
+
       if (extra.type) call.type = extra.type
 
       if (signal === 'invite') {
@@ -143,18 +151,48 @@ export function useMiniProgramCall() {
         await joinCallRoom()
 
       } else if (signal === 'participant_joined') {
-        // 新参与者加入
-        if (content.pull_url) {
-          const exists = remoteStreams.value.some(s => s.userId === content.user_id)
-          if (!exists) {
+        // 新参与者加入（来自 PC/H5 端）
+        console.log('[MiniProgramCall] 🆕 收到 participant_joined 信令:', {
+          user_id: content.user_id,
+          platform: content.platform,
+          pull_url: content.pull_url,
+          flv_url: content.flv_url
+        })
+        
+        if (content.pull_url || content.flv_url) {
+          const existingIndex = remoteStreams.value.findIndex(s => s.userId === content.user_id)
+          if (existingIndex >= 0) {
+            // 更新现有流的地址（重要：当用户重新加入时使用新的流地址）
+            const oldPullUrl = remoteStreams.value[existingIndex].pullUrl
+            const oldFlvUrl = remoteStreams.value[existingIndex].flvUrl
+            remoteStreams.value[existingIndex].pullUrl = content.pull_url || ''
+            remoteStreams.value[existingIndex].flvUrl = content.flv_url || ''
+            remoteStreams.value[existingIndex].userName = content.user_name
+            remoteStreams.value[existingIndex].userAvatar = content.user_avatar
+            console.log('[MiniProgramCall] 🔄 更新远程流地址:', content.user_id)
+            console.log('[MiniProgramCall]   旧地址:', { pullUrl: oldPullUrl, flvUrl: oldFlvUrl })
+            console.log('[MiniProgramCall]   新地址:', { pullUrl: content.pull_url, flvUrl: content.flv_url })
+          } else {
+            // 添加新的远程流
             remoteStreams.value.push({
               userId: content.user_id,
-              pullUrl: content.pull_url,
-              flvUrl: content.flv_url,
+              pullUrl: content.pull_url || '',
+              flvUrl: content.flv_url || '',
               userName: content.user_name,
               userAvatar: content.user_avatar,
             })
+            console.log('[MiniProgramCall] ✅ 添加远程流:', content.user_id)
           }
+          console.log('[MiniProgramCall] 📺 当前远程流列表:', remoteStreams.value)
+        } else {
+          console.log('[MiniProgramCall] ⚠️ participant_joined 没有拉流地址（PC 可能是 WebRTC 模式）')
+        }
+        
+        // 如果当前没有远程流，尝试重新获取房间信息
+        // 因为 PC 端可能没有 RTMP 推流地址（WebRTC 模式）
+        if (remoteStreams.value.length === 0 && call.roomId) {
+          console.log('[MiniProgramCall] 📡 远程流为空，尝试刷新房间信息...')
+          refreshRoomStreams()
         }
 
       } else if (signal === 'participant_left') {
@@ -249,14 +287,14 @@ export function useMiniProgramCall() {
     console.log('[MiniProgramCall] 加入房间:', {
       roomId: call.roomId,
       userId: userId.value,
-      platform: 'miniprogram'
+      platform: 'wxapp'
     })
 
     try {
       const response = await callApi.joinCallRoom({
         room_id: call.roomId,
         user_id: userId.value,
-        platform: 'miniprogram'
+        platform: 'wxapp'
       })
 
       console.log('[MiniProgramCall] 加入房间响应:', JSON.stringify(response, null, 2))
@@ -297,6 +335,10 @@ export function useMiniProgramCall() {
       if (response.participants) {
         console.log('[MiniProgramCall] 房间参与者:', response.participants)
       }
+
+      // 关键修复：通知房间内其他参与者"我已加入"
+      // 发送 participant_joined 信令，让 PC 端知道可以拉取我的流
+      sendParticipantJoinedSignal(response)
 
       // 重置推流状态标记
       isPushingSucceeded = false
@@ -691,10 +733,84 @@ export function useMiniProgramCall() {
         type: call.type,
         senderName: currentUser?.name,
         senderAvatar: currentUser?.avatar,
-        platform: 'miniprogram'
+        platform: 'wxapp'
       }),
     }
     messageApi.sendMessage(payload).catch(console.error)
+  }
+
+  /**
+   * 发送 participant_joined 信令通知其他参与者
+   * 关键：让 PC 端知道小程序已加入并提供 FLV 拉流地址
+   */
+  function sendParticipantJoinedSignal(response: any) {
+    if (!call.callId || !call.roomId) return
+
+    const currentUser = authStore.user
+    
+    // 构建参与者信息，包含 FLV 地址供 PC 端拉流
+    // 使用后端返回的 flv_url，这是正确的 HTTP-FLV 地址
+    const participantInfo = {
+      user_id: userId.value,
+      platform: 'wxapp',
+      pull_url: response.push_url || '',
+      flv_url: response.flv_url || '',  // 后端返回的 FLV 地址
+      user_name: currentUser?.name,
+      user_avatar: currentUser?.avatar,
+    }
+
+    console.log('[MiniProgramCall] 发送 participant_joined 信令:', participantInfo)
+
+    const payload = {
+      sender_client_id: wsManager.getClientId() || '',
+      receiver_user_id: currentReceiverUserId,
+      room_id: call.roomId,
+      message_type: 6,
+      content: JSON.stringify(participantInfo),
+      call_id: call.callId,
+      call_status: 'participant_joined',
+      extra: JSON.stringify({
+        type: call.type,
+        platform: 'wxapp'
+      }),
+    }
+    messageApi.sendMessage(payload).catch(console.error)
+  }
+
+  /**
+   * 刷新房间流信息（当收到 participant_joined 但没有流地址时）
+   */
+  async function refreshRoomStreams() {
+    if (!call.roomId || !userId.value) return
+
+    try {
+      console.log('[MiniProgramCall] 刷新房间流信息...')
+      
+      const response = await callApi.joinCallRoom({
+        room_id: call.roomId,
+        user_id: userId.value,
+        platform: 'wxapp'
+      })
+
+      console.log('[MiniProgramCall] 刷新房间响应:', response)
+
+      // 更新拉流地址列表
+      if (response.pull_urls && response.pull_urls.length > 0) {
+        for (const p of response.pull_urls) {
+          const exists = remoteStreams.value.some(s => s.userId === p.user_id)
+          if (!exists) {
+            remoteStreams.value.push({
+              userId: p.user_id,
+              pullUrl: p.url || '',
+              flvUrl: p.flv_url || '',
+            })
+            console.log('[MiniProgramCall] 刷新后添加远程流:', p.user_id)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[MiniProgramCall] 刷新房间流信息失败:', error)
+    }
   }
 
   /**
@@ -798,34 +914,39 @@ export function useMiniProgramCall() {
   function onPusherStateChange(e: any) {
     const code = e.detail?.code
     const message = e.detail?.message || ''
-    console.log('[MiniProgramCall] 推流状态:', code, message)
+    console.log('[MiniProgramCall] 📹 推流状态:', code, message)
 
     switch (code) {
       // 成功状态
       case 1001: // 已连接到云端推流服务器
-        console.log('[MiniProgramCall] ✅ 已连接到推流服务器')
+        console.log('[MiniProgramCall] ✅ [RTMP连接] 已连接到推流服务器')
         break
-      case 1002: // 已与云端推流服务器握手完毕
-        console.log('[MiniProgramCall] ✅ 握手完成，开始推流')
+      case 1002: // 已与云端推流服务器握手完毕，开始推流
+        console.log('[MiniProgramCall] ✅ [RTMP握手] 握手完成，开始推流')
+        console.log('[MiniProgramCall] 📍 推流地址:', pushUrl.value)
         call.statusText = '通话中'
         break
       case 1003: // 已成功打开摄像头
-        console.log('[MiniProgramCall] ✅ 摄像头已打开')
+        console.log('[MiniProgramCall] ✅ [视频采集] 摄像头已打开')
         break
       case 1004: // 自动调整分辨率
+        console.log('[MiniProgramCall] ℹ️ [视频编码] 自动调整分辨率')
         break
       case 1005: // 推流动态调整分辨率
+        console.log('[MiniProgramCall] ℹ️ [视频编码] 动态调整分辨率:', message)
         break
       case 1006: // 推流动态调整码率
+        console.log('[MiniProgramCall] ℹ️ [视频编码] 动态调整码率:', message)
         break
-      case 1007: // 首帧画面采集完成
-        console.log('[MiniProgramCall] ✅ 首帧画面采集完成')
+      case 1007: // 首帧画面采集完成 - 关键：视频采集正常
+        console.log('[MiniProgramCall] ✅ [视频采集] 首帧画面采集完成')
         break
-      case 1008: // 编码器启动
-        console.log('[MiniProgramCall] ✅ 编码器启动')
+      case 1008: // 编码器启动 - 关键：视频编码开始
+        console.log('[MiniProgramCall] ✅ [视频编码] 硬件编码器启动')
         break
       case 1009: // 已发送首帧视频 - 这是推流真正成功的标志！
-        console.log('[MiniProgramCall] ✅✅ 推流成功！已发送首帧视频')
+        console.log('[MiniProgramCall] ✅✅ [推流成功] 已发送首帧视频到服务器')
+        console.log('[MiniProgramCall] 📊 推流状态: 视频流已建立')
         isPushingSucceeded = true  // 关键：标记推流成功
         isStartingPush = false
         call.statusText = '通话中'
@@ -833,14 +954,14 @@ export function useMiniProgramCall() {
 
       // 警告/网络状态
       case 1101: // 网络状况不佳：上行带宽不足
-        console.warn('[MiniProgramCall] ⚠️ 网络不佳，上行带宽不足')
+        console.warn('[MiniProgramCall] ⚠️ [网络] 上行带宽不足，可能丢帧')
         call.statusText = '网络不佳...'
         break
-      case 1102: // 网络断连，已启动自动重连（不是编码器失败！）
-        console.log('[MiniProgramCall] ℹ️ 网络断连，正在自动重连...')
+      case 1102: // 网络断连，已启动自动重连
+        // 关键：1102 只是网络波动导致的重连，不是推流失败
+        // 微信会自动处理重连，服务器端会看到连接断开和重新连接
+        console.log('[MiniProgramCall] ℹ️ [网络] 自动重连中（这是正常的网络恢复机制）')
         call.statusText = '重连中...'
-        // 重要：1102 是自动重连，不需要手动干预！
-        // 微信会自动处理重连，我们只需要等待
         break
       case 1103: // 摄像头被占用
         console.error('[MiniProgramCall] ❌ 摄像头被占用')
@@ -907,12 +1028,79 @@ export function useMiniProgramCall() {
 
   /**
    * 处理拉流状态变化
+   * 状态码参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
    */
   function onPlayerStateChange(e: any, userId: string) {
     const code = e.detail?.code
-    console.log(`[MiniProgramCall] 拉流状态 [${userId}]:`, code)
+    const message = e.detail?.message || ''
 
-    // 状态码参考微信文档
+    // 根据状态码分类输出日志
+    switch (code) {
+      // 正常状态
+      case 2001: // 已经连接服务器
+        console.log(`[MiniProgramCall] 🎬 [拉流${userId}] 已连接服务器`)
+        break
+      case 2002: // 已经开始拉流
+        console.log(`[MiniProgramCall] 🎬 [拉流${userId}] 开始拉流`)
+        break
+      case 2003: // 网络接收到首个视频数据包(IDR)
+        console.log(`[MiniProgramCall] ✅ [拉流${userId}] 收到首个视频包（关键帧）`)
+        break
+      case 2004: // 视频播放开始
+        console.log(`[MiniProgramCall] ✅ [拉流${userId}] 视频播放开始`)
+        break
+      case 2005: // 视频播放进度
+        // 不输出，太频繁
+        break
+      case 2006: // 视频播放结束
+        console.log(`[MiniProgramCall] ℹ️ [拉流${userId}] 视频播放结束`)
+        break
+      case 2007: // 视频播放加载
+        console.log(`[MiniProgramCall] ℹ️ [拉流${userId}] 视频加载中...`)
+        break
+      case 2008: // 解码器启动
+        console.log(`[MiniProgramCall] ✅ [拉流${userId}] 解码器启动`)
+        break
+      case 2009: // 视频分辨率改变
+        console.log(`[MiniProgramCall] ℹ️ [拉流${userId}] 分辨率改变:`, message)
+        break
+
+      // 网络状态
+      case 2101: // 当前视频播放出现卡顿
+        console.warn(`[MiniProgramCall] ⚠️ [拉流${userId}] 播放卡顿`)
+        break
+      case 2102: // 当前视频播放出现卡顿恢复
+        console.log(`[MiniProgramCall] ✅ [拉流${userId}] 卡顿恢复`)
+        break
+      case 2103: // 网络断连, 已启动自动重连
+        console.log(`[MiniProgramCall] ℹ️ [拉流${userId}] 网络断连，自动重连中`)
+        break
+      case 2104: // 网络来包不稳定
+        console.warn(`[MiniProgramCall] ⚠️ [拉流${userId}] 网络不稳定`)
+        break
+      case 2105: // 下行带宽不足
+        console.warn(`[MiniProgramCall] ⚠️ [拉流${userId}] 下行带宽不足`)
+        break
+      case 2106: // 音频播放出现卡顿
+        break
+      case 2107: // 音频播放出现卡顿恢复
+        break
+
+      // 错误状态
+      case -2301: // 网络连接断开
+        console.error(`[MiniProgramCall] ❌ [拉流${userId}] 网络连接断开`)
+        break
+      case -2302: // 拉取失败
+        console.error(`[MiniProgramCall] ❌ [拉流${userId}] 拉流失败`)
+        break
+
+      default:
+        if (code < 0) {
+          console.error(`[MiniProgramCall] ❌ [拉流${userId}] 错误:`, code, message)
+        } else {
+          console.log(`[MiniProgramCall] 📺 [拉流${userId}] 状态:`, code, message)
+        }
+    }
   }
 
   return {

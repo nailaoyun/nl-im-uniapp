@@ -69,7 +69,7 @@ export function getCallRoom(roomId: string): Promise<RoomInfoResponse> {
 export function joinCallRoom(data: {
   room_id: string
   user_id: string
-  platform: 'h5' | 'app' | 'miniprogram'
+  platform: 'h5' | 'web' | 'app' | 'miniprogram' | 'wxapp'
 }): Promise<JoinCallRoomResponse> {
   return request.post('/call/join', data)
 }

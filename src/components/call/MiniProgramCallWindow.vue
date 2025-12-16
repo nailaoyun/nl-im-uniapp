@@ -10,17 +10,23 @@
     <view class="video-layer">
       <!-- 远端视频流 -->
       <view class="remote-grid" :class="gridClass">
+        <!-- 
+          live-player src 优先级：
+          1. flvUrl: HTTP-FLV 地址（PC/H5 端，live-player 支持 HTTP-FLV）
+          2. pullUrl: RTMP 拉流地址（小程序端推流的 RTMP 地址）
+          注意：PC 端发送的 pull_url 是 WebSocket 地址，live-player 无法播放
+        -->
         <live-player
             v-for="stream in remoteStreams"
             :key="stream.userId"
             class="live-player-item"
-            :src="stream.pullUrl"
+            :src="stream.flvUrl || stream.pullUrl"
             mode="RTC"
             autoplay
             :muted="false"
             object-fit="fillCrop"
-            @statechange="(e) => onPlayerStateChange(e, stream.userId)"
-            @error="(e) => onPlayerError(e, stream.userId)"
+            @statechange="(e: any) => onPlayerStateChange(e, stream.userId)"
+            @error="(e: any) => onPlayerError(e, stream.userId)"
         >
           <!-- 名字标签 (同层渲染直接使用 view) -->
           <view class="player-tag">
@@ -40,15 +46,17 @@
       <!-- 
         关键配置说明：
         - video-codec: 优先使用硬件编码，兼容性更好
+        - audio-codec: 必须使用 AAC 编码，flv.js 只支持 AAC 和 MP3
         - min-bitrate/max-bitrate: 设置合理的码率范围，避免超出设备能力
         - video-width/video-height: 明确指定分辨率，避免自动选择不支持的分辨率
       -->
+      <!-- @ts-ignore mode="RTC" 是微信小程序 live-pusher 的有效模式 -->
       <live-pusher
           v-if="pushUrl"
           id="local-pusher"
           class="local-pusher"
           :url="pushUrl"
-          mode="RTC"
+          :mode="'RTC' as any"
           :autopush="true"
           :enable-camera="!call.camOff"
           :enable-mic="!call.muted"
@@ -58,6 +66,7 @@
           orientation="vertical"
           device-position="front"
           video-codec="hardware"
+          audio-codec="aac"
           :min-bitrate="200"
           :max-bitrate="1000"
           :video-width="360"
@@ -203,7 +212,7 @@ watch(() => pushUrl.value, (newVal, oldVal) => {
       // 等待 live-pusher 完全渲染后再初始化
       setTimeout(() => {
         console.log('[MiniProgramCall] 延迟后初始化 Pusher Context')
-        initPusherContext(instance)
+      initPusherContext(instance)
       }, 500)
     })
   }
