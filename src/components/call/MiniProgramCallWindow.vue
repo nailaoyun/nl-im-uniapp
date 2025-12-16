@@ -37,6 +37,7 @@
         <!-- 等待中的占位符 -->
         <view v-if="remoteStreams.length === 0" class="waiting-placeholder">
           <image :src="call.callerAvatar || '/static/default-avatar.png'" class="placeholder-avatar" mode="aspectFill" />
+          <text class="placeholder-name">{{ call.callerName || '未知用户' }}</text>
           <text class="placeholder-text">{{ call.statusText }}</text>
         </view>
       </view>
@@ -299,6 +300,7 @@ const onPlayerError = (e: any, userId: string) => {
   justify-content: center;
 }
 .placeholder-avatar { width: 160rpx; height: 160rpx; border-radius: 50%; margin-bottom: 20rpx; }
+.placeholder-name { color: #fff; font-size: 36rpx; font-weight: bold; margin-bottom: 12rpx; }
 .placeholder-text { color: #aaa; font-size: 30rpx; }
 
 /* 顶部栏 - 使用标准 view */

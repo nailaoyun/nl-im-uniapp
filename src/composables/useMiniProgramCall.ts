@@ -6,6 +6,7 @@
 import { reactive, ref, computed, nextTick } from 'vue'
 import * as callApi from '@/api/modules/call'
 import * as messageApi from '@/api/modules/message'
+import * as contactApi from '@/api/modules/contact'
 import { wsManager } from '@/api/websocket'
 import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
@@ -130,14 +131,20 @@ export function useMiniProgramCall() {
         call.statusText = `邀请你${call.type === 'video' ? '视频' : '语音'}通话`
         call.callerId = message.sender_user_id
 
-        // 获取来电者信息
+        // 获取来电者信息（优先级：本地联系人 > 信令extra > API查询）
         const contact = chatStore.contacts.find(c => c.contact_user_id === message.sender_user_id)
         if (contact?.user) {
           call.callerName = contact.remark_name || contact.user.name
           call.callerAvatar = contact.user.avatar
+          console.log('[MiniProgramCall] 👤 从本地联系人获取来电者信息:', call.callerName)
         } else if (extra.senderName) {
           call.callerName = extra.senderName
           call.callerAvatar = extra.senderAvatar
+          console.log('[MiniProgramCall] 👤 从信令获取来电者信息:', call.callerName)
+        } else {
+          // 本地找不到且信令没有，异步查询 API
+          console.log('[MiniProgramCall] 👤 来电者信息未知，异步查询API...')
+          fetchCallerInfo(message.sender_user_id)
         }
 
         // 播放来电铃声
@@ -210,6 +217,22 @@ export function useMiniProgramCall() {
       }
     } catch (error) {
       console.error('[MiniProgramCall] 处理信令失败:', error)
+    }
+  }
+
+  /**
+   * 异步查询来电者信息（当本地联系人和信令都没有时调用）
+   */
+  async function fetchCallerInfo(userId: string): Promise<void> {
+    try {
+      const contact = await contactApi.getContactDetail(userId)
+      if (contact?.user) {
+        call.callerName = contact.remark_name || contact.user.name
+        call.callerAvatar = contact.user.avatar
+        console.log('[MiniProgramCall] 👤 从API获取来电者信息:', call.callerName)
+      }
+    } catch (e) {
+      console.warn('[MiniProgramCall] 查询来电者信息失败:', e)
     }
   }
 
